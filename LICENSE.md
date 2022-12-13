@@ -1,7 +1,7 @@
-Direct-Sampling Beam Position Monitor Firmware (DSBPM) Copyright (c) 2022, The Regents
-of the University of California, through Lawrence Berkeley National
-Laboratory (subject to receipt of any required approvals from the U.S.
-Dept. of Energy).  All rights reserved.
+Direct-Sampling Beam Position Monitor (dsbpm) Copyright (c) 2022,
+The Regents of the University of California, through Lawrence Berkeley
+National Laboratory (subject to receipt of any required approvals from
+the U.S. Dept. of Energy). All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
