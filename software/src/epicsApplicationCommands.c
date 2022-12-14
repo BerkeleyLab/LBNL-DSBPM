@@ -144,6 +144,10 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             autotrimSetStaticGains(0, idx, cmdp->args[0]);
             break;
 
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DSA:
+            rfADCSetDSADSBPM(0, idx, cmdp->args[0]);
+            break;
+
         default: return -1;
         }
         break;

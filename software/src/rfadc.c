@@ -20,6 +20,7 @@ typedef int64_t __s64;
 
 #define ADC_PER_TILE    2
 #define NTILES (((CFG_ADC_PHYSICAL_COUNT)+(ADC_PER_TILE)-1)/(ADC_PER_TILE))
+#define ADC_PER_BPM ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
 
 #define REG_W_MASTER_RESET   0x0004
 #define REG_R_POWER_ON_STATE 0x0004
@@ -342,4 +343,69 @@ rfADCstatus(void)
         }
     }
     return status;
+}
+
+float
+rfADCGetDSA(int channel)
+{
+    int i;
+    XRFdc_DSA_Settings dsa;
+    int tile = channel / ADC_PER_TILE;
+    int adc = channel % ADC_PER_TILE;
+
+    i = XRFdc_GetDSA(&rfDC, tile, adc, &dsa);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_GetDSA tile %d, adc %d: %d", tile, adc, i);
+        return -1.0;
+    }
+
+    return dsa.Attenuation;
+}
+
+void
+rfADCSetDSA(int channel, float att)
+{
+    int i;
+    XRFdc_DSA_Settings dsa;
+    int tile = channel / ADC_PER_TILE;
+    int adc = channel % ADC_PER_TILE;
+
+    i = XRFdc_GetDSA(&rfDC, tile, adc, &dsa);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_GetDSA tile %d, adc %d: %d", tile, adc, i);
+        return;
+    }
+
+    dsa.Attenuation = att;
+    i = XRFdc_SetDSA(&rfDC, tile, adc, &dsa);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_SetDSA tile %d, adc %d: %d", tile, adc, i);
+        return;
+    }
+}
+
+/* att is in mDb, integer */
+void
+rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt)
+{
+    float att;
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    att = ((float) mDbAtt) / 1000;
+    ch = bpm * ADC_PER_BPM + channel;
+    rfADCSetDSA(ch, att);
+}
+
+int
+rfADCGetDSADSBPM(unsigned int bpm, int channel)
+{
+    float att;
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    ch = bpm * ADC_PER_BPM + channel;
+    att = rfADCGetDSA(ch);
+
+    return att * 1000;
 }

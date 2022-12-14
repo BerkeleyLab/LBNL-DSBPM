@@ -15,6 +15,7 @@
 #include "localOscillator.h"
 #include "systemParameters.h"
 #include "util.h"
+#include "rfadc.h"
 
 #define MAX_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
 
@@ -76,6 +77,8 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
                 adcChannel, chainNumber));
         pk->gainFactor[i] = GPIO_READ(REG(GPIO_IDX_ADC_GAIN_FACTOR_0 +
                 adcChannel, chainNumber));
+        pk->rfADCDSA[i] = rfADCGetDSADSBPM(chainNumber, adcChannel);
+
     }
     r = 0;
     pk->adcPeak[0] = r;
