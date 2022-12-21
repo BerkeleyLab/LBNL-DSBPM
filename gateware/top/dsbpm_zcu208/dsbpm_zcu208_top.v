@@ -42,6 +42,23 @@ module dsbpm_zcu208_top #(
     output  RFMC_DAC_06_P, RFMC_DAC_06_N,
     output  RFMC_DAC_07_P, RFMC_DAC_07_N,
 
+    input   SYS_CLK_C0_P, SYS_CLK_C0_N,
+
+    output          DDR4_C0_ACT_N,
+    output [16:0]   DDR4_C0_ADR,
+    output [1:0]    DDR4_C0_BA,
+    output [1:0]    DDR4_C0_BG,
+    output          DDR4_C0_CK_C,
+    output          DDR4_C0_CK_T,
+    output          DDR4_C0_CKE,
+    output [1:0]    DDR4_C0_CS_N,
+    inout  [3:0]    DDR4_C0_DM_DBI_N,
+    inout  [31:0]   DDR4_C0_DQ,
+    inout  [3:0]    DDR4_C0_DQS_C,
+    inout  [3:0]    DDR4_C0_DQS_T,
+    output          DDR4_C0_ODT,
+    output          DDR4_C0_RESET_N,
+
     output wire SFP_REC_CLK_P,
     output wire SFP_REC_CLK_N,
 
