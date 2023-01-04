@@ -9,6 +9,7 @@
 #include <string.h>
 #include <lwip/udp.h>
 #include "afe.h"
+#include "localOscillator.h"
 #include "ffs.h"
 #include "st7789v.h"
 #include "tftp.h"
@@ -127,7 +128,7 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     static int lastSend;
     FRESULT fr;
     static FIL fil, *fp;
-    static char stashAFE;
+    static char stashAFE, stashRFTable, stashPTTable;
 
     if (debugFlags & DEBUGFLAG_TFTP)
         printf("%3d on port %d from %d.%d.%d.%d:%d  %02X%02X %02X%02X\n",
@@ -162,6 +163,8 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                         }
                         else {
                             stashAFE = 0;
+                            stashRFTable = 0;
+                            stashPTTable = 0;
                             if (strcasecmp(name, "SCREEN.ppm") == 0) {
                                 st7789vGrabScreen();
                             }
@@ -171,6 +174,22 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                                 }
                                 else {
                                     stashAFE = 1;
+                                }
+                            }
+                            if (strcasecmp(name, RF_TABLE_EEPROM_NAME) == 0) {
+                                if (opcode == TFTP_OPCODE_RRQ) {
+                                    localOscillatorFetchRfEEPROM();
+                                }
+                                else {
+                                    stashRFTable = 1;
+                                }
+                            }
+                            if (strcasecmp(name, PT_TABLE_EEPROM_NAME) == 0) {
+                                if (opcode == TFTP_OPCODE_RRQ) {
+                                    localOscillatorFetchPtEEPROM();
+                                }
+                                else {
+                                    stashPTTable = 1;
                                 }
                             }
                             if (fp) {
@@ -223,7 +242,7 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                         replyERR(pcb, fromAddr, fromPort, ffsStrerror(fr));
                     }
                 }
-                if (fp && (nBytes < 512)) { 
+                if (fp && (nBytes < 512)) {
                     fr = f_close(fp);
                     fp = NULL;
                     if (fr != FR_OK) {
@@ -236,6 +255,18 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                     if (stashAFE) {
                         stashAFE = 0;
                         afeStashEEPROM();
+                    }
+                    if (stashRFTable) {
+                        stashRFTable = 0;
+                        if (localOscillatorStashRfEEPROM() > 0) {
+                            localOscRfCommit();
+                        }
+                    }
+                    if (stashPTTable) {
+                        stashPTTable = 0;
+                        if (localOscillatorStashPtEEPROM() > 0) {
+                            localOscPtCommit();
+                        }
                     }
                 }
             }

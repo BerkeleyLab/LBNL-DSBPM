@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "ffs.h"
 #include "gpio.h"
 #include "localOscillator.h"
 #include "systemParameters.h"
@@ -58,8 +59,12 @@
 
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
-static int32_t rfTable[2+(2*CFG_LO_RF_ROW_CAPACITY)];
-static int32_t ptTable[2+(4*CFG_LO_PT_ROW_CAPACITY)];
+#define RF_TABLE_BUF_SIZE       (2+(2*CFG_LO_RF_ROW_CAPACITY))
+#define PT_TABLE_BUF_SIZE       (2+(4*CFG_LO_PT_ROW_CAPACITY))
+#define MAX_TABLE_BUF_SIZE      (PT_TABLE_BUF_SIZE)
+
+static int32_t rfTable[RF_TABLE_BUF_SIZE];
+static int32_t ptTable[PT_TABLE_BUF_SIZE];
 
 /*
  * Form checksum
@@ -463,4 +468,87 @@ void localOscillatorInit(void)
     localOscSetPtTable(rfTablePT, sizeof(rfTablePT)-1);
     localOscRfCommit();
     localOscPtCommit();
+}
+
+
+/*
+ * EEPROM I/O
+ */
+static int32_t tableBuf[MAX_TABLE_BUF_SIZE];
+
+void
+localOscillatorFetchEEPROM(int isPt)
+{
+    const char *name = isPt ? "/"PT_TABLE_EEPROM_NAME : "/"RF_TABLE_EEPROM_NAME;
+    int nRead;
+    FRESULT fr;
+    FIL fil;
+    UINT nWritten;
+
+    fr = f_open(&fil, name, FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr != FR_OK) {
+        return;
+    }
+    if ((nRead = localOscGetTable((unsigned char *)tableBuf, isPt)) > 0) {
+        f_write(&fil, tableBuf, nRead, &nWritten);
+    }
+    f_close(&fil);
+}
+
+void
+localOscillatorFetchRfEEPROM(void)
+{
+    localOscillatorFetchEEPROM(0);
+}
+
+void
+localOscillatorFetchPtEEPROM(void)
+{
+    localOscillatorFetchEEPROM(1);
+}
+
+/*
+ * Copy file to Local Oscillator EEPROM
+ */
+int
+localOscillatorStashEEPROM(int isPt)
+{
+    const char *name = isPt ? "/"PT_TABLE_EEPROM_NAME : "/"RF_TABLE_EEPROM_NAME;
+    int nWrite;
+    FRESULT fr;
+    FIL fil;
+    UINT nRead;
+
+    fr = f_open(&fil, name, FA_READ);
+    if (fr != FR_OK) {
+        return -1;
+    }
+
+    fr = f_read(&fil, tableBuf, sizeof(tableBuf), &nRead);
+    if (fr != FR_OK) {
+        printf("%s local oscillator file read failed\n", isPt? "PT" : "RF");
+        f_close(&fil);
+        return -1;
+    }
+    if (nRead == 0) {
+        f_close(&fil);
+        return 0;
+    }
+
+    nWrite = localOscSetTable((unsigned char *)tableBuf, nRead, isPt);
+    f_close(&fil);
+
+    return nWrite;
+}
+
+int
+localOscillatorStashRfEEPROM(void)
+{
+    return localOscillatorStashEEPROM(0);
+}
+
+int
+localOscillatorStashPtEEPROM(void)
+{
+    return localOscillatorStashEEPROM(1);
 }
