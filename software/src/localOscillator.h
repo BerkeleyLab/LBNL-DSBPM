@@ -26,9 +26,9 @@ void sdAccumulateSetTbtSumShift(int shift);
 void sdAccumulateSetMtSumShift(int shift);
 void sdAccumulateSetFaSumShift(int shift);
 
-void localOscillatorFetchEEPROM(int isPt);
-void localOscillatorFetchRfEEPROM(void);
-void localOscillatorFetchPtEEPROM(void);
+int localOscillatorFetchEEPROM(int isPt);
+int localOscillatorFetchRfEEPROM(void);
+int localOscillatorFetchPtEEPROM(void);
 int localOscillatorStashEEPROM(int isPt);
 int localOscillatorStashRfEEPROM(void);
 int localOscillatorStashPtEEPROM(void);

@@ -476,7 +476,7 @@ void localOscillatorInit(void)
  */
 static int32_t tableBuf[MAX_TABLE_BUF_SIZE];
 
-void
+int
 localOscillatorFetchEEPROM(int isPt)
 {
     const char *name = isPt ? "/"PT_TABLE_EEPROM_NAME : "/"RF_TABLE_EEPROM_NAME;
@@ -487,24 +487,35 @@ localOscillatorFetchEEPROM(int isPt)
 
     fr = f_open(&fil, name, FA_WRITE | FA_CREATE_ALWAYS);
     if (fr != FR_OK) {
-        return;
+        return -1;
     }
-    if ((nRead = localOscGetTable((unsigned char *)tableBuf, isPt)) > 0) {
-        f_write(&fil, tableBuf, nRead, &nWritten);
+
+    nRead = localOscGetTable((unsigned char *)tableBuf, isPt);
+    if (nRead <= 0) {
+        f_close(&fil);
+        return -1;
     }
+
+    fr = f_write(&fil, tableBuf, nRead, &nWritten);
+    if (fr != FR_OK) {
+        f_close(&fil);
+        return -1;
+    }
+
     f_close(&fil);
+    return nWritten;
 }
 
-void
+int
 localOscillatorFetchRfEEPROM(void)
 {
-    localOscillatorFetchEEPROM(0);
+    return localOscillatorFetchEEPROM(0);
 }
 
-void
+int
 localOscillatorFetchPtEEPROM(void)
 {
-    localOscillatorFetchEEPROM(1);
+    return localOscillatorFetchEEPROM(1);
 }
 
 /*
