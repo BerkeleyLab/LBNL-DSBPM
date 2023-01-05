@@ -482,63 +482,81 @@ afeFetchADCextents(uint32_t *buf)
 /*
  * EEPROM I/O
  */
-void
+int
 afeFetchEEPROM(void)
 {
     uint8_t buf[128];
     FRESULT fr;
     FIL fil;
     UINT nWritten;
+    int r;
 
-    if (afeMissing) return;
+    if (afeMissing) return 0;
     fr = f_open(&fil, "/"AFE_EEPROM_NAME, FA_WRITE | FA_CREATE_ALWAYS);
     if (fr != FR_OK) {
-        return;
+        return -1;
     }
-    if (iicRead((0x50 << 8) | IIC_INDEX_RFMC, 0, buf, sizeof buf)) {
-        f_write(&fil, buf, sizeof buf, &nWritten);
+
+    r = iicRead((0x50 << 8) | IIC_INDEX_RFMC, 0, buf, sizeof buf);
+    if (!r) {
+        f_close(&fil);
+        return -1;
     }
+
+    fr = f_write(&fil, buf, sizeof buf, &nWritten);
+    if (fr != FR_OK) {
+        f_close(&fil);
+        return -1;
+    }
+
     f_close(&fil);
+    return nWritten;
 }
 
 /*
  * Copy file to AFE EEPROM
  */
-void
+int
 afeStashEEPROM(void)
 {
     int address = 0;
     int pass;
     uint8_t buf[17];
+    int nTotalRead = 0;
     FRESULT fr;
     FIL fil;
     UINT nRead;
 
-    if (afeMissing) return;
+    if (afeMissing) return 0;
     fr = f_open(&fil, "/"AFE_EEPROM_NAME, FA_READ);
     if (fr != FR_OK) {
-        return;
+        return -1;
     }
     for (;;) {
         fr = f_read(&fil, buf+1, sizeof(buf)-1, &nRead);
         if (fr != FR_OK) {
             printf("IIC file read failed\n");
-            break;
+            f_close(&fil);
+            return -1;
         }
         if (nRead == 0) {
             break;
         }
+
         pass = 0;
         buf[0] = address;
         while (!iicWrite((0x50 << 8) | IIC_INDEX_RFMC, buf, nRead + 1)) {
             if (++pass > 12) {
                 printf("IIC EEPROM write failed\n");
                 f_close(&fil);
-                return;
+                return -1;
             }
             microsecondSpin(500);
         }
+        nTotalRead += nRead;
         address += nRead;
     }
+
     f_close(&fil);
+    return nTotalRead;
 }

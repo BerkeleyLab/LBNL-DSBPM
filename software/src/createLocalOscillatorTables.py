@@ -31,13 +31,13 @@ def rfTable(name, Frf, refDivider, refMultiplier, sampleCount, Feff = None, conj
             c = quantize(math.cos(w*Tsamp*i))
             f.write("%9.6f,%9.6f\n" % (c, s))
 
-def ptTable(name, Foffset, Frf, refDivider, refMultiplier, sampleCount, Feff = None, conjugate = False):
+def ptTableGen(name, FoffsetL, FoffsetH, Frf, refDivider, refMultiplier, sampleCount, Feff = None, conjugate = False):
     Frf = float(Frf)
     Fadc = Frf / refDivider * refMultiplier
     if (not Feff): Feff = Frf - math.floor(Frf / Fadc) * Fadc
     if (Feff > Fadc / 2): Feff = Fadc - Feff
-    Flo = Feff - Foffset
-    Fhi = Feff + Foffset
+    Flo = Feff - FoffsetL
+    Fhi = Feff + FoffsetH
     print("Frf:%.3f  Fadc:%.3f  Flo:%.3f  Fhi:%.3f" % (Frf, Fadc, Flo, Fhi))
     with open(name, 'w') as f:
         wl = 2 * math.pi * Flo
@@ -51,6 +51,9 @@ def ptTable(name, Foffset, Frf, refDivider, refMultiplier, sampleCount, Feff = N
             if conjugate: sh = -sh
             ch = quantize(math.cos(wh*Tsamp*i))
             f.write("%9.6f,%9.6f,%9.6f,%9.6f\n" % (cl, sl, ch, sh))
+
+def ptTable(name, Foffset, Frf, refDivider, refMultiplier, sampleCount, Feff = None, conjugate = False):
+    ptTableGen(name, Foffset, Foffset, Frf, refDivider, refMultiplier, sampleCount, Feff = None, conjugate = False)
 
 rfTable('rfTableSR.csv', 500, 328,  77, 77)
 rfTable('rfTableSR_81_328.csv', 499.64, 328,  81, 81)
@@ -66,6 +69,8 @@ ptTable('ptTableSR_80_333_1_2.csv', (499.50/333.0)*(1.0/2.0), 499.50, 333, 80, 8
 ptTable('ptTableSR_81_328_11_19.csv', (499.64/328.0)*(11.0/19.0), 499.64, 328, 81, 81*19)
 ptTable('ptTableSR_81_328_11_19_bin_20.csv', (499.64/328.0)*(11.0/19.0), 499.64, 328, 81, 81*19, Feff = 499.64/328*20)
 ptTable('ptTableSR_81_328_11_19_bin_20_conjugate.csv', (499.64/328.0)*(11.0/19.0), 499.64, 328, 81, 81*19, Feff = 499.64/328*20, conjugate = True)
+ptTable('ptTableSR_81_328_30_19_bin_20_conjugate.csv', (499.64/328.0)*(30.0/19.0), 499.64, 328, 81, 81*19, Feff = 499.64/328*20, conjugate = True)
+ptTableGen('ptTableSR_81_328_L26_19_H30_19_bin_20_conjugate.csv', (499.64/328.0)*(26.0/19.0), (499.64/328.0)*(30.0/19.0), 499.64, 328, 81, 81*19, Feff = 499.64/328*20, conjugate = True)
 ptTable('ptTableSR_11_19.csv', (500.0/328.0)*(11.0/19.0), 500, 328, 77, 77*19)
 ptTable('ptTableTL.csv', 0, 500, 328,  77,  77)
 ptTable('ptTableBR_1_2.csv', (500.0/125.0)*(1.0/2.0), 500, 500, 116,  29*2)
