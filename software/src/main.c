@@ -101,6 +101,9 @@ main(void)
     }
     drawIPv4Address(&ipv4->address, isRecovery);
 
+    /* Readback configurations from filesystem, if available */
+    filesystemReadbacks();
+
     /* Set up hardware */
     microsecondSpin(100000);
     sysmonInit();

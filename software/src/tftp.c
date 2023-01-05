@@ -31,7 +31,6 @@ struct fileInfo {
     int       (*preTransmit)(void);
     int       (*postReceive)(void);
     void      (*commit)(void);
-    void      (*readback)(void);
 };
 
 static int dummyPreTransmit(void)
@@ -47,35 +46,27 @@ static int dummyPostReceive(void)
 static void dummyCommit(void)
 {}
 
-static void dummyReadback(void)
-{}
-
 static struct fileInfo fileTable[] = {
    {"SCREEN.ppm", "SCREEN grab",
                                                     st7789vGrabScreen,
                                                     dummyPostReceive,
-                                                    dummyCommit,
-                                                    dummyReadback},
+                                                    dummyCommit},
    {AFE_EEPROM_NAME, "AFE data",
                                                     afeFetchEEPROM,
                                                     afeStashEEPROM,
-                                                    dummyCommit,
-                                                    dummyReadback},
+                                                    dummyCommit},
    {RF_TABLE_EEPROM_NAME, "Local oscillator table (RF)",
                                                     localOscillatorFetchRfEEPROM,
                                                     localOscillatorStashRfEEPROM,
-                                                    localOscRfCommit,
-                                                    dummyReadback},
+                                                    localOscRfCommit},
    {PT_TABLE_EEPROM_NAME, "Local oscillator table (Pilot Tones)",
                                                     localOscillatorFetchPtEEPROM,
                                                     localOscillatorStashPtEEPROM,
-                                                    localOscPtCommit,
-                                                    dummyReadback},
+                                                    localOscPtCommit},
    {"BOOT.bin", "Bitsream + Software image",
                                                     dummyPreTransmit,
                                                     dummyPostReceive,
-                                                    dummyCommit,
-                                                    dummyReadback},
+                                                    dummyCommit},
 };
 
 #define FILE_TABLE_SIZE ((sizeof fileTable / sizeof fileTable[0]))
@@ -367,6 +358,36 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     pbuf_free(p);
     if (ackBlock >= 0)
         replyACK(pcb, fromAddr, fromPort, ackBlock);
+}
+
+/*
+ * Read back 'filesystem' values on startup
+ */
+void
+filesystemReadbacks(void)
+{
+    int i, bytesTrans;
+
+    for (i = 0 ; i < FILE_TABLE_SIZE ; i++) {
+        bytesTrans = 0;
+        int (*funcPostTrans)(void) = fileTable[i].postReceive;
+        if (funcPostTrans) {
+            bytesTrans = (*funcPostTrans)();
+            if (bytesTrans < 0) {
+                printf("%s (%s): Error reading back file\n",
+                        fileTable[i].description, fileTable[i].name);
+            }
+            else {
+                printf("%s (%s): File readback successfully\n",
+                        fileTable[i].description, fileTable[i].name);
+            }
+        }
+
+        void (*funcCommit)(void) = fileTable[i].commit;
+        if (funcCommit && bytesTrans > 0) {
+            (*funcCommit)();
+        }
+    }
 }
 
 /*

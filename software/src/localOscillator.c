@@ -347,6 +347,13 @@ localOscRun()
     printf("Local oscillator running!\n");
 }
 
+static int
+isLocalOscRun()
+{
+    uint32_t v = GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, 0));
+    return (v & NOBANK_RUN_BIT) == NOBANK_RUN_BIT;
+}
+
 /*
  * Commit table to FPGA
  */
@@ -401,14 +408,6 @@ localOscWrite(int32_t *dst, const int32_t *src, int capacity,
 /*
  * Initialize local oscillators
  */
-static void
-localOscReadback(const unsigned char *buf, int isPt)
-{
-    int32_t *src = (int32_t *)buf, *dst = isPt ? ptTable : rfTable;
-    int capacity = isPt ? CFG_LO_PT_ROW_CAPACITY : CFG_LO_RF_ROW_CAPACITY;
-
-    localOscWrite(dst, src, capacity, isPt);
-}
 
 static void
 localOscCommit(int isPt)
@@ -417,18 +416,6 @@ localOscCommit(int isPt)
     int capacity = isPt ? CFG_LO_PT_ROW_CAPACITY : CFG_LO_RF_ROW_CAPACITY;
 
     localOscWrite(NULL, src, capacity, isPt);
-}
-
-void
-localOscRfReadback(const unsigned char *buf)
-{
-    localOscReadback(buf, 0);
-}
-
-void
-localOscPtReadback(const unsigned char *buf)
-{
-    localOscReadback(buf, 1);
 }
 
 void
@@ -464,10 +451,16 @@ localOscGetSdSyncStatus(void)
 
 void localOscillatorInit(void)
 {
-    localOscSetRfTable(rfTableSR, sizeof(rfTableSR)-1);
-    localOscSetPtTable(rfTablePT, sizeof(rfTablePT)-1);
-    localOscRfCommit();
-    localOscPtCommit();
+    /*
+     * If running, it was already initilized by the filesystem
+     * readback
+     */
+    if (!isLocalOscRun()) {
+        localOscSetRfTable(rfTableSR, sizeof(rfTableSR)-1);
+        localOscSetPtTable(rfTablePT, sizeof(rfTablePT)-1);
+        localOscRfCommit();
+        localOscPtCommit();
+    }
 }
 
 
