@@ -78,3 +78,44 @@ The following script can download the software via JTAG:
 cd software/scripts
 xsct download_elf.tcl ../../gateware/syn/dsbpm_zcu208/psu_init.tcl ../app/dsbpm/dsbpm_zcu208.elf
 ```
+
+### Updates
+
+The following system parameters can be updated via TFTP:
+
+* RF table
+* Pilot Tone table
+* Gateware + Software boot file (BOOT.bin)
+
+#### Update RF table
+
+```bash
+tftp -v -m binary <system IP> -c put rfTable.csv rfTable.csv
+```
+
+#### Update Pilot tone table
+
+```bash
+tftp -v -m binary <system IP> -c put ptTable.csv ptTable.csv
+```
+
+#### Update system image file (BOOT.bin):
+
+```bash
+tftp -v -m binary <system IP> -c put BOOT.bin BOOT.bin
+```
+
+When copying `BOOT.bin`, the user needs to reboot the system via a power cycle
+or via the console `boot` command.
+
+Another option to upgrade the image is to use the `programFlash.sh` script
+located at: `software/app/dsbpm/scripts`. The script will automatically
+readback the image file from the system and peform a byte-to-byte comparison
+to detect possible transmission errors.
+
+```bash
+cd software/app/dsbpm
+sh ./scripts/programFlash.sh <system IP> [BOOT.bin filename]
+```
+
+If `BOOT.bin filename` is missing the current path is assumed.
