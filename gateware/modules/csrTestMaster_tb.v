@@ -31,8 +31,8 @@ initial begin
 
 	clk = 0;
 	for (cc = 0; cc < 1000; cc = cc+1) begin
-		#10; clk = 1;
-		#11; clk = 0;
+		clk = 0; #5;
+		clk = 1; #5;
 	end
 
     $display("%s",errors==0?"# PASS":"# FAIL");
