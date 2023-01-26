@@ -48,6 +48,7 @@ module preliminaryProcessing #(
     input                        evrPtTrigger,evrSinglePassTrigger,evrHbMarker,
     output wire                  PT_P, PT_N,
     output reg                   sysSingleTrig,
+    output wire                  adcSingleTrig,
     output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg, plProductsDbg, phProductsDbg,
     output wire  [LO_WIDTH-1:0]  rfLOcosDbg, rfLOsinDbg, plLOcosDbg, plLOsinDbg, phLOcosDbg, phLOsinDbg,
     output wire  [8*MAG_WIDTH-1:0] tbtSumsDbg,
@@ -449,6 +450,8 @@ always @(posedge adcClk) begin
         adcHoldoff <= 0;
     end
 end
+
+assign adcSingleTrig = adcHoldoff;
 
 //
 // Synchronous demodulator accumulators
