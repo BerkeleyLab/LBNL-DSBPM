@@ -14,7 +14,7 @@ module saDecimate #(
     input [(CHANNEL_COUNT*DATA_WIDTH)-1:0] inputData,
     input                                  inputToggle,
     input                                  decimateFlag,
-    
+
     output reg                                  outputToggle = 0,
     output reg [(CHANNEL_COUNT*DATA_WIDTH)-1:0] outputData);
 
@@ -46,7 +46,7 @@ always @(posedge clk) begin
         outputData[i*DATA_WIDTH+:DATA_WIDTH] <= cicData;
     end
 end
-        
+
 decimateCIC #(.INPUT_WIDTH(DATA_WIDTH),
               .OUTPUT_WIDTH(DATA_WIDTH),
               .DECIMATION_FACTOR(DECIMATION_FACTOR),

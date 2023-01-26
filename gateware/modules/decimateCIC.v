@@ -48,7 +48,7 @@ for (i = 0 ; i < STAGES ; i = i + 1) begin : integrate
     always @(posedge clk) begin
         if (iEnables[i]) begin
             if (i == 0) begin
-                sum[0*WIDTH+:WIDTH] <= sum[0*WIDTH+:WIDTH] + 
+                sum[0*WIDTH+:WIDTH] <= sum[0*WIDTH+:WIDTH] +
                  { {WIDEN{IS_SIGNED ? S_TDATA[INPUT_WIDTH-1]: 1'b0}}, S_TDATA };
             end
             else begin

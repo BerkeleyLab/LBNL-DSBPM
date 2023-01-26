@@ -40,7 +40,7 @@ always @(posedge evrClk) begin
     if (evrHeartbeatMarker && !evrHeartbeatMarker_d) begin
         evrSROC <= 1;
         evrSROCstrobe <= 1;
-        evrCounter <= reloadHi; 
+        evrCounter <= reloadHi;
         evrSROCsynced <= (!evrSROC && (evrCounter == 0));
     end
     else if (evrCounter == 0) begin
