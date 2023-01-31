@@ -1,7 +1,9 @@
-VFLAGS_DEP += -I. -y.
-VFLAGS += -I. -y.
+# Interaction between newad and auto-dependency generation is confusing.
+# . and $(DSP_DIR) are different when building out-of-tree
+VFLAGS_DEP += -I. -y . -y$(DSP_DIR)
+VFLAGS += -I. -y . -y$(DSP_DIR) -I$(AUTOGEN_DIR)
 
-TEST_BENCH = csrTestMaster_tb
+TEST_BENCH = csrTestMaster_tb genericWaveformRecorder_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =
