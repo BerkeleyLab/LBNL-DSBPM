@@ -1,15 +1,7 @@
-[*]
-[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Mon Jan 30 23:57:55 2023
-[*]
-[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericWaveformRecorder.vcd"
-[dumpfile_mtime] "Mon Jan 30 23:52:51 2023"
-[dumpfile_size] 325430
-[savefile] "/home/lrusso/repos/dsbpm/gateware/modules/genericWaveformRecorder.gtkw"
-[timestart] 1238
+[timestart] 0
 [size] 2556 1344
 [pos] -1 -1
-*-7.000000 1420 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-9.000000 388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] genericWaveformRecorder_tb.
 [treeopen] genericWaveformRecorder_tb.DUT.
 [sst_width] 269
@@ -18,6 +10,8 @@
 [sst_vpaned_height] 415
 @200
 -TB
+@24
+genericWaveformRecorder_tb.cc
 @28
 genericWaveformRecorder_tb.adc_clk
 genericWaveformRecorder_tb.clk
@@ -27,7 +21,11 @@ genericWaveformRecorder_tb.GPIO_STROBES[7:0]
 @420
 genericWaveformRecorder_tb.errors
 @28
-genericWaveformRecorder_tb.test_done
+genericWaveformRecorder_tb.module_accepting_trigger
+@29
+genericWaveformRecorder_tb.module_done
+@28
+genericWaveformRecorder_tb.module_ready
 @22
 genericWaveformRecorder_tb.timestamp[63:0]
 @c00022
@@ -99,7 +97,7 @@ genericWaveformRecorder_tb.DUT.axi_AWLEN[7:0]
 -group_end
 @28
 genericWaveformRecorder_tb.DUT.axi_AWREADY
-@23
+@22
 genericWaveformRecorder_tb.DUT.axi_WDATA[127:0]
 @28
 genericWaveformRecorder_tb.DUT.axi_AWVALID
@@ -293,7 +291,5 @@ genericWaveformRecorder_tb.DUT.fifo.re
 genericWaveformRecorder_tb.DUT.fifo.empty
 genericWaveformRecorder_tb.DUT.fifo.full
 genericWaveformRecorder_tb.DUT.fifo.last
-@24
-genericWaveformRecorder_tb.DUT.fifo.count[4:0]
 [pattern_trace] 1
 [pattern_trace] 0

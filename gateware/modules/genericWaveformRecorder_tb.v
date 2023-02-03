@@ -10,6 +10,10 @@ module genericWaveformRecorder_tb #(
     parameter AXI_DATA_WIDTH = 128
 );
 
+// generate valid every 16 CC
+localparam VALID_CNT_MAX = 16;
+localparam VALID_CNT_WIDTH = $clog2(VALID_CNT_MAX);
+
 //
 // Register offsets
 //
@@ -22,20 +26,34 @@ localparam WR_REG_OFFSET_TIMESTAMP_SECONDS    = 5;
 localparam WR_REG_OFFSET_TIMESTAMP_TICKS      = 6;
 
 //
-// CSR fields
+// Write CSR fields
 //
-localparam WR_CSR_TRIGGER_MASK             = 'hFF000000;
-localparam WR_CSR_EVENT_TRIGGER_7_ENABLE   = 'h80000000;
-localparam WR_CSR_EVENT_TRIGGER_6_ENABLE   = 'h40000000;
-localparam WR_CSR_EVENT_TRIGGER_5_ENABLE   = 'h20000000;
-localparam WR_CSR_EVENT_TRIGGER_4_ENABLE   = 'h10000000;
-localparam WR_CSR_SOFT_TRIGGER_ENABLE      = 'h01000000;
-localparam WR_CSR_RESET_BAR_MODE           = 'h400;
-localparam WR_CSR_TEST_ACQUISITION_MODE    = 'h200;
-localparam WR_CSR_DIAGNOSTIC_MODE          = 'h100;
-localparam WR_CSR_ARM                      = 'h1;
+localparam WR_W_CSR_TRIGGER_MASK             = 'hFF000000;
+localparam WR_W_CSR_EVENT_TRIGGER_7_ENABLE   = 'h80000000;
+localparam WR_W_CSR_EVENT_TRIGGER_6_ENABLE   = 'h40000000;
+localparam WR_W_CSR_EVENT_TRIGGER_5_ENABLE   = 'h20000000;
+localparam WR_W_CSR_EVENT_TRIGGER_4_ENABLE   = 'h10000000;
+localparam WR_W_CSR_SOFT_TRIGGER_ENABLE      = 'h01000000;
+localparam WR_W_CSR_RESET_BAR_MODE           = 'h400;
+localparam WR_W_CSR_TEST_ACQUISITION_MODE    = 'h200;
+localparam WR_W_CSR_DIAGNOSTIC_MODE          = 'h100;
+localparam WR_W_CSR_ARM                      = 'h1;
 
-reg test_done = 0;
+//
+// Read CSR fields
+//
+localparam WR_R_CSR_TRIGGER_MASK             = 'hFF000000; // 1 0000 0000
+localparam WR_R_CSR_PRE_TRIG_DONE            = 'h200; // 10 0000 0000
+localparam WR_R_CSR_DIAG_MODE                = 'h100; // 1 0000 0000
+localparam WR_R_CSR_FULL                     = 'h80;  // 1000 0000
+localparam WR_R_CSR_BRESP                    = 'h60;  // 0110 0000
+localparam WR_R_CSR_OVERRUN                  = 'h10;  // 1 0000
+localparam WR_R_CSR_STATE                    = 'hE;   // 1110
+localparam WR_R_CSR_ARM                      = 'h1;   // 0001
+
+reg module_done = 0;
+reg module_ready = 0;
+reg module_accepting_trigger = 0;
 integer errors = 0;
 integer idx = 0;
 initial begin
@@ -44,7 +62,7 @@ initial begin
 		$dumpvars(0, genericWaveformRecorder_tb);
 	end
 
-    wait(test_done);
+    wait(module_done);
     $display("%s",errors==0?"# PASS":"# FAIL");
     $finish();
 end
@@ -53,7 +71,7 @@ integer cc;
 reg clk = 0;
 initial begin
 	clk = 0;
-	for (cc = 0; cc < 1000; cc = cc+1) begin
+	for (cc = 0; cc < 3000; cc = cc+1) begin
 		clk = 0; #5;
 		clk = 1; #5;
 	end
@@ -63,7 +81,7 @@ integer adc_cc;
 reg adc_clk = 0;
 initial begin
 	adc_clk = 0;
-	for (adc_cc = 0; adc_cc < 1000; adc_cc = adc_cc+1) begin
+	for (adc_cc = 0; adc_cc < 3000; adc_cc = adc_cc+1) begin
 		adc_clk = 0; #4;
 		adc_clk = 1; #4;
 	end
@@ -125,8 +143,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(ACQ_CAPACITY),
     .DATA_WIDTH(8*DATA_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
-    .FIFO_CAPACITY(16)
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH)
   )
   DUT(
     .sysClk(clk),
@@ -165,27 +182,43 @@ initial begin
     wait(CSR0.ready);
     @(posedge clk);
 
+    module_done = 0;
     @(posedge clk);
-    CSR0.write32(WR_REG_OFFSET_PRETRIGGER_COUNT, 10);
+    CSR0.write32(WR_REG_OFFSET_PRETRIGGER_COUNT, 32);
     @(posedge clk);
-    CSR0.write32(WR_REG_OFFSET_ACQUISITION_COUNT, 100);
+    CSR0.write32(WR_REG_OFFSET_ACQUISITION_COUNT, 128);
     @(posedge clk);
     CSR0.write32(WR_REG_OFFSET_ADDRESS_LSB, 32'h00010000);
     @(posedge clk);
     CSR0.write32(WR_REG_OFFSET_ADDRESS_MSB, 0);
     @(posedge clk);
     CSR0.write32(WR_REG_OFFSET_CSR,
-        WR_CSR_SOFT_TRIGGER_ENABLE |
-        WR_CSR_ARM);
+        WR_W_CSR_SOFT_TRIGGER_ENABLE |
+        WR_W_CSR_ARM);
 
-    repeat(1000) begin
-        @(posedge clk);
-    end
+    // wait until recorder acks its armed and ready
+    // for data
+    wait(wfr_CSR & WR_R_CSR_ARM);
+    @(posedge clk);
+    module_ready = 1;
 
-    test_done = 1;
+    // wait until module has acquired all pretrig samples
+    wait(wfr_CSR & WR_R_CSR_PRE_TRIG_DONE);
+    @(posedge clk);
+    module_accepting_trigger = 1;
+
+    wait(!(wfr_CSR & WR_R_CSR_ARM));
+    @(posedge clk);
+    module_accepting_trigger = 0;
+    module_ready = 0;
+    module_done = 1;
+
 end
 
 initial begin
+    wait (module_accepting_trigger);
+    @(posedge adc_clk);
+
     repeat(100) begin
         @(posedge adc_clk);
     end
@@ -195,13 +228,13 @@ initial begin
     triggers <= 8'h0;
 end
 
-// simulate something with at least < 10% valids,
-// such as TbT, FA, SA
-wire valid_comb = !(cc % 10)? 1 : 0;
+wire valid_comb = (valid_cnt == 0) & module_ready;
+reg [VALID_CNT_WIDTH-1:0] valid_cnt = 0;
 always @(posedge adc_clk) begin
+    valid_cnt <= valid_cnt + 1;
+
     valid <= valid_comb;
     data <= valid_comb ? counter : 'hdead;
-
     if (valid_comb)
         counter <= counter + 1;
 end
