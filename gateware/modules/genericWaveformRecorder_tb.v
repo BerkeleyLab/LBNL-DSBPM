@@ -57,10 +57,10 @@ reg module_accepting_trigger = 0;
 integer errors = 0;
 integer idx = 0;
 initial begin
-	if ($test$plusargs("vcd")) begin
-		$dumpfile("genericWaveformRecorder.vcd");
-		$dumpvars(0, genericWaveformRecorder_tb);
-	end
+    if ($test$plusargs("vcd")) begin
+        $dumpfile("genericWaveformRecorder.vcd");
+        $dumpvars(0, genericWaveformRecorder_tb);
+    end
 
     wait(module_done);
     $display("%s",errors==0?"# PASS":"# FAIL");
@@ -70,21 +70,21 @@ end
 integer cc;
 reg clk = 0;
 initial begin
-	clk = 0;
-	for (cc = 0; cc < 3000; cc = cc+1) begin
-		clk = 0; #5;
-		clk = 1; #5;
-	end
+    clk = 0;
+    for (cc = 0; cc < 3000; cc = cc+1) begin
+        clk = 0; #5;
+        clk = 1; #5;
+    end
 end
 
 integer adc_cc;
 reg adc_clk = 0;
 initial begin
-	adc_clk = 0;
-	for (adc_cc = 0; adc_cc < 3000; adc_cc = adc_cc+1) begin
-		adc_clk = 0; #4;
-		adc_clk = 1; #4;
-	end
+    adc_clk = 0;
+    for (adc_cc = 0; adc_cc < 3000; adc_cc = adc_cc+1) begin
+        adc_clk = 0; #4;
+        adc_clk = 1; #4;
+    end
 end
 
 //
