@@ -95,12 +95,14 @@ reg [7:0] sysCsrTriggerEnables = 0;
 reg       sysCsrDiagMode = 0;
 wire     sysFull, sysOverrun;
 reg      sysCsrArmed = 0;
+wire     sysAcqArmed;
+wire     sysAcqPretrigLeftDone;
 wire [1:0] sysCsrBRESP;
 wire [2:0] sysState;
 assign csr = { sysCsrTriggerEnables,
                8'b0,
-               7'b0, sysCsrDiagMode,
-              sysFull, sysCsrBRESP, sysOverrun, sysState, sysCsrArmed };
+               6'b0, sysAcqPretrigLeftDone, sysCsrDiagMode,
+              sysFull, sysCsrBRESP, sysOverrun, sysState, sysAcqArmed };
 reg [2*BUS_WIDTH-1:0] sysAcqBase;
 
 //
@@ -171,6 +173,7 @@ parameter S_PAUSE = 3'd4;
 reg                   [2:0] state = S_WAIT;
 reg                   [5:0] pauseCount = 0;
 reg                         triggerFlag = 0, triggered = 0;
+reg                         acqPretrigLeftDone = 0;
 reg [WRITE_COUNT_WIDTH-1:0] acqPretrigLeft = 0, acqLeft = 0;
 reg  [WRITE_ADDR_WIDTH-1:0] writeAddr = 0;
 assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + 4], writeAddr, 4'b0 };
@@ -271,6 +274,8 @@ always @(posedge clk) begin
                 if (acqPretrigLeft) begin
                     acqPretrigLeft <= acqPretrigLeft - 1;
                     if (acqLeft) acqLeft <= acqLeft - 1;
+                end else begin
+                    acqPretrigLeftDone <= 1;
                 end
             end
         end
@@ -278,6 +283,7 @@ always @(posedge clk) begin
     else begin
         triggerFlag <= 0;
         triggered <= 0;
+        acqPretrigLeftDone <= 0;
     end
 
     //
@@ -363,11 +369,13 @@ end
 //
 wire [AXI_ADDR_WIDTH-1:0] sysAxi_AWADDR;
 wire [TIMESTAMP_WIDTH-1:0] sysWhenTriggered;
-forwardData #(.DATA_WIDTH(AXI_ADDR_WIDTH+TIMESTAMP_WIDTH+1+1+2+3))
+forwardData #(.DATA_WIDTH(AXI_ADDR_WIDTH+TIMESTAMP_WIDTH+1+1+2+3+1+1))
   forwardAcqtoCSR (
     .inClk(clk),
-    .inData({   axi_AWADDR, acqWhenTriggered, overrun, full, csrBRESP, state     }),
+    .inData({   axi_AWADDR, acqWhenTriggered, overrun, full,
+                csrBRESP, state, acqArmed, acqPretrigLeftDone     }),
     .outClk(sysClk),
-    .outData({  sysAxi_AWADDR, sysWhenTriggered, sysOverrun, sysFull, sysCsrBRESP, sysState  }));
+    .outData({  sysAxi_AWADDR, sysWhenTriggered, sysOverrun, sysFull,
+                sysCsrBRESP, sysState, sysAcqArmed, sysAcqPretrigLeftDone}));
 
 endmodule
