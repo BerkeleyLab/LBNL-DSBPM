@@ -16,6 +16,7 @@
 #include "systemParameters.h"
 #include "util.h"
 #include "rfadc.h"
+#include "waveformRecorder.h"
 
 #define MAX_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
 
@@ -59,8 +60,8 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
         pk->yRMSnarrow[i] = GPIO_READ(REG(GPIO_IDX_RMS_Y_NARROW, chainNumber));
         pk->lossOfBeamStatus[i] = GPIO_READ(REG(GPIO_IDX_LOSS_OF_BEAM_TRIGGER, chainNumber));
         pk->prelimProcStatus[i] = GPIO_READ(REG(GPIO_IDX_PRELIM_STATUS, chainNumber));
+        pk->recorderStatus[i] = wfrStatus(i);
     }
-    pk->recorderStatus = 0;
     pk->syncStatus = 0;
     pk->clipStatus = rfADCstatus();
     pk->sdSyncStatus = localOscGetSdSyncStatus();
@@ -96,6 +97,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
 void
 publisherCheck(void)
 {
+    struct pbuf *p;
     unsigned int saSeconds;
     unsigned int saTicks;
     static unsigned int previousSaSeconds, previousSaTicks;
@@ -141,6 +143,11 @@ publisherCheck(void)
             previousSaTicks = saTicks;
             publishSlowAcquisition(saSeconds, saTicks);
         }
+
+        if ((p = wfrCheckForWork()) != NULL) {
+            udp_sendto(pcb, p, &subscriberAddr, subscriberPort);
+            pbuf_free(p);
+        }
     }
 }
 
@@ -179,6 +186,16 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
         }
         subscriberAddr = *fromAddr;
         subscriberPort = fromPort;
+    }
+    else if (subscriberPort && (p->len == sizeof(struct dsbpmWaveformAck))) {
+        struct dsbpmWaveformAck dsbpmAck;
+        struct pbuf *txPacket;
+        memcpy(&dsbpmAck, p->payload, sizeof dsbpmAck);
+        txPacket = wfrAckPacket(&dsbpmAck);
+        if (txPacket) {
+            udp_sendto(pcb, txPacket, &subscriberAddr, subscriberPort);
+            pbuf_free(txPacket);
+        }
     }
     pbuf_free(p);
 }

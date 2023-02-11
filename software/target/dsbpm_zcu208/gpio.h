@@ -9,7 +9,7 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
-#define GPIO_IDX_COUNT 512
+#define GPIO_IDX_COUNT 1024
 
 #define GPIO_IDX_FIRMWARE_BUILD_DATE      0 // Firmware build POSIX seconds (R)
 #define GPIO_IDX_MICROSECONDS_SINCE_BOOT  1 // Microseconds since boot (R)
@@ -77,8 +77,9 @@
 #define GPIO_IDX_RMS_Y_WIDE              67 // RMS Y wide bandwidth
 #define GPIO_IDX_RMS_X_NARROW            68 // RMS X narrow bandwidth
 #define GPIO_IDX_RMS_Y_NARROW            69 // RMS Y narrow bandwidth
+#define GPIO_IDX_WFR_SOFT_TRIGGER        70 // WFR soft trigger
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_RMS_Y_NARROW-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_WFR_SOFT_TRIGGER-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 /*
  * Per ADC registers
@@ -96,6 +97,22 @@
 #define CFG_AXI_SAMPLES_PER_CLOCK         1 // 1 sample per clock
 #define CFG_LO_RF_ROW_CAPACITY           1024
 #define CFG_LO_PT_ROW_CAPACITY           8192
+
+// Waveform recorders
+// Capacities must be powers of two
+#define GPIO_IDX_PER_RECORDER            8
+
+#define GPIO_IDX_ADC_RECORDER_BASE       512  // ADC recorder
+#define GPIO_IDX_ADC_RECORDER_END        519
+#define GPIO_IDX_TBT_RECORDER_BASE       520  // Turn-by-turn recorder
+#define GPIO_IDX_TBT_RECORDER_END        527
+#define GPIO_IDX_FA_RECORDER_BASE        528  // Fast acquisition recorder
+#define GPIO_IDX_FA_RECORDER_END         535
+#define GPIO_IDX_PL_RECORDER_BASE        536  // Low pilot tone recorder
+#define GPIO_IDX_PL_RECORDER_END         543
+#define GPIO_IDX_PH_RECORDER_BASE        544  // High pilot tone recorder
+#define GPIO_IDX_PH_RECORDER_END         551
+#define GPIO_IDX_RECORDER_PER_DSBPM      (GPIO_IDX_PH_RECORDER_END-GPIO_IDX_ADC_RECORDER_BASE+1)
 
 #include <xil_io.h>
 #include <xparameters.h>
