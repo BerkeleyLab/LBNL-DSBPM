@@ -4,7 +4,7 @@ PROJECT_BOARD =
 COMMUNICATION = gty
 XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
-FPGA_PLATFORM := zu48
+FPGA_PLATFORM := zu48-1
 FPGA_APPLICATION := dsbpm
 
 CMD_SEP = ;
@@ -12,7 +12,7 @@ CMD_SEP = ;
 include ../../../dir_list.mk
 
 # Top level design name
-TARGET ?= dsbpm_zcu208
+TARGET ?= dsbpm_rfsoc_marble
 
 # Top level bitstream name
 all: $(TARGET)_top.bit
