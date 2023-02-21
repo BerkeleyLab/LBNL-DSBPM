@@ -47,23 +47,23 @@ include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
 
 IP_CORES += evrGTY rmsBandSelect prbsMMCM trimMultiplier positionCalcDivider positionCalcMultiplier adcCordic adcToSysFIFO ila_td256_s4096_cap
-evrGTY_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/evrGTY
+evrGTY_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/evrGTY
 evrGTY_TOP = $(evrGTY_DIR)/synth/evrGTY.v
-rmsBandSelect_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/rmsBandSelect
+rmsBandSelect_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/rmsBandSelect
 rmsBandSelect_TOP = $(rmsBandSelect_DIR)/synth/rmsBandSelect.vhd
-prbsMMCM_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/prbsMMCM
+prbsMMCM_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/prbsMMCM
 prbsMMCM_TOP = $(prbsMMCM_DIR)/prbsMMCM.v
-trimMultiplier_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/trimMultiplier
+trimMultiplier_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/trimMultiplier
 trimMultiplier_TOP = $(trimMultiplier_DIR)/synth/trimMultiplier.vhd
-positionCalcDivider_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/positionCalcDivider
+positionCalcDivider_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/positionCalcDivider
 positionCalcDivider_TOP = $(positionCalcDivider_DIR)/synth/positionCalcDivider.vhd
-positionCalcMultiplier_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/positionCalcMultiplier
+positionCalcMultiplier_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/positionCalcMultiplier
 positionCalcMultiplier_TOP = $(positionCalcMultiplier_DIR)/synth/positionCalcMultiplier.vhd
-adcCordic_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/adcCordic
+adcCordic_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/adcCordic
 adcCordic_TOP = $(adcCordic_DIR)/synth/adcCordic.vhd
-adcToSysFIFO_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/adcToSysFIFO
+adcToSysFIFO_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/adcToSysFIFO
 adcToSysFIFO_TOP = $(adcToSysFIFO_DIR)/synth/adcToSysFIFO.vhd
-ila_td256_s4096_cap_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/ila_td256_s4096_cap
+ila_td256_s4096_cap_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/ila_td256_s4096_cap
 ila_td256_s4096_cap_TOP = $(ila_td256_s4096_cap_DIR)/synth/ila_td256_s4096_cap.v
 
 IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(prbsMMCM_TOP) $(trimMultiplier_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $(ila_td256_s4096_cap_TOP)
@@ -75,7 +75,7 @@ IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
 IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
 
 BD += system
-system_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/system
+system_DIR = $(PLATFORM_ZU47_DSBPM_DIR)/system
 system_TOP = $(system_DIR)/synth/system.v
 
 BD_TOP_LVL_SRCS += $(system_TOP)
