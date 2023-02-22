@@ -109,6 +109,9 @@ __ST7789V_HDR_FILES =\
 ifeq ($(TARGET),dsbpm_zcu208)
 	__ST7789V_SRC_FILES += \
 		st7789v_stub.c
+else ifeq ($(TARGET),dsbpm_rfsoc_marble)
+	__ST7789V_SRC_FILES += \
+		st7789v_stub.c
 #else ifeq ($(TARGET),dsbpm_???)
 #	__ST7789V_SRC_FILES += \
 #		st7789v.c
@@ -131,6 +134,8 @@ LIBS = -Wl,--start-group,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lm
 
 ifeq ($(TARGET),dsbpm_zcu208)
 	USER_FLAGS += -D__TARGET_DSBPM_ZCU208__
+else ifeq ($(TARGET),dsbpm_rfsoc_marble)
+	USER_FLAGS += -D__TARGET_DSBPM_RFSOC_MARBLE__
 else
 	USER_FLAGS += -D__TARGET_NOT_RECOGNIZED__
 endif
