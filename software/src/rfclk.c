@@ -16,7 +16,7 @@ void
 rfClkInitLMK04xx(void)
 {
     int i;
-#if defined (__TARGET_DSBPM_ZCU208__)
+#if defined (__TARGET_DSBPM_ZCU208__) || defined(__TARGET_DSBPM_RFSOC_MARBLE__)
     static const uint32_t lmk04828B[] = {
 #include "lmk04828B.h"
     };
