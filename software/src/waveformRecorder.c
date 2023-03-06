@@ -141,7 +141,7 @@ wfrInit(void)
         for (i = 0 ; i < DSBPM_PROTOCOL_RECORDER_COUNT ; i++) {
             switch(i) {
             case 0:
-                r = GPIO_IDX_ADC_RECORDER_BASE;
+                r = GPIO_IDX_ADC_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM;
                 bytesPerSample = 8; /* 4 16-bit ADCs */
                 acqSampleCapacity = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
 #if 0
@@ -154,7 +154,7 @@ wfrInit(void)
                 break;
 
             case 1:
-                r = GPIO_IDX_TBT_RECORDER_BASE;
+                r = GPIO_IDX_TBT_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM;
                 bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
                 acqSampleCapacity = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
                 maxPretrig = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
@@ -163,7 +163,7 @@ wfrInit(void)
                 break;
 
             case 2:
-                r = GPIO_IDX_FA_RECORDER_BASE;
+                r = GPIO_IDX_FA_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM;
                 bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
                 acqSampleCapacity = CFG_RECORDER_FA_SAMPLE_CAPACITY;
                 maxPretrig = CFG_RECORDER_FA_SAMPLE_CAPACITY;
@@ -172,7 +172,8 @@ wfrInit(void)
                 break;
 
             case 3: case 4:
-                r = i == 3 ? GPIO_IDX_PL_RECORDER_BASE : GPIO_IDX_PH_RECORDER_BASE;
+                r = i == 3 ? GPIO_IDX_PL_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM :
+                    GPIO_IDX_PH_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM;
                 bytesPerSample = 16; /* 4 32-bit pilot tone magnitudes values */
                 acqSampleCapacity = CFG_RECORDER_PT_SAMPLE_CAPACITY;
                 maxPretrig = CFG_RECORDER_PT_SAMPLE_CAPACITY;
