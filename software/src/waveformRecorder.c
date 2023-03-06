@@ -632,21 +632,11 @@ waveformRecorderCommand(unsigned int bpm, int waveformCommand, int recorderIndex
         rp->triggerMask = val;
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_TRIGGER_MASK_GET:
-        reply[0] = rp->triggerMask;
-        replyArgCount = 1;
-        break;
-
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT_SET:
         if (val >= 0) {
             if (val > rp->maxPretrigger) val = rp->maxPretrigger;
             rp->pretrigCount = val;
         }
-        break;
-
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT_GET:
-        reply[0] = rp->pretrigCount;
-        replyArgCount = 1;
         break;
 
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT_SET:
@@ -656,19 +646,9 @@ waveformRecorderCommand(unsigned int bpm, int waveformCommand, int recorderIndex
         }
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT_GET:
-        reply[0] = rp->acqCount;
-        replyArgCount = 1;
-        break;
-
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_MODE_SET:
         if (val) rp->csrModeBits |=  WR_CSR_TEST_ACQUISITION_MODE;
         else     rp->csrModeBits &= ~WR_CSR_TEST_ACQUISITION_MODE;
-        break;
-
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_MODE_GET:
-        reply[0] = (rp->csrModeBits & WR_CSR_TEST_ACQUISITION_MODE) != 0;
-        replyArgCount = 1;
         break;
 
     default:
