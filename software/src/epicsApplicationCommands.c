@@ -14,6 +14,8 @@
 #include "gpio.h"
 #include "util.h"
 #include "autotrim.h"
+#include "rfadc.h"
+#include "waveformRecorder.h"
 
 /*
  * Set the acquisition trigger events
