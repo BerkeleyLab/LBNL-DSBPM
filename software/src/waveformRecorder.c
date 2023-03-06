@@ -603,7 +603,7 @@ waveformRecorderCommand(unsigned int bpm, int waveformCommand, int recorderIndex
 
     epicsUInt32 csr = 0;
     switch (waveformCommand) {
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ARM_SET:
+    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ARM:
         csr = (rp->triggerMask & 0xFF) << 24;
         if (val) {
             if (!isArmed(rp)) {
@@ -622,31 +622,26 @@ waveformRecorderCommand(unsigned int bpm, int waveformCommand, int recorderIndex
         wrWrite(rp, WR_REG_OFFSET_CSR, csr);
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ARM_GET:
-        reply[0] = isArmed(rp);
-        replyArgCount = 1;
-        break;
-
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_TRIGGER_MASK_SET:
+    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_TRIGGER_MASK:
         val &= 0xFF;
         rp->triggerMask = val;
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT_SET:
+    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT:
         if (val >= 0) {
             if (val > rp->maxPretrigger) val = rp->maxPretrigger;
             rp->pretrigCount = val;
         }
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT_SET:
+    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT:
         if (val > 0) {
             if (val > rp->acqSampleCapacity) val = rp->acqSampleCapacity;
             rp->acqCount = val;
         }
         break;
 
-    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_MODE_SET:
+    case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_MODE:
         if (val) rp->csrModeBits |=  WR_CSR_TEST_ACQUISITION_MODE;
         else     rp->csrModeBits &= ~WR_CSR_TEST_ACQUISITION_MODE;
         break;
