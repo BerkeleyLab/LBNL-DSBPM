@@ -529,7 +529,7 @@ wfrCheckForWork(void)
             /* Clear full status */
             wrWrite(rp, WR_REG_OFFSET_CSR, rp->csrModeBits);
             if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
-                printf("Recorder %d is full\n", rp->recorderNumber);
+                printf("DSBPM:Recorder %d:%d is full\n", rp->dsbpmNumber, rp->recorderNumber);
 
             /*
              * The buffer is almost certainly bigger than the cache
