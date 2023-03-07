@@ -3,9 +3,9 @@
  * Same restrictions as noted in gpio.h.
  */
 #define VERILOG_FIRMWARE_STYLE_HSD
-#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<15)
-#define CFG_LONG_SEGMENT_CAPACITY           (1<<9)
-#define CFG_SHORT_SEGMENT_CAPACITY          (1<<6)
+#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<12)
+#define CFG_LONG_SEGMENT_CAPACITY           (1<<8)
+#define CFG_SHORT_SEGMENT_CAPACITY          (1<<5)
 #define CFG_EARLY_SEGMENTS_COUNT            5
 #define CFG_SEGMENT_PRETRIGGER_COUNT        32
 #define CFG_DSPS_PER_BONDED_GROUP           4
