@@ -55,6 +55,7 @@ __SRC_FILES = \
 	localOscillator.c \
 	user_mgt_refclk.c \
 	util.c \
+	memcpy2.c \
 	waveformRecorder.c
 SRC_FILES = $(addprefix $(SW_SRC_DIR)/, $(__SRC_FILES))
 
@@ -92,6 +93,7 @@ __HDR_FILES = \
 	loTables.h \
 	user_mgt_refclk.h \
 	util.h \
+	memcpy2.h \
 	waveformRecorder.h
 HDR_FILES = $(addprefix $(SW_SRC_DIR)/, $(__HDR_FILES))
 
