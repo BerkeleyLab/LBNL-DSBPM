@@ -532,6 +532,8 @@ wfrCheckForWork(void)
         recorderIndex++;
     }
     rp = recorderPointer(dsbpmIndex, recorderIndex);
+    if (rp == NULL)
+        return NULL;
 
     /*
      * Send a header when a recorder has filled
