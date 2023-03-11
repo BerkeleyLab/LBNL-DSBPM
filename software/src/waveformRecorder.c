@@ -11,6 +11,7 @@
 #include "gpio.h"
 #include "util.h"
 #include "rfadc.h"
+#include "memcpy2.h"
 
 /*
  * Read/write CSR bits
@@ -249,16 +250,16 @@ dataPacket(struct recorder *rp)
             dp->waveformNumber = rp->waveformNumber;
             dp->blockNumber = rp->txBlock;
             if ((offset + dataLength) <= rp->acqByteCapacity) {
-                memcpy(dp->payload, rp->acqBuf + offset, dataLength);
+                memcpy2(dp->payload, rp->acqBuf + offset, dataLength);
             }
             else {
                 /* Handle ring buffer wraparound */
                 unsigned int l1, l2;
                 l1 = rp->acqByteCapacity - offset;
-                memcpy(dp->payload, rp->acqBuf + offset, l1);
+                memcpy2(dp->payload, rp->acqBuf + offset, l1);
                 offset = 0;
                 l2 = dataLength - l1;
-                memcpy(dp->payload + l1, rp->acqBuf + offset, l2);
+                memcpy2(dp->payload + l1, rp->acqBuf + offset, l2);
             }
             rp->sysUsAtPreviousPacket = MICROSECONDS_SINCE_BOOT();
             if (debugFlags & DEBUGFLAG_WAVEFORM_XFER)
