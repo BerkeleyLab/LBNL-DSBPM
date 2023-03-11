@@ -268,6 +268,12 @@ dataPacket(struct recorder *rp)
                                             rp->recorderNumber,
                                             (int)dp->blockNumber, dataLength);
         }
+        else {
+            if (debugFlags & DEBUGFLAG_WAVEFORM_XFER)
+                printf("dataPacket(): pbuf_alloc() could not allocate pbuf "
+                        "DSBPM:Recorder %d:%d\n",
+                        rp->dsbpmNumber, rp->recorderNumber);
+        }
     }
     if (p) {
         rp->commState = CS_ACTIVE;
@@ -373,6 +379,12 @@ headerPacket(struct recorder *rp)
                                     rp->startByteOffset, rp->startByteOffset,
                                     rp->bytesLeft);
     }
+    else {
+        if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
+            printf("headerPacket(): pbuf_alloc() could not allocate pbuf "
+                    "DSBPM:Recorder %d:%d\n",
+                    rp->dsbpmNumber, rp->recorderNumber);
+    }
     rp->bytesInPreviousPacket = 0;
     return p;
 }
@@ -453,7 +465,7 @@ adcRecorderDiagnosticCheck(struct recorder *rp)
 static void
 recorderDiagnosticCheck(struct recorder *rp)
 {
-    unsigned int oldVal, val, wordCount;
+    unsigned int oldVal = 0, val, wordCount;
     int i;
     unsigned int count = WR_READ(rp, WR_REG_OFFSET_ACQUISITION_COUNT);
     char *nextAddress = (char *)((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_LSB_POINTER) |
@@ -468,7 +480,7 @@ recorderDiagnosticCheck(struct recorder *rp)
         int *a = (int *)(rp->acqBuf + bIndex);
         val = a[0];
         if (i && (val != (oldVal + 1))) {
-            printf("%7d: %8.8X %8.8X %8.8X %8.8X %8.8X\n", i, a[0], a[1],
+            printf("%7d(%p): %8.8X %8.8X %8.8X %8.8X %8.8X\n", i, a, a[0], a[1],
                                                            a[2], a[3], oldVal);
         }
         oldVal = val;
