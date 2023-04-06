@@ -13,6 +13,7 @@ set clk_pl_0_period                   [get_property PERIOD [get_clocks clk_pl_0]
 set clk_cpllpd_int_reg_0_period       [get_property PERIOD [get_clocks cpllpd_int_reg_0]]
 set clk_prbs_period                   [get_property PERIOD [get_clocks -of_objects [get_pins calibration/prbsMMCM/inst/mmcme4_adv_inst/CLKOUT0]]]
 set clk_drp_period                    [get_property PERIOD [get_clocks -of_objects [get_pins system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0]]]
+set clk_ddr_ui_period                 [get_property PERIOD [get_clocks -of_objects [get_pins system_i/ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0]]]
 
 #########################################
 # Set max delay constraints for clock
@@ -35,6 +36,10 @@ set_max_delay -datapath_only -from [get_clocks USER_MGT_SI570_CLK_O2] -to [get_c
 # and with ASYNC_REG properties in RTL.
 set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks cpllpd_int_reg_0] $clk_cpllpd_int_reg_0_period
 set_max_delay -datapath_only -from [get_clocks cpllpd_int_reg_0] -to [get_clocks clk_pl_0] $clk_pl_0_period
+
+# Set max delay path between sys clock and DDR clock,
+# only used for monitoring and debug
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins system_i/ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0]] $clk_ddr_ui_period
 
 #########################################
 # Don't check timing across clock domains.
