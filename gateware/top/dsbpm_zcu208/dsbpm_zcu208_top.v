@@ -608,6 +608,8 @@ wire                            wr_ph_axi_BVALID[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) reg softTrigger[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire adcLossOffBeamTrigger[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire adcSoftTrigger[0:CFG_DSBPM_COUNT-1];
+(* mark_debug = "true" *) wire ddrLossOffBeamTrigger[0:CFG_DSBPM_COUNT-1];
+(* mark_debug = "true" *) wire ddrSoftTrigger[0:CFG_DSBPM_COUNT-1];
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recorders
 
@@ -634,6 +636,12 @@ forwardData #(.DATA_WIDTH(2))
              .inData({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
              .outClk(adcClk),
              .outData({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
+
+forwardData #(.DATA_WIDTH(2))
+  forwardTriggersToDDR(.inClk(sysClk),
+             .inData({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
+             .outClk(ddr4_ui_clk),
+             .outData({ddrLossOffBeamTrigger[dsbpm], ddrSoftTrigger[dsbpm]}));
 
 wire [7:0] sysRecorderTriggerBus = { sysTriggerBus[7:4],
                                   1'b0,
