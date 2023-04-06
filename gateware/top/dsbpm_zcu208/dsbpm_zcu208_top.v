@@ -1,4 +1,5 @@
 module dsbpm_zcu208_top #(
+    parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
     parameter AXI_SAMPLE_WIDTH          = ((ADC_WIDTH + 7) / 8) * 8,
     parameter AXI_ADDR_WIDTH            = 35,
@@ -933,6 +934,41 @@ wire ddr4_ui_clk;
 wire ddr4_calib_complete;
 wire ddr4_rst;
 
+wire [1:0]      ddr_aximm_dbg_ARBURST;
+wire [3:0]      ddr_aximm_dbg_ARCACHE;
+wire [7:0]      ddr_aximm_dbg_ARLEN;
+wire [0:0]      ddr_aximm_dbg_ARLOCK;
+wire [2:0]      ddr_aximm_dbg_ARPROT;
+wire [3:0]      ddr_aximm_dbg_ARQOS;
+wire            ddr_aximm_dbg_ARREADY;
+wire [2:0]      ddr_aximm_dbg_ARSIZE;
+wire [15:0]     ddr_aximm_dbg_ARUSER;
+wire            ddr_aximm_dbg_ARVALID;
+wire [31:0]     ddr_aximm_dbg_AWADDR;
+wire [1:0]      ddr_aximm_dbg_AWBURST;
+wire [3:0]      ddr_aximm_dbg_AWCACHE;
+wire [7:0]      ddr_aximm_dbg_AWLEN;
+wire [0:0]      ddr_aximm_dbg_AWLOCK;
+wire [2:0]      ddr_aximm_dbg_AWPROT;
+wire [3:0]      ddr_aximm_dbg_AWQOS;
+wire            ddr_aximm_dbg_AWREADY;
+wire [2:0]      ddr_aximm_dbg_AWSIZE;
+wire [15:0]     ddr_aximm_dbg_AWUSER;
+wire            ddr_aximm_dbg_AWVALID;
+wire            ddr_aximm_dbg_BREADY;
+wire [1:0]      ddr_aximm_dbg_BRESP;
+wire            ddr_aximm_dbg_BVALID;
+wire [255:0]    ddr_aximm_dbg_RDATA;
+wire            ddr_aximm_dbg_RLAST;
+wire            ddr_aximm_dbg_RREADY;
+wire [1:0]      ddr_aximm_dbg_RRESP;
+wire            ddr_aximm_dbg_RVALID;
+wire [255:0]    ddr_aximm_dbg_WDATA;
+wire            ddr_aximm_dbg_WLAST;
+wire            ddr_aximm_dbg_WREADY;
+wire [31:0]     ddr_aximm_dbg_WSTRB;
+wire            ddr_aximm_dbg_WVALID;
+
 //////////////////////////////////////////////////////////////////////////////
 // ZYNQ processor system
 system
@@ -1265,9 +1301,80 @@ system
     .wr_ph_1_axi_wlast(wr_ph_axi_WLAST[1]),
     .wr_ph_1_axi_wready(wr_ph_axi_WREADY[1]),
     .wr_ph_1_axi_wstrb(WSTRB_ALL_BYTES),
-    .wr_ph_1_axi_wvalid(wr_ph_axi_WVALID[1])
+    .wr_ph_1_axi_wvalid(wr_ph_axi_WVALID[1]),
 
+    // debug from AXISM to DDR core
+    .ddr_aximm_dbg_araddr(ddr_aximm_dbg_ARADDR),
+    .ddr_aximm_dbg_arburst(ddr_aximm_dbg_ARBURST),
+    .ddr_aximm_dbg_arcache(ddr_aximm_dbg_ARCACHE),
+    .ddr_aximm_dbg_arlen(ddr_aximm_dbg_ARLEN),
+    .ddr_aximm_dbg_arlock(ddr_aximm_dbg_ARLOCK),
+    .ddr_aximm_dbg_arprot(ddr_aximm_dbg_ARPROT),
+    .ddr_aximm_dbg_arqos(ddr_aximm_dbg_ARQOS),
+    .ddr_aximm_dbg_arready(ddr_aximm_dbg_ARREADY),
+    .ddr_aximm_dbg_arsize(ddr_aximm_dbg_ARSIZE),
+    .ddr_aximm_dbg_aruser(ddr_aximm_dbg_ARUSER),
+    .ddr_aximm_dbg_arvalid(ddr_aximm_dbg_ARVALID),
+    .ddr_aximm_dbg_awaddr(ddr_aximm_dbg_AWADDR),
+    .ddr_aximm_dbg_awburst(ddr_aximm_dbg_AWBURST),
+    .ddr_aximm_dbg_awcache(ddr_aximm_dbg_AWCACHE),
+    .ddr_aximm_dbg_awlen(ddr_aximm_dbg_AWLEN),
+    .ddr_aximm_dbg_awlock(ddr_aximm_dbg_AWLOCK),
+    .ddr_aximm_dbg_awprot(ddr_aximm_dbg_AWPROT),
+    .ddr_aximm_dbg_awqos(ddr_aximm_dbg_AWQOS),
+    .ddr_aximm_dbg_awready(ddr_aximm_dbg_AWREADY),
+    .ddr_aximm_dbg_awsize(ddr_aximm_dbg_AWSIZE),
+    .ddr_aximm_dbg_awuser(ddr_aximm_dbg_AWUSER),
+    .ddr_aximm_dbg_awvalid(ddr_aximm_dbg_AWVALID),
+    .ddr_aximm_dbg_bready(ddr_aximm_dbg_BREADY),
+    .ddr_aximm_dbg_bresp(ddr_aximm_dbg_BRESP),
+    .ddr_aximm_dbg_bvalid(ddr_aximm_dbg_BVALID),
+    .ddr_aximm_dbg_rdata(ddr_aximm_dbg_RDATA),
+    .ddr_aximm_dbg_rlast(ddr_aximm_dbg_RLAST),
+    .ddr_aximm_dbg_rready(ddr_aximm_dbg_RREADY),
+    .ddr_aximm_dbg_rresp(ddr_aximm_dbg_RRESP),
+    .ddr_aximm_dbg_rvalid(ddr_aximm_dbg_RVALID),
+    .ddr_aximm_dbg_wdata(ddr_aximm_dbg_WDATA),
+    .ddr_aximm_dbg_wlast(ddr_aximm_dbg_WLAST),
+    .ddr_aximm_dbg_wready(ddr_aximm_dbg_WREADY),
+    .ddr_aximm_dbg_wstrb(ddr_aximm_dbg_WSTRB),
+    .ddr_aximm_dbg_wvalid(ddr_aximm_dbg_WVALID)
     );
+
+
+generate
+if (DDR_ILA_CHIPSCOPE_DBG != "TRUE" && DDR_ILA_CHIPSCOPE_DBG != "FALSE") begin
+    DDR_ILA_CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
+
+generate
+if (DDR_ILA_CHIPSCOPE_DBG == "TRUE") begin
+
+wire [255:0] probe;
+ila_td256_s4096_cap ila_td256_s4096_cap_inst (
+    .clk(ddr4_ui_clk),
+    .probe0(probe)
+);
+
+assign probe[0]       = ddr_aximm_dbg_WVALID;
+assign probe[1]       = ddr_aximm_dbg_WLAST;
+assign probe[2]       = ddr_aximm_dbg_WREADY;
+assign probe[3]       = ddr_aximm_dbg_AWVALID;
+assign probe[4]       = ddr_aximm_dbg_AWREADY;
+assign probe[5]       = ddrSoftTrigger[0];
+assign probe[9:6]     = ddrTriggerBus[7:4];
+
+assign probe[32+:8]   = ddr_aximm_dbg_AWLEN;
+assign probe[64+:32]  = ddr_aximm_dbg_AWADDR;
+
+assign probe[128+:32] = ddr_aximm_dbg_WDATA[0+:32];
+assign probe[160+:32] = ddr_aximm_dbg_WDATA[32+:32];
+assign probe[192+:32] = ddr_aximm_dbg_WDATA[64+:32];
+assign probe[224+:32] = ddr_aximm_dbg_WDATA[96+:32];
+
+end // end if
+endgenerate
 
 `endif // `ifndef SIMULATE
 
