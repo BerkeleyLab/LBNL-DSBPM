@@ -529,6 +529,7 @@ assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
 // All waveform recorders share these burst parameters
 wire  [1:0] BURST_TYPE_INCR = 2'b01;
 wire  [2:0] BURST_SIZE_16   = 3'b100;
+wire  [3:0] CACHE_NORMAL_NONCACHE_BUFF = 4'b0011;
 wire [15:0] WSTRB_ALL_BYTES = 16'hFFFF;
 
 // ADC
@@ -1073,11 +1074,8 @@ system
     // ADC recorder
     .wr_adc_0_axi_awaddr(wr_adc_axi_AWADDR[0]),
     .wr_adc_0_axi_awburst(BURST_TYPE_INCR),
-    .wr_adc_0_axi_awcache(0),
+    .wr_adc_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_adc_0_axi_awlen(wr_adc_axi_AWLEN[0]),
-    .wr_adc_0_axi_awlock(0),
-    .wr_adc_0_axi_awprot(0),
-    .wr_adc_0_axi_awqos(0),
     .wr_adc_0_axi_awready(wr_adc_axi_AWREADY[0]),
     .wr_adc_0_axi_awsize(BURST_SIZE_16),
     .wr_adc_0_axi_awvalid(wr_adc_axi_AWVALID[0]),
@@ -1093,11 +1091,8 @@ system
     // TbT recorder
     .wr_tbt_0_axi_awaddr(wr_tbt_axi_AWADDR[0]),
     .wr_tbt_0_axi_awburst(BURST_TYPE_INCR),
-    .wr_tbt_0_axi_awcache(0),
+    .wr_tbt_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_tbt_0_axi_awlen(wr_tbt_axi_AWLEN[0]),
-    .wr_tbt_0_axi_awlock(0),
-    .wr_tbt_0_axi_awprot(0),
-    .wr_tbt_0_axi_awqos(0),
     .wr_tbt_0_axi_awready(wr_tbt_axi_AWREADY[0]),
     .wr_tbt_0_axi_awsize(BURST_SIZE_16),
     .wr_tbt_0_axi_awvalid(wr_tbt_axi_AWVALID[0]),
@@ -1113,11 +1108,8 @@ system
     // FA recorder
     .wr_fa_0_axi_awaddr(wr_fa_axi_AWADDR[0]),
     .wr_fa_0_axi_awburst(BURST_TYPE_INCR),
-    .wr_fa_0_axi_awcache(0),
+    .wr_fa_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_fa_0_axi_awlen(wr_fa_axi_AWLEN[0]),
-    .wr_fa_0_axi_awlock(0),
-    .wr_fa_0_axi_awprot(0),
-    .wr_fa_0_axi_awqos(0),
     .wr_fa_0_axi_awready(wr_fa_axi_AWREADY[0]),
     .wr_fa_0_axi_awsize(BURST_SIZE_16),
     .wr_fa_0_axi_awvalid(wr_fa_axi_AWVALID[0]),
@@ -1133,11 +1125,8 @@ system
     // PL recorder
     .wr_pl_0_axi_awaddr(wr_pl_axi_AWADDR[0]),
     .wr_pl_0_axi_awburst(BURST_TYPE_INCR),
-    .wr_pl_0_axi_awcache(0),
+    .wr_pl_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_pl_0_axi_awlen(wr_pl_axi_AWLEN[0]),
-    .wr_pl_0_axi_awlock(0),
-    .wr_pl_0_axi_awprot(0),
-    .wr_pl_0_axi_awqos(0),
     .wr_pl_0_axi_awready(wr_pl_axi_AWREADY[0]),
     .wr_pl_0_axi_awsize(BURST_SIZE_16),
     .wr_pl_0_axi_awvalid(wr_pl_axi_AWVALID[0]),
@@ -1153,11 +1142,8 @@ system
     // PH recorder
     .wr_ph_0_axi_awaddr(wr_ph_axi_AWADDR[0]),
     .wr_ph_0_axi_awburst(BURST_TYPE_INCR),
-    .wr_ph_0_axi_awcache(0),
+    .wr_ph_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_ph_0_axi_awlen(wr_ph_axi_AWLEN[0]),
-    .wr_ph_0_axi_awlock(0),
-    .wr_ph_0_axi_awprot(0),
-    .wr_ph_0_axi_awqos(0),
     .wr_ph_0_axi_awready(wr_ph_axi_AWREADY[0]),
     .wr_ph_0_axi_awsize(BURST_SIZE_16),
     .wr_ph_0_axi_awvalid(wr_ph_axi_AWVALID[0]),
@@ -1177,11 +1163,8 @@ system
     // ADC recorder
     .wr_adc_1_axi_awaddr(wr_adc_axi_AWADDR[1]),
     .wr_adc_1_axi_awburst(BURST_TYPE_INCR),
-    .wr_adc_1_axi_awcache(0),
+    .wr_adc_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_adc_1_axi_awlen(wr_adc_axi_AWLEN[1]),
-    .wr_adc_1_axi_awlock(0),
-    .wr_adc_1_axi_awprot(0),
-    .wr_adc_1_axi_awqos(0),
     .wr_adc_1_axi_awready(wr_adc_axi_AWREADY[1]),
     .wr_adc_1_axi_awsize(BURST_SIZE_16),
     .wr_adc_1_axi_awvalid(wr_adc_axi_AWVALID[1]),
@@ -1197,11 +1180,8 @@ system
     // TbT recorder
     .wr_tbt_1_axi_awaddr(wr_tbt_axi_AWADDR[1]),
     .wr_tbt_1_axi_awburst(BURST_TYPE_INCR),
-    .wr_tbt_1_axi_awcache(0),
+    .wr_tbt_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_tbt_1_axi_awlen(wr_tbt_axi_AWLEN[1]),
-    .wr_tbt_1_axi_awlock(0),
-    .wr_tbt_1_axi_awprot(0),
-    .wr_tbt_1_axi_awqos(0),
     .wr_tbt_1_axi_awready(wr_tbt_axi_AWREADY[1]),
     .wr_tbt_1_axi_awsize(BURST_SIZE_16),
     .wr_tbt_1_axi_awvalid(wr_tbt_axi_AWVALID[1]),
@@ -1217,11 +1197,8 @@ system
     // FA recorder
     .wr_fa_1_axi_awaddr(wr_fa_axi_AWADDR[1]),
     .wr_fa_1_axi_awburst(BURST_TYPE_INCR),
-    .wr_fa_1_axi_awcache(0),
+    .wr_fa_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_fa_1_axi_awlen(wr_fa_axi_AWLEN[1]),
-    .wr_fa_1_axi_awlock(0),
-    .wr_fa_1_axi_awprot(0),
-    .wr_fa_1_axi_awqos(0),
     .wr_fa_1_axi_awready(wr_fa_axi_AWREADY[1]),
     .wr_fa_1_axi_awsize(BURST_SIZE_16),
     .wr_fa_1_axi_awvalid(wr_fa_axi_AWVALID[1]),
@@ -1237,11 +1214,8 @@ system
     // PL recorder
     .wr_pl_1_axi_awaddr(wr_pl_axi_AWADDR[1]),
     .wr_pl_1_axi_awburst(BURST_TYPE_INCR),
-    .wr_pl_1_axi_awcache(0),
+    .wr_pl_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_pl_1_axi_awlen(wr_pl_axi_AWLEN[1]),
-    .wr_pl_1_axi_awlock(0),
-    .wr_pl_1_axi_awprot(0),
-    .wr_pl_1_axi_awqos(0),
     .wr_pl_1_axi_awready(wr_pl_axi_AWREADY[1]),
     .wr_pl_1_axi_awsize(BURST_SIZE_16),
     .wr_pl_1_axi_awvalid(wr_pl_axi_AWVALID[1]),
@@ -1257,11 +1231,8 @@ system
     // PH recorder
     .wr_ph_1_axi_awaddr(wr_ph_axi_AWADDR[1]),
     .wr_ph_1_axi_awburst(BURST_TYPE_INCR),
-    .wr_ph_1_axi_awcache(0),
+    .wr_ph_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_ph_1_axi_awlen(wr_ph_axi_AWLEN[1]),
-    .wr_ph_1_axi_awlock(0),
-    .wr_ph_1_axi_awprot(0),
-    .wr_ph_1_axi_awqos(0),
     .wr_ph_1_axi_awready(wr_ph_axi_AWREADY[1]),
     .wr_ph_1_axi_awsize(BURST_SIZE_16),
     .wr_ph_1_axi_awvalid(wr_ph_axi_AWVALID[1]),
