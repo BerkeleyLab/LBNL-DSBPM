@@ -41,6 +41,10 @@ set_max_delay -datapath_only -from [get_clocks cpllpd_int_reg_0] -to [get_clocks
 # only used for monitoring and debug
 set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins system_i/ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0]] $clk_ddr_ui_period
 
+# Set max delay path between EVR clock and DDR clock,
+# only used for monitoring and debug
+set_max_delay -datapath_only -from [get_clocks cpllpd_int_reg_0] -to [get_clocks -of_objects [get_pins system_i/ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0]] $clk_ddr_ui_period
+
 #########################################
 # Don't check timing across clock domains.
 #########################################
