@@ -605,6 +605,9 @@ wire                            wr_ph_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_ph_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_BVALID[0:CFG_DSBPM_COUNT-1];
 
+(* mark_debug = "true" *) reg softTrigger[0:CFG_DSBPM_COUNT-1];
+(* mark_debug = "true" *) wire adcLossOffBeamTrigger[0:CFG_DSBPM_COUNT-1];
+(* mark_debug = "true" *) wire adcSoftTrigger[0:CFG_DSBPM_COUNT-1];
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recorders
 
@@ -613,38 +616,36 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recor
 // Stretch soft trigger to ensure it is seen across clock boundaries
 //
 reg [3:0] softTriggerStretch;
-reg       softTrigger;
 always @(posedge sysClk) begin
     if (GPIO_STROBES[GPIO_IDX_WFR_SOFT_TRIGGER + dsbpm*GPIO_IDX_PER_DSBPM]) begin
-        softTrigger <= 1;
+        softTrigger[dsbpm] <= 1;
         softTriggerStretch <= ~0;
     end
     else if (softTriggerStretch) begin
         softTriggerStretch <= softTriggerStretch - 1;
     end
     else begin
-        softTrigger <= 0;
+        softTrigger[dsbpm] <= 0;
     end
 end
 
-wire adcLossOffBeamTrigger, adcSoftTrigger;
 forwardData #(.DATA_WIDTH(2))
   forwardTriggersToADC(.inClk(sysClk),
-             .inData({lossOfBeamTrigger[dsbpm], softTrigger}),
+             .inData({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
              .outClk(adcClk),
-             .outData({adcLossOffBeamTrigger, adcSoftTrigger}));
+             .outData({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
 
 wire [7:0] sysRecorderTriggerBus = { sysTriggerBus[7:4],
                                   1'b0,
                                   sysSingleTrig[dsbpm],
                                   lossOfBeamTrigger[dsbpm],
-                                  softTrigger };
+                                  softTrigger[dsbpm] };
 
 wire [7:0] adcRecorderTriggerBus = { adcTriggerBus[7:4],
                                   1'b0,
                                   adcSingleTrig[dsbpm],
-                                  adcLossOffBeamTrigger,
-                                  adcSoftTrigger };
+                                  adcLossOffBeamTrigger[dsbpm],
+                                  adcSoftTrigger[dsbpm] };
 
 //
 // ADC waveform recorder
