@@ -421,7 +421,7 @@ end
 //
 // Forward the EVR trigger bus and time stamp to the ADC clock domain.
 //
-wire [7:0] adcTriggerBus;
+(* mark_debug = "true" *) wire [7:0] adcTriggerBus;
 wire [63:0] adcTimestamp;
 wire [71:0] evrForward, adcForward;
 assign evrForward = { evrTriggerBus, evrTimestamp };
@@ -436,7 +436,7 @@ assign adcTriggerBus = adcForward[71:64];
 //
 // Forward the EVR trigger bus and time stamp to the system clock domain.
 //
-wire [7:0] sysTriggerBus;
+(* mark_debug = "true" *) wire [7:0] sysTriggerBus;
 wire [63:0] sysTimestamp;
 wire [71:0] sysForward;
 forwardData #(.DATA_WIDTH(72))
