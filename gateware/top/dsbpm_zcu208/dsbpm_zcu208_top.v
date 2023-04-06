@@ -447,6 +447,19 @@ forwardData #(.DATA_WIDTH(72))
 assign sysTimestamp = sysForward[63:0];
 assign sysTriggerBus = sysForward[71:64];
 
+//
+// Forward the EVR trigger bus and time stamp to the DDR clock domain.
+//
+(* mark_debug = "true" *) wire [7:0] ddrTriggerBus;
+wire [63:0] ddrTimestamp;
+wire [71:0] ddrForward;
+forwardData #(.DATA_WIDTH(72))
+  forwardTimestampToDDR(.inClk(evrClk),
+             .inData(evrForward),
+             .outClk(ddr4_ui_clk),
+             .outData(ddrForward));
+assign ddrTimestamp = ddrForward[63:0];
+assign ddrTriggerBus = ddrForward[71:64];
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
