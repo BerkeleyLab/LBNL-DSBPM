@@ -678,7 +678,7 @@ genericWaveformRecorder #(
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_ADC_RECORDER_BASE+:5]),
+    .regStrobes(GPIO_STROBES[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
     .csr(adcWfrCSR),
     .pretrigCount(adcWfrPretrigCount),
     .acqCount(adcWfrAcqCount),
@@ -732,7 +732,7 @@ genericWaveformRecorder #(
   tbtWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_RECORDER_BASE+:5]),
+    .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
     .csr(tbtWfrCSR),
     .pretrigCount(tbtWfrPretrigCount),
     .acqCount(tbtWfrAcqCount),
@@ -785,7 +785,7 @@ genericWaveformRecorder #(
   faWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_FA_RECORDER_BASE+:5]),
+    .regStrobes(GPIO_STROBES[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
     .csr(faWfrCSR),
     .pretrigCount(faWfrPretrigCount),
     .acqCount(faWfrAcqCount),
@@ -838,7 +838,7 @@ genericWaveformRecorder #(
   plWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_PL_RECORDER_BASE+:5]),
+    .regStrobes(GPIO_STROBES[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
     .csr(plWfrCSR),
     .pretrigCount(plWfrPretrigCount),
     .acqCount(plWfrAcqCount),
@@ -891,7 +891,7 @@ genericWaveformRecorder #(
   phWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_PH_RECORDER_BASE+:5]),
+    .regStrobes(GPIO_STROBES[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
     .csr(phWfrCSR),
     .pretrigCount(phWfrPretrigCount),
     .acqCount(phWfrAcqCount),
