@@ -89,7 +89,9 @@
 #define CFG_ADC_NCO_FREQ -308.000
 
 /*
- *  Recorder capacities
+ *  Recorder capacities, in samples. Waveform recorder pads
+ *  the write address by the correct sample size (usually 4
+ *  32-bit samples).
  */
 #define CFG_RECORDER_ADC_SAMPLE_CAPACITY 64*1024*1024
 #define CFG_RECORDER_TBT_SAMPLE_CAPACITY 32*1024*1024
