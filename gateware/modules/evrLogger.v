@@ -7,7 +7,7 @@ module evrLogger #(
     input  wire [31:0] sysGpioOut,
     output wire [31:0] sysCsr,
     output wire [31:0] sysDataTicks,
-    
+
     input  wire        evrClk,
     input  wire  [7:0] evrChar,
     input  wire        evrCharIsK);

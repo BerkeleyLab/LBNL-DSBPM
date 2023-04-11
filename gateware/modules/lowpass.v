@@ -15,9 +15,9 @@ assign y = sum[SUM_WIDTH-1:SUM_WIDTH-WIDTH];
 always @(posedge clk)
 begin
     if (en) begin
-        sum <= { {SUM_WIDTH-WIDTH{u[WIDTH-1]}}, u[WIDTH-1:0]} + 
+        sum <= { {SUM_WIDTH-WIDTH{u[WIDTH-1]}}, u[WIDTH-1:0]} +
                sum -
-               { {L2_ALPHA{sum[SUM_WIDTH-1]}}, sum[SUM_WIDTH-1:L2_ALPHA]}; 
+               { {L2_ALPHA{sum[SUM_WIDTH-1]}}, sum[SUM_WIDTH-1:L2_ALPHA]};
     end
 end
 

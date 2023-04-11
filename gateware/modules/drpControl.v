@@ -25,7 +25,7 @@ assign dataOut = { busy,
                    {16-1-DRP_ADDR_WIDTH{1'b0}},
                    drp_addr,
                    data };
-            
+
 always @(posedge clk) begin
     if (strobe) begin
         if (dataIn[30]) begin

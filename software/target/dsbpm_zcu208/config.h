@@ -3,9 +3,9 @@
  * Same restrictions as noted in gpio.h.
  */
 #define VERILOG_FIRMWARE_STYLE_HSD
-#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<15)
-#define CFG_LONG_SEGMENT_CAPACITY           (1<<9)
-#define CFG_SHORT_SEGMENT_CAPACITY          (1<<6)
+#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<10)
+#define CFG_LONG_SEGMENT_CAPACITY           (1<<8)
+#define CFG_SHORT_SEGMENT_CAPACITY          (1<<5)
 #define CFG_EARLY_SEGMENTS_COUNT            5
 #define CFG_SEGMENT_PRETRIGGER_COUNT        32
 #define CFG_DSPS_PER_BONDED_GROUP           4
@@ -87,3 +87,13 @@
  *  Since the RF is at bin 328 or -328, bin 20 would be at -308
  */
 #define CFG_ADC_NCO_FREQ -308.000
+
+/*
+ *  Recorder capacities, in samples. Waveform recorder pads
+ *  the write address by the correct sample size (usually 4
+ *  32-bit samples).
+ */
+#define CFG_RECORDER_ADC_SAMPLE_CAPACITY 64*1024*1024
+#define CFG_RECORDER_TBT_SAMPLE_CAPACITY 32*1024*1024
+#define CFG_RECORDER_FA_SAMPLE_CAPACITY  32*1024*1024
+#define CFG_RECORDER_PT_SAMPLE_CAPACITY  4*1024*1024

@@ -37,8 +37,8 @@ include $(CORDIC_DIR)/rules.mk
 UNISIM_CRAP += -e 'GTYE4_CHANNEL|MMCME4_ADV'
 
 # Top level files for depedency tracking
-SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
-SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc
+SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc $(TARGET)_top_ddr_pins.xdc
+SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc $(TARGET)_top_ddr_tim.xdc
 
 # ip_cores generation scripts/names
 
@@ -66,7 +66,7 @@ adcToSysFIFO_TOP = $(adcToSysFIFO_DIR)/synth/adcToSysFIFO.vhd
 ila_td256_s4096_cap_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/ila_td256_s4096_cap
 ila_td256_s4096_cap_TOP = $(ila_td256_s4096_cap_DIR)/synth/ila_td256_s4096_cap.v
 
-IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(prbsMMCM_TOP) $(trimMultiplier_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $(ila_td256_s4096_cap_TOP)
+IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(prbsMMCM_TOP) $(trimMultiplier_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $($(ila_td256_s4096_cap_TOP)
 IP_CORES_DIRS += $(evrGTY_DIR) $(rmsBandSelect_DIR) $(prbsMMCM_DIR) $(trimMultiplier_DIR) $(positionCalcDivider_DIR) $(positionCalcMultiplier_DIR) $(adcCordic_DIR) $(adcToSysFIFO_DIR) $(ila_td256_s4096_cap_DIR)
 IP_CORES_XDCS += $(evrGTY_TOP:%.v=%.xdc) $(prbsMMCM_TOP:%.v=%.xdc)
 

@@ -30,6 +30,7 @@
 #include "acqSync.h"
 #include "publisher.h"
 #include "positionCalc.h"
+#include "waveformRecorder.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -149,6 +150,7 @@ main(void)
     localOscillatorInit();
     acqSyncInit();
     positionCalcInit();
+    wfrInit();
     for (int i = 0 ; i < CFG_ADC_PHYSICAL_COUNT ; i++) { afeSetGain(i, 16); }
 
     /*

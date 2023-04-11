@@ -54,7 +54,9 @@ __SRC_FILES = \
 	tftp.c \
 	localOscillator.c \
 	user_mgt_refclk.c \
-	util.c
+	util.c \
+	memcpy2.c \
+	waveformRecorder.c
 SRC_FILES = $(addprefix $(SW_SRC_DIR)/, $(__SRC_FILES))
 
 __HDR_FILES = \
@@ -90,7 +92,9 @@ __HDR_FILES = \
 	localOscillator.h \
 	loTables.h \
 	user_mgt_refclk.h \
-	util.h
+	util.h \
+	memcpy2.h \
+	waveformRecorder.h
 HDR_FILES = $(addprefix $(SW_SRC_DIR)/, $(__HDR_FILES))
 
 __HDR_GEN_FILES = \
@@ -120,10 +124,11 @@ SRC_FILES += $(ST7789V_SRC_FILES)
 HDR_FILES += $(ST7789V_HDR_FILES)
 
 OBJ_FILES = $(SRC_FILES:.c=.o)
-LINKER_FILES = $(SW_SRC_DIR)/lscript.ld
+LINKER_FILE = $(SW_SRC_DIR)/lscript.ld
+LINKER_FILE_DDR = $(SW_SRC_DIR)/lscript_ddr.ld
 
-CFLAGS = -Wall -O2 -fmessage-length=0
-LD_FLAGS = -Wl,-T -Wl,$(LINKER_FILES)
+CFLAGS = -Wall -O2 -fmessage-length=0 -fPIC
+LD_FLAGS = -Wl,-T -Wl,$(LINKER_FILE) -Wl,-T,$(LINKER_FILE_DDR)
 USER_FLAGS = -DST7789_GRAB_SCREEN -D__BAREMETAL__
 LIB_DIRS = $(TARGET)/platform/export/platform/sw/platform/standalone_domain/bsplib/lib
 LIB_FLAGS = $(addprefix -L, $(LIB_DIRS))
@@ -158,7 +163,7 @@ vpath *.bif.in $(SW_DSBPM_SCRIPTS_DIR)
 $(TARGET):
 	$(XSCT) $(SW_SCRIPTS_DIR)/gen_vitis_platform.tcl $(TARGET) $(GW_DSBPM_TGT_DIR)/system.xsa
 
-$(TARGET).elf: $(HDR_FILES) $(HDR_GEN_FILES) $(OBJ_FILES) $(LINKER_FILES)
+$(TARGET).elf: $(HDR_FILES) $(HDR_GEN_FILES) $(OBJ_FILES) $(LINKER_FILE) $(LINKER_FILE_DDR)
 	$(CC) $(CFLAGS) $(USER_FLAGS) $(INCLUDE_FLAGS) $(LIB_FLAGS) $(LD_FLAGS) -o $@ $(filter %.o, $^) $(LIBS)
 
 $(TARGET).elf.size: $(TARGET).elf

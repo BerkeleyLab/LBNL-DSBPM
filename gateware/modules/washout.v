@@ -29,7 +29,7 @@ reg    [WIDTH-1:0] y = 0;
 reg  [SUM_WIDTH-1:0]  sum = 0;
 wire [DIFF_WIDTH-1:0] diff;
 wire [WIDTH:0]        yRaw;
- 
+
 assign diff = {x[WIDTH-1], x, {DIFF_WIDTH-WIDTH-1{1'b0}}} -
               {sum[SUM_WIDTH-1], sum};
 assign yRaw = diff[DIFF_WIDTH-1:DIFF_WIDTH-WIDTH-1];

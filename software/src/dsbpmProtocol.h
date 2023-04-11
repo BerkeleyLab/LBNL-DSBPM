@@ -13,14 +13,28 @@
 # include <epicsTypes.h>
 #endif
 
-#define DSBPM_PROTOCOL_UDP_PORT        50005
-#define DSBPM_PROTOCOL_PUBLISHER_UDP_PORT 50006
-#define DSBPM_PROTOCOL_MAGIC           0xBD008427
-#define DSBPM_PROTOCOL_MAGIC_SWAPPED   0x278400BD
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION  \
-                                     0xCAFE0005
+#define DSBPM_PROTOCOL_UDP_PORT                 50005
+#define DSBPM_PROTOCOL_PUBLISHER_UDP_PORT       50006
+
+#define DSBPM_PROTOCOL_WAVEFORM_PAYLOAD_CAPACITY  1440
+#define DSBPM_PROTOCOL_RECORDER_COUNT             5
+
+// echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
+#define DSBPM_PROTOCOL_MAGIC                    0xD06F9691
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91966FD0
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9692
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                     0x0500FECA
+                                                0x92966FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9693
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
+                                                0x93966FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9694
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_DATA \
+                                                0x94966FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_ACK       0xD06F9695
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_ACK \
+                                                0x95966FD0
+
 #define DSBPM_PROTOCOL_ARG_CAPACITY    350
 #define DSBPM_PROTOCOL_ADC_COUNT       8
 #define DSBPM_PROTOCOL_DSP_COUNT       2
@@ -41,7 +55,6 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 seconds;
     epicsUInt32 ticks;
     epicsUInt8  syncStatus;
-    epicsUInt8  recorderStatus;
     epicsUInt8  clipStatus;
     epicsUInt8  cellCommStatus;
     epicsUInt8  autotrimStatus;
@@ -64,6 +77,39 @@ struct dsbpmSlowAcquisition {
     epicsInt32  yRMSnarrow[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt32 lossOfBeamStatus[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt32 prelimProcStatus[DSBPM_PROTOCOL_DSP_COUNT];
+    epicsUInt32 recorderStatus[DSBPM_PROTOCOL_DSP_COUNT];
+};
+
+/*
+ * Waveform transfer
+ * When a waveform recorder completes acquisition it sends the header
+ * unsolicited.  It then sends each block when requested.
+ * The header is retransmitted if a block request does not arrive in a
+ * reasonable interval.
+ */
+struct dsbpmWaveformHeader {
+    epicsUInt32 magic;
+    epicsUInt32 dsbpmNumber;
+    epicsUInt32 waveformNumber;
+    epicsUInt16 recorderNumber;
+    epicsUInt32 seconds;
+    epicsUInt32 ticks;
+    epicsUInt32 byteCount;
+};
+struct dsbpmWaveformData {
+    epicsUInt32 magic;
+    epicsUInt32 dsbpmNumber;
+    epicsUInt32 waveformNumber;
+    epicsUInt32 recorderNumber;
+    epicsUInt32 blockNumber;
+    unsigned char payload[DSBPM_PROTOCOL_WAVEFORM_PAYLOAD_CAPACITY];
+};
+struct dsbpmWaveformAck {
+    epicsUInt32 magic;
+    epicsUInt32 dsbpmNumber;
+    epicsUInt32 waveformNumber;
+    epicsUInt32 recorderNumber;
+    epicsUInt32 blockNumber;
 };
 
 #define DSBPM_PROTOCOL_SIZE_TO_ARG_COUNT(s) (DSBPM_PROTOCOL_ARG_CAPACITY - \
@@ -137,5 +183,13 @@ struct dsbpmSlowAcquisition {
 #define DSBPM_PROTOCOL_CMD_HI_PLL_CONFIG       0x4000
 # define DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_SET     0x0000
 # define DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_GET     0x0100
+
+#define DSBPM_PROTOCOL_CMD_HI_RECORDERS        0x5000
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_ARM                 0x0000
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_TRIGGER_MASK        0x0100
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT    0x0200
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT   0x0300
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_MODE    0x0400
+# define DSBPM_PROTOCOL_CMD_RECORDERS_LO_SOFT_TRIGGER        0x0500
 
 #endif /* _DS_BPM_PROTOCOL_ */

@@ -15,6 +15,7 @@
 #include "util.h"
 #include "autotrim.h"
 #include "rfadc.h"
+#include "waveformRecorder.h"
 
 /*
  * Set the acquisition trigger events
@@ -151,6 +152,11 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
         default: return -1;
         }
+        break;
+
+    case DSBPM_PROTOCOL_CMD_HI_RECORDERS:
+        replyArgCount = waveformRecorderCommand(0, lo, idx,
+            cmdp->args[0], replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY);
         break;
 
     default: return -1;

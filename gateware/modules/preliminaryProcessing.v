@@ -48,6 +48,7 @@ module preliminaryProcessing #(
     input                        evrPtTrigger,evrSinglePassTrigger,evrHbMarker,
     output wire                  PT_P, PT_N,
     output reg                   sysSingleTrig,
+    output wire                  adcSingleTrig,
     output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg, plProductsDbg, phProductsDbg,
     output wire  [LO_WIDTH-1:0]  rfLOcosDbg, rfLOsinDbg, plLOcosDbg, plLOsinDbg, phLOcosDbg, phLOsinDbg,
     output wire  [8*MAG_WIDTH-1:0] tbtSumsDbg,
@@ -72,6 +73,7 @@ module preliminaryProcessing #(
     output reg   [MAG_WIDTH-1:0] plMag0, plMag1, plMag2, plMag3,
     output reg   [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
     output reg                   ptToggle,
+    output reg                   ptValid,
     output reg                   overflowFlag);
 
 wire sysUseRMS           = localOscillatorCsr[2];
@@ -450,6 +452,8 @@ always @(posedge adcClk) begin
     end
 end
 
+assign adcSingleTrig = adcHoldoff;
+
 //
 // Synchronous demodulator accumulators
 //
@@ -774,8 +778,8 @@ reg ptToggle_d = 0, awaitGainsAndRf = 0;
 reg rfDecimatedMatch = 0, gainDoneMatch = 0;
 reg faTrimStrobe = 0;
 always @(posedge clk) begin
+    ptToggle_d <= ptToggle;
     if (ptToggle_d != ptToggle) begin
-        ptToggle_d <= ptToggle;
         // Set up to watch for new gain and RF values
         gainDoneMatch <= gainDoneToggle;
         rfDecimatedMatch <= rfDecimatedToggle;
@@ -813,24 +817,31 @@ trim #(.MAG_WIDTH(MAG_WIDTH),
     .trimmed({rfTbtMag3, rfTbtMag2, rfTbtMag1, rfTbtMag0}));
 
 // TbT/FA valid generation
-reg tbtToggle_m;
-reg faToggle_m;
+reg tbtToggle_d = 0;
+reg faToggle_d = 0;
 always @(posedge clk) begin
-    tbtToggle_m <= tbtToggle;
-    faToggle_m <= faToggle;
+    tbtToggle_d <= tbtToggle;
+    faToggle_d <= faToggle;
 
-    if (tbtToggle != tbtToggle_m) begin
+    if (tbtToggle != tbtToggle_d) begin
         rfTbtMagValid <= 1'b1;
     end
     else begin
         rfTbtMagValid <= 1'b0;
     end
 
-    if (faToggle != faToggle_m) begin
+    if (faToggle != faToggle_d) begin
         rfFaMagValid <= 1'b1;
     end
     else begin
         rfFaMagValid <= 1'b0;
+    end
+
+    if (ptToggle != ptToggle_d) begin
+        ptValid <= 1'b1;
+    end
+    else begin
+        ptValid <= 1'b0;
     end
 end
 

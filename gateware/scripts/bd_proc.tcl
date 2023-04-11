@@ -16,14 +16,22 @@ proc gen_bd {bd_file project_part project_board ipcore_dirs} {
     read_bd $bd_file
 
     # make top level wrapper
-    make_wrapper -files [get_files $bd_file] -top
+    set wrapper_file [make_wrapper -files [get_files $bd_file] -top]
+
+    # add generated file to project
+    add_files -norecurse $wrapper_file
+
+    # get BD basename
+    set bd_basename [file rootname [file tail $bd_file]]
+    # set wrapper to top-level
+    set_property TOP ${bd_basename}_wrapper [current_fileset]
+    set_property TOP_FILE ${wrapper_file} [current_fileset]
 
     # Generate all the output products
     generate_target all [get_files $bd_file] -force
 
     # export and validate hardware platform for use with
     # Vitis
-    set bd_basename [file rootname [file tail $bd_file]]
     write_hw_platform -fixed -force $bd_basename.xsa
     validate_hw_platform ./$bd_basename.xsa
 }
