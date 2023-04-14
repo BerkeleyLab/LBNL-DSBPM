@@ -2,6 +2,14 @@
 // Generic Waveform Recorder
 //
 module genericWaveformRecorder #(
+    // "FALSE" = usual pause after a burst and small burst size
+    // (i.e., 8 beats);
+    // "TRUE" = skip pause state and larger burst
+    // size (64 beats). Note that we need to use INCR burst type
+    // for more than 16 beats (as per AXI protocol specification:
+    // https://developer.arm.com/documentation/ihi0022/e/, page
+    // A3-46)
+    parameter HIGH_BANDWIDTH_MODE = "FALSE",
     parameter DATA_WIDTH      = 128,
     parameter TIMESTAMP_WIDTH = 64,
     parameter BUS_WIDTH       = 32,
@@ -39,7 +47,7 @@ module genericWaveformRecorder #(
 
 parameter WRITE_ADDR_WIDTH  = $clog2(ACQ_CAPACITY);
 parameter WRITE_COUNT_WIDTH = $clog2(ACQ_CAPACITY+1);
-parameter BEATCOUNT_WIDTH   = 3;
+parameter BEATCOUNT_WIDTH   = HIGH_BANDWIDTH_MODE == "TRUE"? 6:3; // 64 x 8 beats per transfer
 parameter MULTI_BEAT_LENGTH = (1 << BEATCOUNT_WIDTH);
 parameter FIFO_ADDR_WIDTH   = $clog2(FIFO_CAPACITY);
 
@@ -51,6 +59,12 @@ localparam FIFO_PROG_EMPTY_THRESHOLD = MULTI_BEAT_LENGTH-1;
 
 assign pretrigCount  = { {BUS_WIDTH-WRITE_COUNT_WIDTH{1'b0}}, sysPretrigCount_r };
 assign acqCount      = { {BUS_WIDTH-WRITE_COUNT_WIDTH{1'b0}}, sysAcqCount_r };
+
+generate
+if (HIGH_BANDWIDTH_MODE != "TRUE" && HIGH_BANDWIDTH_MODE != "FALSE") begin
+    HIGH_BANDWIDTH_MODE_supports_only_TRUE_or_FALSE error();
+end
+endgenerate
 
 generate
 if (AXI_ADDR_WIDTH > BUS_WIDTH) begin
@@ -380,7 +394,10 @@ always @(posedge clk) begin
                 acqLeft <= 0;
             end
             pauseCount <= ~0;
+
             state <= S_PAUSE;
+            if (HIGH_BANDWIDTH_MODE == "TRUE")
+                state <= S_WAIT;
         end
     end
 
