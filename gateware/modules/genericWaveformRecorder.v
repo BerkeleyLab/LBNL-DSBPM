@@ -77,8 +77,8 @@ end
 endgenerate
 
 generate
-if (DATA_WIDTH != AXI_DATA_WIDTH) begin
-    DATA_WIDTH_is_different_than_AXI_DATA_WIDTH error();
+if (!(DATA_WIDTH == AXI_DATA_WIDTH || 2*DATA_WIDTH == AXI_DATA_WIDTH)) begin
+    DATA_WIDTH_is_different_than_once_or_twice_AXI_DATA_WIDTH error();
 end
 endgenerate
 
@@ -182,7 +182,7 @@ assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + 4], writeAddr,
 reg [BEATCOUNT_WIDTH-1:0] beatCount;
 assign axi_AWLEN = { {(8-BEATCOUNT_WIDTH){1'b0}}, beatCount };
 assign axi_WLAST = (state == S_DATA) && (beatCount == 0);
-assign axi_WDATA = csrDiagMode ? { fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
+assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
                             {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
                             fifoOut[BUS_WIDTH-1:0] } : fifoOut;
 
@@ -192,15 +192,43 @@ assign axi_WDATA = csrDiagMode ? { fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
 //
 wire                       fifo_wr_en, fifo_rd_en;
 wire                       fifoOverflow, fifoEmpty, fifoProgEmpty;
-wire      [DATA_WIDTH-1:0] fifoIn, fifoOut;
-assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} : data;
-assign fifo_wr_en = (acqArmed && valid
+wire      [AXI_DATA_WIDTH-1:0] fifoIn, fifoOut;
+wire                       dataValid;
+reg [DATA_WIDTH-1:0]       dataHold;
+reg                        dataPhase = 0;
+
+generate
+if (DATA_WIDTH == AXI_DATA_WIDTH) begin
+
+assign dataValid = valid;
+assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
+    data;
+
+end
+if (2*DATA_WIDTH == AXI_DATA_WIDTH) begin
+
+always @(posedge clk) begin
+    if (valid) begin
+        dataPhase <= !dataPhase;
+        dataHold <= data;
+    end
+end
+
+assign dataValid = valid && dataPhase;
+assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:0],
+        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
+        {data, dataHold};
+
+end
+endgenerate
+
+assign fifo_wr_en = (acqArmed && dataValid
                   && (!triggerFlag || (acqLeft != 0)));
 assign fifo_rd_en = (((state == S_ADDR) && axi_AWREADY)
                   || ((state == S_DATA) && (beatCount != 0) && axi_WREADY));
 wire signed [FIFO_ADDR_WIDTH:0] fifoCount;
 genericFifo #(
-    .dw(DATA_WIDTH),
+    .dw(AXI_DATA_WIDTH),
     .aw(FIFO_ADDR_WIDTH),
     .fwft(0)
 ) fifo (
@@ -230,7 +258,7 @@ always @(posedge clk) begin
     csrToggle_d1 <= csrToggle;
     csrStrobe <= csrToggle_d1 ^ csrToggle;
 
-    if (valid) diagCount <= diagCount + 1;
+    if (dataValid) diagCount <= diagCount + 1;
     if (fifoOverflow) overrun <= 1;
     if (csrStrobe) begin
         full <= 0;
@@ -257,7 +285,7 @@ always @(posedge clk) begin
          && ((csrTriggerEnables & triggerReg & ~triggerReg_d) != 0)) begin
             triggerFlag <= 1;
         end
-        if (valid) begin
+        if (dataValid) begin
             if (triggerFlag) begin
                 triggered <= 1;
                 if (!triggered) acqWhenTriggered <= timestamp;
