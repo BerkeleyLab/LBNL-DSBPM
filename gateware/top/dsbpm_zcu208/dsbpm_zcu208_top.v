@@ -3,7 +3,7 @@ module dsbpm_zcu208_top #(
     parameter ADC_WIDTH                 = 14,
     parameter AXI_SAMPLE_WIDTH          = ((ADC_WIDTH + 7) / 8) * 8,
     parameter AXI_ADDR_WIDTH            = 35,
-    parameter AXI_ADC_DATA_WIDTH        = 128,
+    parameter AXI_ADC_DATA_WIDTH        = 256, // 2 * 8 * I/Q ADC samples
     parameter AXI_MAG_DATA_WIDTH        = 128,
     parameter IQ_DATA                   = "TRUE",
     parameter SYSCLK_RATE               = 99999001,  // From block design
@@ -669,12 +669,12 @@ assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4]
 assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = adcWfrWhenTriggered[63:32];
 assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = adcWfrWhenTriggered[31:0];
 
-`ifdef WITH_ADC_RECORDER
 genericWaveformRecorder #(
+    .HIGH_BANDWIDTH_MODE("TRUE"),
     .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
     .DATA_WIDTH(8*AXI_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(8*AXI_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(16*AXI_SAMPLE_WIDTH)) // twice as large as input (DATA_WIDTH)
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -703,13 +703,14 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_adc_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_adc_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_adc_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_adc_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_adc_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_adc_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_adc_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_adc_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_adc_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_adc_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_adc_axi_BVALID[dsbpm]));
-`endif
 
 //
 // TbT waveform recorder
