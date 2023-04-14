@@ -145,13 +145,9 @@ wfrInit(void)
                 r = GPIO_IDX_ADC_RECORDER_BASE + dsbpm*GPIO_IDX_RECORDER_PER_DSBPM;
                 bytesPerSample = 8; /* 4 16-bit ADCs */
                 acqSampleCapacity = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
-#if 0
-                maxPretrig = ADC_WFR_HW_PRETRIG_COUNT;
-                pretrigCount = ADC_WFR_HW_PRETRIG_COUNT;
-#endif
-                maxPretrig = 0;
-                pretrigCount = 0;
-                acqCount = 1024 * 1024;
+                maxPretrig = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
+                pretrigCount = 40;
+                acqCount = 10000;
                 break;
 
             case 1:
@@ -341,25 +337,14 @@ headerPacket(struct recorder *rp)
         count = rp->acqCount;
     if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
         showRec(rp);
-    if (rp->recorderNumber == 0) {
-        /*
-         * ADC recorder uses linear buffer with fixed trigger samples.
-         */
-#if 0
-        rp->startByteOffset = (ADC_WFR_HW_PRETRIG_COUNT - rp->pretrigCount) *
-                                                            rp->bytesPerSample;
-#endif
-        rp->startByteOffset = 0;
-    }
-    else {
-        /* Other recorders use a ring buffer */
-        char *nextAddress = (char *)((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_LSB_POINTER) |
-                ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
-        rp->startByteOffset = ((nextAddress - rp->acqBuf) +
-                               rp->acqByteCapacity -
-                               (rp->acqCount * rp->bytesPerSample)) %
-                                                            rp->acqByteCapacity;
-    }
+
+    /* All recorders use a ring buffer */
+    char *nextAddress = (char *)((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_LSB_POINTER) |
+            ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
+    rp->startByteOffset = ((nextAddress - rp->acqBuf) +
+                           rp->acqByteCapacity -
+                           (rp->acqCount * rp->bytesPerSample)) %
+                                                        rp->acqByteCapacity;
     p = pbuf_alloc(PBUF_TRANSPORT, sizeof(*hp), PBUF_RAM);
     if (p) {
         hp = (struct dsbpmWaveformHeader *)p->payload;
@@ -413,51 +398,6 @@ wfrStatus(int dsbpm)
  */
 #define HISTSIZE 120
 static unsigned int histogram[HISTSIZE];
-
-#if 0
-/*
- * Check that ADC waveform recorder is working as expected
- */
-static void
-adcRecorderDiagnosticCheck(struct recorder *rp)
-{
-    unsigned int old, new, diff;
-    int i;
-    unsigned int count = WR_READ(rp, WR_REG_OFFSET_ACQUISITION_COUNT) / 2;
-    unsigned int *a = (unsigned int *)rp->acqBuf;
-    int errorCount = 0;
-
-    showRec(rp);
-    for (i = 0 ; i < HISTSIZE ; i++) histogram[i] = 0;
-    old = a[0];
-    for (i = 1 ; i < count ; i++) {
-        new = a[i*4];
-        diff = new - old;
-        if (errorCount < 100) {
-            if ((diff == 0)
-             || (diff >= HISTSIZE)
-             || ((a[i*4+1] - 1) != a[(i-1)*4+1])
-             || ((a[i*4+1] + 1) != a[(i*4+2)])
-             || ((a[i*4+1] + 2) != a[(i*4+3)])) {
-                if (errorCount == 0)
-                    printf("  Index     TICKS   ADC 1    ADC 2    ADC 3 \n");
-                printf("%7d: %8.8X %8.8X %8.8X %8.8X\n", i, a[i*4+0], a[i*4+1],
-                                                            a[i*4+2], a[i*4+3]);
-                if (++errorCount >= 100) {
-                    printf("Too many errors -- printing inhibited\n");
-                }
-            }
-        }
-        if (diff >= HISTSIZE) diff = HISTSIZE - 1;
-        histogram[diff]++;
-        old = new;
-    }
-    for (i = 0 ; i < HISTSIZE ; i++) {
-        if (histogram[i])
-            printf("%5d: %u\n", i, histogram[i]);
-    }
-}
-#endif
 
 /*
  * Check that non-ADC waveform recorder is working as expected
@@ -556,15 +496,9 @@ wfrCheckForWork(void)
              */
             Xil_DCacheFlush();
             rp->retryCount = 0;
-            if (csr & WR_CSR_DIAGNOSTIC_MODE) {
-                if (rp->recorderNumber == 0) {
-#if 0
-                    adcRecorderDiagnosticCheck(rp);
-#endif
-                }
-                else
-                    recorderDiagnosticCheck(rp);
-            }
+            if (csr & WR_CSR_DIAGNOSTIC_MODE)
+                recorderDiagnosticCheck(rp);
+
             p = headerPacket(rp);
         }
     }
