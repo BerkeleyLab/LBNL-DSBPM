@@ -28,9 +28,11 @@ module genericWaveformRecorder #(
     output wire                [7:0] axi_AWLEN,
     output reg                       axi_AWVALID = 0,
     input                            axi_AWREADY,
+    output wire [2:0]                axi_AWSIZE,
     output wire [AXI_DATA_WIDTH-1:0] axi_WDATA,
     output wire                      axi_WLAST,
     output reg                       axi_WVALID = 0,
+    output wire [AXI_DATA_WIDTH/8-1:0] axi_WSTRB,
     input                            axi_WREADY,
     input                      [1:0] axi_BRESP,
     input                            axi_BVALID);
@@ -214,6 +216,8 @@ genericFifo #(
 );
 
 assign fifoProgEmpty = fifoCount < FIFO_PROG_EMPTY_THRESHOLD;
+assign axi_AWSIZE = $clog2(AXI_DATA_WIDTH/8);
+assign axi_WSTRB = {(AXI_DATA_WIDTH/8){1'b1}};
 
 //
 // The recorder
