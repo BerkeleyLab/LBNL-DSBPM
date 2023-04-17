@@ -25,9 +25,9 @@
 #define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9692
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
                                                 0x92966FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9693
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9793
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
-                                                0x93966FD0
+                                                0x93976FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9694
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_DATA \
                                                 0x94966FD0
@@ -95,6 +95,8 @@ struct dsbpmWaveformHeader {
     epicsUInt32 seconds;
     epicsUInt32 ticks;
     epicsUInt32 byteCount;
+    epicsUInt32 bytesPerSample;
+    epicsUInt32 bytesPerAtom;
 };
 struct dsbpmWaveformData {
     epicsUInt32 magic;
