@@ -79,7 +79,7 @@ end
 endgenerate
 
 generate
-if (WRITE_ADDR_WIDTH+4 > AXI_ADDR_WIDTH-1) begin
+if (WRITE_ADDR_WIDTH+WRITE_ADDR_ALIGNMENT > AXI_ADDR_WIDTH-1) begin
     WRITE_ADDR_WIDTH_is_bigger_than_AXI_ADDR_WIDTH error();
 end
 endgenerate
