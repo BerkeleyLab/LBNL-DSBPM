@@ -200,9 +200,6 @@ assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + WRITE_ADDR_ALI
 reg [BEATCOUNT_WIDTH-1:0] beatCount;
 assign axi_AWLEN = { {(8-BEATCOUNT_WIDTH){1'b0}}, beatCount };
 assign axi_WLAST = (state == S_DATA) && (beatCount == 0);
-assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
-                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
-                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
 
 
 //
@@ -226,6 +223,10 @@ always @(posedge clk) begin
     if (valid) diagCount <= diagCount + 1;
 end
 
+assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
+
 end
 if (2*DATA_WIDTH == AXI_DATA_WIDTH) begin
 
@@ -248,6 +249,18 @@ always @(posedge clk) begin
         diagCountHold <= diagCount;
     end
 end
+
+// Super confusing concatenation, but basically
+// replacing fifoOut bits 63-32 and 191-160 with
+// beatCount. With csrDiagMode fifoOut counts a
+// 32-bit counter in bits 31-0 and 159-128
+assign axi_WDATA = csrDiagMode ? {
+                            fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH+DATA_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[DATA_WIDTH+BUS_WIDTH-1:DATA_WIDTH],
+                            fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
 
 end
 endgenerate
