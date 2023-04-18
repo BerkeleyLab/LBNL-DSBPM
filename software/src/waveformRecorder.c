@@ -441,7 +441,7 @@ recorderDiagnosticCheck(struct recorder *rp)
     // word 63-32 is the number of beats per burst
     // AXI_DATA_SIZE-64 unmodified samples
     for (i = 0 ; i < count ; i++) {
-        int32_t *a = (int32_t *)(rp->acqBuf + bIndex);
+        uint32_t *a = (uint32_t *)(rp->acqBuf + bIndex);
         val = a[0];
         if (i && (val != (oldVal + 1))) {
             switch(rp->bytesPerAtom) {
@@ -451,9 +451,9 @@ recorderDiagnosticCheck(struct recorder *rp)
                 break;
 
             case 2:
-                printf("%7d(%p): %4.4X %4.4X %4.4X %4.4X "
+                printf("%7d(%p): %8.8X %4.4X %4.4X "
                         "%4.4X %4.4X %4.4X %4.4X %8.8X\n",
-                        i, a, a[0] >> 16, a[0] & 0xFFFF, a[1] >> 16, a[1] & 0xFFFF,
+                        i, a, a[0], a[1] >> 16, a[1] & 0xFFFF,
                         a[2] >> 16, a[2] & 0xFFFF, a[3] >> 16, a[3] & 0xFFFF, oldVal);
                break;
 
