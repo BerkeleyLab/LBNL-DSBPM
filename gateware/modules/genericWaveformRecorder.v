@@ -176,6 +176,7 @@ reg [7:0] triggerReg, triggerReg_d;
 //
 // Data transfer
 //
+reg [BUS_WIDTH-1:0] diagCountHold;
 reg [BUS_WIDTH-1:0] diagCount;
 
 //
@@ -218,6 +219,10 @@ assign dataValid = valid;
 assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
     data;
 
+always @(posedge clk) begin
+    if (valid) diagCount <= diagCount + 1;
+end
+
 end
 if (2*DATA_WIDTH == AXI_DATA_WIDTH) begin
 
@@ -229,9 +234,17 @@ always @(posedge clk) begin
 end
 
 assign dataValid = valid && dataPhase;
-assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:0],
-        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
+assign fifoIn = csrDiagMode ? {
+        data[DATA_WIDTH-1:BUS_WIDTH], diagCount,
+        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagCountHold} :
         {data, dataHold};
+
+always @(posedge clk) begin
+    if (valid) begin
+        diagCount <= diagCount + 1;
+        diagCountHold <= diagCount;
+    end
+end
 
 end
 endgenerate
@@ -272,7 +285,6 @@ always @(posedge clk) begin
     csrToggle_d1 <= csrToggle;
     csrStrobe <= csrToggle_d1 ^ csrToggle;
 
-    if (dataValid) diagCount <= diagCount + 1;
     if (fifoOverflow) overrun <= 1;
     if (csrStrobe) begin
         full <= 0;
