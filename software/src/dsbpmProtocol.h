@@ -22,12 +22,12 @@
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
 #define DSBPM_PROTOCOL_MAGIC                    0xD06F9691
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91966FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9692
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9792
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x92966FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9693
+                                                0x92976FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9793
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
-                                                0x93966FD0
+                                                0x93976FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9694
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_DATA \
                                                 0x94966FD0
@@ -61,6 +61,7 @@ struct dsbpmSlowAcquisition {
     epicsUInt8  sdSyncStatus;
     epicsUInt8  pad1;
     epicsUInt8  pad2;
+    epicsUInt8  pad3;
     epicsUInt16 adcPeak[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 rfMag[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 ptLoMag[DSBPM_PROTOCOL_ADC_COUNT];
@@ -95,6 +96,8 @@ struct dsbpmWaveformHeader {
     epicsUInt32 seconds;
     epicsUInt32 ticks;
     epicsUInt32 byteCount;
+    epicsUInt32 bytesPerSample;
+    epicsUInt32 bytesPerAtom;
 };
 struct dsbpmWaveformData {
     epicsUInt32 magic;

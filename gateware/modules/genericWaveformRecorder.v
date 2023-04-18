@@ -2,6 +2,14 @@
 // Generic Waveform Recorder
 //
 module genericWaveformRecorder #(
+    // "FALSE" = usual pause after a burst and small burst size
+    // (i.e., 8 beats);
+    // "TRUE" = skip pause state and larger burst
+    // size (64 beats). Note that we need to use INCR burst type
+    // for more than 16 beats (as per AXI protocol specification:
+    // https://developer.arm.com/documentation/ihi0022/e/, page
+    // A3-46)
+    parameter HIGH_BANDWIDTH_MODE = "FALSE",
     parameter DATA_WIDTH      = 128,
     parameter TIMESTAMP_WIDTH = 64,
     parameter BUS_WIDTH       = 32,
@@ -28,16 +36,18 @@ module genericWaveformRecorder #(
     output wire                [7:0] axi_AWLEN,
     output reg                       axi_AWVALID = 0,
     input                            axi_AWREADY,
+    output wire [2:0]                axi_AWSIZE,
     output wire [AXI_DATA_WIDTH-1:0] axi_WDATA,
     output wire                      axi_WLAST,
     output reg                       axi_WVALID = 0,
+    output wire [AXI_DATA_WIDTH/8-1:0] axi_WSTRB,
     input                            axi_WREADY,
     input                      [1:0] axi_BRESP,
     input                            axi_BVALID);
 
 parameter WRITE_ADDR_WIDTH  = $clog2(ACQ_CAPACITY);
 parameter WRITE_COUNT_WIDTH = $clog2(ACQ_CAPACITY+1);
-parameter BEATCOUNT_WIDTH   = 3;
+parameter BEATCOUNT_WIDTH   = HIGH_BANDWIDTH_MODE == "TRUE"? 6:3; // 64 x 8 beats per transfer
 parameter MULTI_BEAT_LENGTH = (1 << BEATCOUNT_WIDTH);
 parameter FIFO_ADDR_WIDTH   = $clog2(FIFO_CAPACITY);
 
@@ -49,6 +59,12 @@ localparam FIFO_PROG_EMPTY_THRESHOLD = MULTI_BEAT_LENGTH-1;
 
 assign pretrigCount  = { {BUS_WIDTH-WRITE_COUNT_WIDTH{1'b0}}, sysPretrigCount_r };
 assign acqCount      = { {BUS_WIDTH-WRITE_COUNT_WIDTH{1'b0}}, sysAcqCount_r };
+
+generate
+if (HIGH_BANDWIDTH_MODE != "TRUE" && HIGH_BANDWIDTH_MODE != "FALSE") begin
+    HIGH_BANDWIDTH_MODE_supports_only_TRUE_or_FALSE error();
+end
+endgenerate
 
 generate
 if (AXI_ADDR_WIDTH > BUS_WIDTH) begin
@@ -63,7 +79,7 @@ end
 endgenerate
 
 generate
-if (WRITE_ADDR_WIDTH+4 > AXI_ADDR_WIDTH-1) begin
+if (WRITE_ADDR_WIDTH+WRITE_ADDR_ALIGNMENT > AXI_ADDR_WIDTH-1) begin
     WRITE_ADDR_WIDTH_is_bigger_than_AXI_ADDR_WIDTH error();
 end
 endgenerate
@@ -75,8 +91,8 @@ end
 endgenerate
 
 generate
-if (DATA_WIDTH != AXI_DATA_WIDTH) begin
-    DATA_WIDTH_is_different_than_AXI_DATA_WIDTH error();
+if (!(DATA_WIDTH == AXI_DATA_WIDTH || 2*DATA_WIDTH == AXI_DATA_WIDTH)) begin
+    DATA_WIDTH_is_different_than_once_or_twice_AXI_DATA_WIDTH error();
 end
 endgenerate
 
@@ -155,11 +171,13 @@ forwardData #(.DATA_WIDTH(1+1+1+8+BUS_WIDTH+BUS_WIDTH+WRITE_COUNT_WIDTH+WRITE_CO
 //                             DATA CLOCK DOMAIN                            //
 //////////////////////////////////////////////////////////////////////////////
 
+localparam WRITE_ADDR_ALIGNMENT = $clog2(AXI_DATA_WIDTH/8);
 reg [7:0] triggerReg, triggerReg_d;
 
 //
 // Data transfer
 //
+reg [BUS_WIDTH-1:0] diagCountHold;
 reg [BUS_WIDTH-1:0] diagCount;
 
 //
@@ -176,13 +194,12 @@ reg                         triggerFlag = 0, triggered = 0;
 reg                         acqPretrigLeftDone = 0;
 reg [WRITE_COUNT_WIDTH-1:0] acqPretrigLeft = 0, acqLeft = 0;
 reg  [WRITE_ADDR_WIDTH-1:0] writeAddr = 0;
-assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + 4], writeAddr, 4'b0 };
+assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + WRITE_ADDR_ALIGNMENT],
+                        writeAddr,
+                        {WRITE_ADDR_ALIGNMENT{1'b0}} };
 reg [BEATCOUNT_WIDTH-1:0] beatCount;
 assign axi_AWLEN = { {(8-BEATCOUNT_WIDTH){1'b0}}, beatCount };
 assign axi_WLAST = (state == S_DATA) && (beatCount == 0);
-assign axi_WDATA = csrDiagMode ? { fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
-                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
-                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
 
 
 //
@@ -190,15 +207,71 @@ assign axi_WDATA = csrDiagMode ? { fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
 //
 wire                       fifo_wr_en, fifo_rd_en;
 wire                       fifoOverflow, fifoEmpty, fifoProgEmpty;
-wire      [DATA_WIDTH-1:0] fifoIn, fifoOut;
-assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} : data;
-assign fifo_wr_en = (acqArmed && valid
+wire      [AXI_DATA_WIDTH-1:0] fifoIn, fifoOut;
+wire                       dataValid;
+reg [DATA_WIDTH-1:0]       dataHold;
+reg                        dataPhase = 0;
+
+generate
+if (DATA_WIDTH == AXI_DATA_WIDTH) begin
+
+assign dataValid = valid;
+assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
+    data;
+
+always @(posedge clk) begin
+    if (valid) diagCount <= diagCount + 1;
+end
+
+assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
+
+end
+if (2*DATA_WIDTH == AXI_DATA_WIDTH) begin
+
+always @(posedge clk) begin
+    if (valid) begin
+        dataPhase <= !dataPhase;
+        dataHold <= data;
+    end
+end
+
+assign dataValid = valid && dataPhase;
+assign fifoIn = csrDiagMode ? {
+        data[DATA_WIDTH-1:BUS_WIDTH], diagCount,
+        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagCountHold} :
+        {data, dataHold};
+
+always @(posedge clk) begin
+    if (valid) begin
+        diagCount <= diagCount + 1;
+        diagCountHold <= diagCount;
+    end
+end
+
+// Super confusing concatenation, but basically
+// replacing fifoOut bits 63-32 and 191-160 with
+// beatCount. With csrDiagMode fifoOut counts a
+// 32-bit counter in bits 31-0 and 159-128
+assign axi_WDATA = csrDiagMode ? {
+                            fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH+DATA_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[DATA_WIDTH+BUS_WIDTH-1:DATA_WIDTH],
+                            fifoOut[DATA_WIDTH-1:2*BUS_WIDTH],
+                            {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
+                            fifoOut[BUS_WIDTH-1:0] } : fifoOut;
+
+end
+endgenerate
+
+assign fifo_wr_en = (acqArmed && dataValid
                   && (!triggerFlag || (acqLeft != 0)));
 assign fifo_rd_en = (((state == S_ADDR) && axi_AWREADY)
                   || ((state == S_DATA) && (beatCount != 0) && axi_WREADY));
 wire signed [FIFO_ADDR_WIDTH:0] fifoCount;
 genericFifo #(
-    .dw(DATA_WIDTH),
+    .dw(AXI_DATA_WIDTH),
     .aw(FIFO_ADDR_WIDTH),
     .fwft(0)
 ) fifo (
@@ -214,6 +287,8 @@ genericFifo #(
 );
 
 assign fifoProgEmpty = fifoCount < FIFO_PROG_EMPTY_THRESHOLD;
+assign axi_AWSIZE = $clog2(AXI_DATA_WIDTH/8);
+assign axi_WSTRB = {(AXI_DATA_WIDTH/8){1'b1}};
 
 //
 // The recorder
@@ -226,7 +301,6 @@ always @(posedge clk) begin
     csrToggle_d1 <= csrToggle;
     csrStrobe <= csrToggle_d1 ^ csrToggle;
 
-    if (valid) diagCount <= diagCount + 1;
     if (fifoOverflow) overrun <= 1;
     if (csrStrobe) begin
         full <= 0;
@@ -253,7 +327,7 @@ always @(posedge clk) begin
          && ((csrTriggerEnables & triggerReg & ~triggerReg_d) != 0)) begin
             triggerFlag <= 1;
         end
-        if (valid) begin
+        if (dataValid) begin
             if (triggerFlag) begin
                 triggered <= 1;
                 if (!triggered) acqWhenTriggered <= timestamp;
@@ -348,7 +422,10 @@ always @(posedge clk) begin
                 acqLeft <= 0;
             end
             pauseCount <= ~0;
+
             state <= S_PAUSE;
+            if (HIGH_BANDWIDTH_MODE == "TRUE")
+                state <= S_WAIT;
         end
     end
 

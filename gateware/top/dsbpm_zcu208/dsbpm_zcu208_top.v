@@ -3,7 +3,7 @@ module dsbpm_zcu208_top #(
     parameter ADC_WIDTH                 = 14,
     parameter AXI_SAMPLE_WIDTH          = ((ADC_WIDTH + 7) / 8) * 8,
     parameter AXI_ADDR_WIDTH            = 35,
-    parameter AXI_ADC_DATA_WIDTH        = 128,
+    parameter AXI_ADC_DATA_WIDTH        = 256, // 2 * 8 * I/Q ADC samples
     parameter AXI_MAG_DATA_WIDTH        = 128,
     parameter IQ_DATA                   = "TRUE",
     parameter SYSCLK_RATE               = 99999001,  // From block design
@@ -542,18 +542,18 @@ assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
 //
 // All waveform recorders share these burst parameters
 wire  [1:0] BURST_TYPE_INCR = 2'b01;
-wire  [2:0] BURST_SIZE_16   = 3'b100;
 wire  [3:0] CACHE_NORMAL_NONCACHE_BUFF = 4'b0011;
-wire [15:0] WSTRB_ALL_BYTES = 16'hFFFF;
 
 // ADC
 wire   [AXI_ADDR_WIDTH-1:0]     wr_adc_axi_AWADDR[0:CFG_DSBPM_COUNT-1];
 wire   [7:0]                    wr_adc_axi_AWLEN[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_AWVALID[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_AWREADY[0:CFG_DSBPM_COUNT-1];
+wire   [2:0]                    wr_adc_axi_AWSIZE[0:CFG_DSBPM_COUNT-1];
 wire   [AXI_ADC_DATA_WIDTH-1:0] wr_adc_axi_WDATA[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_WLAST[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_WVALID[0:CFG_DSBPM_COUNT-1];
+wire   [AXI_ADC_DATA_WIDTH/8-1:0] wr_adc_axi_WSTRB[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_adc_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_adc_axi_BVALID[0:CFG_DSBPM_COUNT-1];
@@ -563,9 +563,11 @@ wire   [AXI_ADDR_WIDTH-1:0]     wr_tbt_axi_AWADDR[0:CFG_DSBPM_COUNT-1];
 wire   [7:0]                    wr_tbt_axi_AWLEN[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_AWVALID[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_AWREADY[0:CFG_DSBPM_COUNT-1];
+wire   [2:0]                    wr_tbt_axi_AWSIZE[0:CFG_DSBPM_COUNT-1];
 wire   [AXI_MAG_DATA_WIDTH-1:0] wr_tbt_axi_WDATA[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_WLAST[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_WVALID[0:CFG_DSBPM_COUNT-1];
+wire   [AXI_MAG_DATA_WIDTH/8-1:0] wr_tbt_axi_WSTRB[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_tbt_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_tbt_axi_BVALID[0:CFG_DSBPM_COUNT-1];
@@ -575,9 +577,11 @@ wire   [AXI_ADDR_WIDTH-1:0]     wr_fa_axi_AWADDR[0:CFG_DSBPM_COUNT-1];
 wire   [7:0]                    wr_fa_axi_AWLEN[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_AWVALID[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_AWREADY[0:CFG_DSBPM_COUNT-1];
+wire   [2:0]                    wr_fa_axi_AWSIZE[0:CFG_DSBPM_COUNT-1];
 wire   [AXI_MAG_DATA_WIDTH-1:0] wr_fa_axi_WDATA[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_WLAST[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_WVALID[0:CFG_DSBPM_COUNT-1];
+wire   [AXI_MAG_DATA_WIDTH/8-1:0] wr_fa_axi_WSTRB[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_fa_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_fa_axi_BVALID[0:CFG_DSBPM_COUNT-1];
@@ -587,9 +591,11 @@ wire   [AXI_ADDR_WIDTH-1:0]     wr_pl_axi_AWADDR[0:CFG_DSBPM_COUNT-1];
 wire   [7:0]                    wr_pl_axi_AWLEN[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_AWVALID[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_AWREADY[0:CFG_DSBPM_COUNT-1];
+wire   [2:0]                    wr_pl_axi_AWSIZE[0:CFG_DSBPM_COUNT-1];
 wire   [AXI_MAG_DATA_WIDTH-1:0] wr_pl_axi_WDATA[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_WLAST[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_WVALID[0:CFG_DSBPM_COUNT-1];
+wire   [AXI_MAG_DATA_WIDTH/8-1:0] wr_pl_axi_WSTRB[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_pl_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_pl_axi_BVALID[0:CFG_DSBPM_COUNT-1];
@@ -599,9 +605,11 @@ wire   [AXI_ADDR_WIDTH-1:0]     wr_ph_axi_AWADDR[0:CFG_DSBPM_COUNT-1];
 wire   [7:0]                    wr_ph_axi_AWLEN[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_AWVALID[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_AWREADY[0:CFG_DSBPM_COUNT-1];
+wire   [2:0]                    wr_ph_axi_AWSIZE[0:CFG_DSBPM_COUNT-1];
 wire   [AXI_MAG_DATA_WIDTH-1:0] wr_ph_axi_WDATA[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_WLAST[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_WVALID[0:CFG_DSBPM_COUNT-1];
+wire   [AXI_MAG_DATA_WIDTH/8-1:0] wr_ph_axi_WSTRB[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_WREADY[0:CFG_DSBPM_COUNT-1];
 wire   [1:0]                    wr_ph_axi_BRESP[0:CFG_DSBPM_COUNT-1];
 wire                            wr_ph_axi_BVALID[0:CFG_DSBPM_COUNT-1];
@@ -669,12 +677,12 @@ assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4]
 assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = adcWfrWhenTriggered[63:32];
 assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = adcWfrWhenTriggered[31:0];
 
-`ifdef WITH_ADC_RECORDER
 genericWaveformRecorder #(
+    .HIGH_BANDWIDTH_MODE("TRUE"),
     .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
     .DATA_WIDTH(8*AXI_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(8*AXI_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(16*AXI_SAMPLE_WIDTH)) // twice as large as input (DATA_WIDTH)
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -703,13 +711,14 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_adc_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_adc_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_adc_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_adc_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_adc_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_adc_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_adc_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_adc_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_adc_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_adc_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_adc_axi_BVALID[dsbpm]));
-`endif
 
 //
 // TbT waveform recorder
@@ -757,9 +766,11 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_tbt_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_tbt_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_tbt_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_tbt_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_tbt_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_tbt_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_tbt_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_tbt_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_tbt_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_tbt_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_tbt_axi_BVALID[dsbpm]));
@@ -810,9 +821,11 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_fa_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_fa_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_fa_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_fa_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_fa_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_fa_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_fa_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_fa_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_fa_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_fa_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_fa_axi_BVALID[dsbpm]));
@@ -863,9 +876,11 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_pl_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_pl_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_pl_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_pl_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_pl_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_pl_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_pl_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_pl_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_pl_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_pl_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_pl_axi_BVALID[dsbpm]));
@@ -916,9 +931,11 @@ genericWaveformRecorder #(
     .axi_AWLEN(wr_ph_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_ph_axi_AWVALID[dsbpm]),
     .axi_AWREADY(wr_ph_axi_AWREADY[dsbpm]),
+    .axi_AWSIZE(wr_ph_axi_AWSIZE[dsbpm]),
     .axi_WDATA(wr_ph_axi_WDATA[dsbpm]),
     .axi_WLAST(wr_ph_axi_WLAST[dsbpm]),
     .axi_WVALID(wr_ph_axi_WVALID[dsbpm]),
+    .axi_WSTRB(wr_ph_axi_WSTRB[dsbpm]),
     .axi_WREADY(wr_ph_axi_WREADY[dsbpm]),
     .axi_BRESP(wr_ph_axi_BRESP[dsbpm]),
     .axi_BVALID(wr_ph_axi_BVALID[dsbpm]));
@@ -1135,7 +1152,7 @@ system
     .wr_adc_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_adc_0_axi_awlen(wr_adc_axi_AWLEN[0]),
     .wr_adc_0_axi_awready(wr_adc_axi_AWREADY[0]),
-    .wr_adc_0_axi_awsize(BURST_SIZE_16),
+    .wr_adc_0_axi_awsize(wr_adc_axi_AWSIZE[0]),
     .wr_adc_0_axi_awvalid(wr_adc_axi_AWVALID[0]),
     .wr_adc_0_axi_bready(1'b1),
     .wr_adc_0_axi_bresp(wr_adc_axi_BRESP[0]),
@@ -1143,7 +1160,7 @@ system
     .wr_adc_0_axi_wdata(wr_adc_axi_WDATA[0]),
     .wr_adc_0_axi_wlast(wr_adc_axi_WLAST[0]),
     .wr_adc_0_axi_wready(wr_adc_axi_WREADY[0]),
-    .wr_adc_0_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_adc_0_axi_wstrb(wr_adc_axi_WSTRB[0]),
     .wr_adc_0_axi_wvalid(wr_adc_axi_WVALID[0]),
 
     // TbT recorder
@@ -1152,7 +1169,7 @@ system
     .wr_tbt_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_tbt_0_axi_awlen(wr_tbt_axi_AWLEN[0]),
     .wr_tbt_0_axi_awready(wr_tbt_axi_AWREADY[0]),
-    .wr_tbt_0_axi_awsize(BURST_SIZE_16),
+    .wr_tbt_0_axi_awsize(wr_tbt_axi_AWSIZE[0]),
     .wr_tbt_0_axi_awvalid(wr_tbt_axi_AWVALID[0]),
     .wr_tbt_0_axi_bready(1'b1),
     .wr_tbt_0_axi_bresp(wr_tbt_axi_BRESP[0]),
@@ -1160,7 +1177,7 @@ system
     .wr_tbt_0_axi_wdata(wr_tbt_axi_WDATA[0]),
     .wr_tbt_0_axi_wlast(wr_tbt_axi_WLAST[0]),
     .wr_tbt_0_axi_wready(wr_tbt_axi_WREADY[0]),
-    .wr_tbt_0_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_tbt_0_axi_wstrb(wr_tbt_axi_WSTRB[0]),
     .wr_tbt_0_axi_wvalid(wr_tbt_axi_WVALID[0]),
 
     // FA recorder
@@ -1169,7 +1186,7 @@ system
     .wr_fa_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_fa_0_axi_awlen(wr_fa_axi_AWLEN[0]),
     .wr_fa_0_axi_awready(wr_fa_axi_AWREADY[0]),
-    .wr_fa_0_axi_awsize(BURST_SIZE_16),
+    .wr_fa_0_axi_awsize(wr_fa_axi_AWSIZE[0]),
     .wr_fa_0_axi_awvalid(wr_fa_axi_AWVALID[0]),
     .wr_fa_0_axi_bready(1'b1),
     .wr_fa_0_axi_bresp(wr_fa_axi_BRESP[0]),
@@ -1177,7 +1194,7 @@ system
     .wr_fa_0_axi_wdata(wr_fa_axi_WDATA[0]),
     .wr_fa_0_axi_wlast(wr_fa_axi_WLAST[0]),
     .wr_fa_0_axi_wready(wr_fa_axi_WREADY[0]),
-    .wr_fa_0_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_fa_0_axi_wstrb(wr_fa_axi_WSTRB[0]),
     .wr_fa_0_axi_wvalid(wr_fa_axi_WVALID[0]),
 
     // PL recorder
@@ -1186,7 +1203,7 @@ system
     .wr_pl_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_pl_0_axi_awlen(wr_pl_axi_AWLEN[0]),
     .wr_pl_0_axi_awready(wr_pl_axi_AWREADY[0]),
-    .wr_pl_0_axi_awsize(BURST_SIZE_16),
+    .wr_pl_0_axi_awsize(wr_pl_axi_AWSIZE[0]),
     .wr_pl_0_axi_awvalid(wr_pl_axi_AWVALID[0]),
     .wr_pl_0_axi_bready(1'b1),
     .wr_pl_0_axi_bresp(wr_pl_axi_BRESP[0]),
@@ -1194,7 +1211,7 @@ system
     .wr_pl_0_axi_wdata(wr_pl_axi_WDATA[0]),
     .wr_pl_0_axi_wlast(wr_pl_axi_WLAST[0]),
     .wr_pl_0_axi_wready(wr_pl_axi_WREADY[0]),
-    .wr_pl_0_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_pl_0_axi_wstrb(wr_pl_axi_WSTRB[0]),
     .wr_pl_0_axi_wvalid(wr_pl_axi_WVALID[0]),
 
     // PH recorder
@@ -1203,7 +1220,7 @@ system
     .wr_ph_0_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_ph_0_axi_awlen(wr_ph_axi_AWLEN[0]),
     .wr_ph_0_axi_awready(wr_ph_axi_AWREADY[0]),
-    .wr_ph_0_axi_awsize(BURST_SIZE_16),
+    .wr_ph_0_axi_awsize(wr_ph_axi_AWSIZE[0]),
     .wr_ph_0_axi_awvalid(wr_ph_axi_AWVALID[0]),
     .wr_ph_0_axi_bready(1'b1),
     .wr_ph_0_axi_bresp(wr_ph_axi_BRESP[0]),
@@ -1211,7 +1228,7 @@ system
     .wr_ph_0_axi_wdata(wr_ph_axi_WDATA[0]),
     .wr_ph_0_axi_wlast(wr_ph_axi_WLAST[0]),
     .wr_ph_0_axi_wready(wr_ph_axi_WREADY[0]),
-    .wr_ph_0_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_ph_0_axi_wstrb(wr_ph_axi_WSTRB[0]),
     .wr_ph_0_axi_wvalid(wr_ph_axi_WVALID[0]),
 
     /////////////////////////////////////////////
@@ -1224,7 +1241,7 @@ system
     .wr_adc_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_adc_1_axi_awlen(wr_adc_axi_AWLEN[1]),
     .wr_adc_1_axi_awready(wr_adc_axi_AWREADY[1]),
-    .wr_adc_1_axi_awsize(BURST_SIZE_16),
+    .wr_adc_1_axi_awsize(wr_adc_axi_AWSIZE[1]),
     .wr_adc_1_axi_awvalid(wr_adc_axi_AWVALID[1]),
     .wr_adc_1_axi_bready(1'b1),
     .wr_adc_1_axi_bresp(wr_adc_axi_BRESP[1]),
@@ -1232,7 +1249,7 @@ system
     .wr_adc_1_axi_wdata(wr_adc_axi_WDATA[1]),
     .wr_adc_1_axi_wlast(wr_adc_axi_WLAST[1]),
     .wr_adc_1_axi_wready(wr_adc_axi_WREADY[1]),
-    .wr_adc_1_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_adc_1_axi_wstrb(wr_adc_axi_WSTRB[1]),
     .wr_adc_1_axi_wvalid(wr_adc_axi_WVALID[1]),
 
     // TbT recorder
@@ -1241,7 +1258,7 @@ system
     .wr_tbt_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_tbt_1_axi_awlen(wr_tbt_axi_AWLEN[1]),
     .wr_tbt_1_axi_awready(wr_tbt_axi_AWREADY[1]),
-    .wr_tbt_1_axi_awsize(BURST_SIZE_16),
+    .wr_tbt_1_axi_awsize(wr_tbt_axi_AWSIZE[1]),
     .wr_tbt_1_axi_awvalid(wr_tbt_axi_AWVALID[1]),
     .wr_tbt_1_axi_bready(1'b1),
     .wr_tbt_1_axi_bresp(wr_tbt_axi_BRESP[1]),
@@ -1249,7 +1266,7 @@ system
     .wr_tbt_1_axi_wdata(wr_tbt_axi_WDATA[1]),
     .wr_tbt_1_axi_wlast(wr_tbt_axi_WLAST[1]),
     .wr_tbt_1_axi_wready(wr_tbt_axi_WREADY[1]),
-    .wr_tbt_1_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_tbt_1_axi_wstrb(wr_tbt_axi_WSTRB[1]),
     .wr_tbt_1_axi_wvalid(wr_tbt_axi_WVALID[1]),
 
     // FA recorder
@@ -1258,7 +1275,7 @@ system
     .wr_fa_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_fa_1_axi_awlen(wr_fa_axi_AWLEN[1]),
     .wr_fa_1_axi_awready(wr_fa_axi_AWREADY[1]),
-    .wr_fa_1_axi_awsize(BURST_SIZE_16),
+    .wr_fa_1_axi_awsize(wr_fa_axi_AWSIZE[1]),
     .wr_fa_1_axi_awvalid(wr_fa_axi_AWVALID[1]),
     .wr_fa_1_axi_bready(1'b1),
     .wr_fa_1_axi_bresp(wr_fa_axi_BRESP[1]),
@@ -1266,7 +1283,7 @@ system
     .wr_fa_1_axi_wdata(wr_fa_axi_WDATA[1]),
     .wr_fa_1_axi_wlast(wr_fa_axi_WLAST[1]),
     .wr_fa_1_axi_wready(wr_fa_axi_WREADY[1]),
-    .wr_fa_1_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_fa_1_axi_wstrb(wr_fa_axi_WSTRB[1]),
     .wr_fa_1_axi_wvalid(wr_fa_axi_WVALID[1]),
 
     // PL recorder
@@ -1275,7 +1292,7 @@ system
     .wr_pl_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_pl_1_axi_awlen(wr_pl_axi_AWLEN[1]),
     .wr_pl_1_axi_awready(wr_pl_axi_AWREADY[1]),
-    .wr_pl_1_axi_awsize(BURST_SIZE_16),
+    .wr_pl_1_axi_awsize(wr_pl_axi_AWSIZE[1]),
     .wr_pl_1_axi_awvalid(wr_pl_axi_AWVALID[1]),
     .wr_pl_1_axi_bready(1'b1),
     .wr_pl_1_axi_bresp(wr_pl_axi_BRESP[1]),
@@ -1283,7 +1300,7 @@ system
     .wr_pl_1_axi_wdata(wr_pl_axi_WDATA[1]),
     .wr_pl_1_axi_wlast(wr_pl_axi_WLAST[1]),
     .wr_pl_1_axi_wready(wr_pl_axi_WREADY[1]),
-    .wr_pl_1_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_pl_1_axi_wstrb(wr_pl_axi_WSTRB[1]),
     .wr_pl_1_axi_wvalid(wr_pl_axi_WVALID[1]),
 
     // PH recorder
@@ -1292,7 +1309,7 @@ system
     .wr_ph_1_axi_awcache(CACHE_NORMAL_NONCACHE_BUFF),
     .wr_ph_1_axi_awlen(wr_ph_axi_AWLEN[1]),
     .wr_ph_1_axi_awready(wr_ph_axi_AWREADY[1]),
-    .wr_ph_1_axi_awsize(BURST_SIZE_16),
+    .wr_ph_1_axi_awsize(wr_ph_axi_AWSIZE[1]),
     .wr_ph_1_axi_awvalid(wr_ph_axi_AWVALID[1]),
     .wr_ph_1_axi_bready(1'b1),
     .wr_ph_1_axi_bresp(wr_ph_axi_BRESP[1]),
@@ -1300,7 +1317,7 @@ system
     .wr_ph_1_axi_wdata(wr_ph_axi_WDATA[1]),
     .wr_ph_1_axi_wlast(wr_ph_axi_WLAST[1]),
     .wr_ph_1_axi_wready(wr_ph_axi_WREADY[1]),
-    .wr_ph_1_axi_wstrb(WSTRB_ALL_BYTES),
+    .wr_ph_1_axi_wstrb(wr_ph_axi_WSTRB[1]),
     .wr_ph_1_axi_wvalid(wr_ph_axi_WVALID[1]),
 
     // debug from AXISM to DDR core
