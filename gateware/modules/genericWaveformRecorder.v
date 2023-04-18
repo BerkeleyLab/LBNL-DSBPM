@@ -171,6 +171,7 @@ forwardData #(.DATA_WIDTH(1+1+1+8+BUS_WIDTH+BUS_WIDTH+WRITE_COUNT_WIDTH+WRITE_CO
 //                             DATA CLOCK DOMAIN                            //
 //////////////////////////////////////////////////////////////////////////////
 
+localparam WRITE_ADDR_ALIGNMENT = $clog2(AXI_DATA_WIDTH/8);
 reg [7:0] triggerReg, triggerReg_d;
 
 //
@@ -193,7 +194,9 @@ reg                         triggerFlag = 0, triggered = 0;
 reg                         acqPretrigLeftDone = 0;
 reg [WRITE_COUNT_WIDTH-1:0] acqPretrigLeft = 0, acqLeft = 0;
 reg  [WRITE_ADDR_WIDTH-1:0] writeAddr = 0;
-assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + 4], writeAddr, 4'b0 };
+assign axi_AWADDR = { acqBase[AXI_ADDR_WIDTH-1:WRITE_ADDR_WIDTH + WRITE_ADDR_ALIGNMENT],
+                        writeAddr,
+                        {WRITE_ADDR_ALIGNMENT{1'b0}} };
 reg [BEATCOUNT_WIDTH-1:0] beatCount;
 assign axi_AWLEN = { {(8-BEATCOUNT_WIDTH){1'b0}}, beatCount };
 assign axi_WLAST = (state == S_DATA) && (beatCount == 0);
