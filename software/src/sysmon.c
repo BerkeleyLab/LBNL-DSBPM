@@ -25,20 +25,20 @@ static struct {
     int     ampsPerVolt; /* 1/Rshunt */
     const char *name;
 } const psInfo[] = {
-    { IIC_INDEX_INA226_VCCINT,         500, "VccINT"          },
-    { IIC_INDEX_INA226_VCCINT_IO_BRAM, 200, "VccINT I/O BRAM" },
-    { IIC_INDEX_INA226_VCC1V8,         200, "VCC 1V8"         },
-    { IIC_INDEX_INA226_VCC1V2,         200, "VCC 1V2"         },
-    { IIC_INDEX_INA226_VADJ_FMC,       200, "FMC Vadj"        },
-    { IIC_INDEX_INA226_MGTAVCC,        500, "MGT AVcc"        },
-    { IIC_INDEX_INA226_MGT1V2,         200, "MGT 1V2"         },
-    { IIC_INDEX_INA226_MGT1V8C,        200, "MGT 1V8"         },
-    { IIC_INDEX_INA226_VCCINT_RF,      200, "VCCINT RF"       },
-    { IIC_INDEX_INA226_DAC_AVTT,       200, "DAC AVtt"        },
-    { IIC_INDEX_INA226_DAC_AVCCAUX,    200, "DAC AVcc AUX"    },
-    { IIC_INDEX_INA226_ADC_AVCC,       200, "ADC AVcc"        },
-    { IIC_INDEX_INA226_ADC_AVCCAUX,    200, "ADC AVcc AUX"    },
-    { IIC_INDEX_INA226_DAC_AVCC,       200, "DAC AVcc"        }
+    { IIC_INDEX_INA226_VCCINT,          INA226_VCCINT_AMP_PER_VOLT,         "VccINT"          },
+    { IIC_INDEX_INA226_VCCINT_IO_BRAM,  INA226_VCCINT_IO_BRAM_AMP_PER_VOLT, "VccINT I/O BRAM" },
+    { IIC_INDEX_INA226_VCC1V8,          INA226_VCC1V8_AMP_PER_VOLT,         "VCC 1V8"         },
+    { IIC_INDEX_INA226_VCC1V2,          INA226_VCC1V2_AMP_PER_VOLT,         "VCC 1V2"         },
+    { IIC_INDEX_INA226_VADJ_FMC,        INA226_VADJ_FMC_AMP_PER_VOLT,       "FMC Vadj"        },
+    { IIC_INDEX_INA226_MGTAVCC,         INA226_MGTAVCC_AMP_PER_VOLT,        "MGT AVcc"        },
+    { IIC_INDEX_INA226_MGT1V2,          INA226_MGT1V2_AMP_PER_VOLT,         "MGT 1V2"         },
+    { IIC_INDEX_INA226_MGT1V8C,         INA226_MGT1V8C_AMP_PER_VOLT,        "MGT 1V8"         },
+    { IIC_INDEX_INA226_VCCINT_RF,       INA226_VCCINT_RF_AMP_PER_VOLT,      "VCCINT RF"       },
+    { IIC_INDEX_INA226_DAC_AVTT,        INA226_DAC_AVTT_AMP_PER_VOLT,       "DAC AVtt"        },
+    { IIC_INDEX_INA226_DAC_AVCCAUX,     INA226_DAC_AVCCAUX_AMP_PER_VOLT,    "DAC AVcc AUX"    },
+    { IIC_INDEX_INA226_ADC_AVCC,        INA226_ADC_AVCC_AMP_PER_VOLT,       "ADC AVcc"        },
+    { IIC_INDEX_INA226_ADC_AVCCAUX,     INA226_ADC_AVCCAUX_AMP_PER_VOLT,    "ADC AVcc AUX"    },
+    { IIC_INDEX_INA226_DAC_AVCC,        INA226_DAC_AVCC_AMP_PER_VOLT,       "DAC AVcc"        }
 };
 
 static struct {
