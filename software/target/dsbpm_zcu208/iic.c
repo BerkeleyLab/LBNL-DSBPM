@@ -65,13 +65,12 @@ static struct deviceInfo deviceTable[] = {
     { 0,            0, 0x4C }, // INA226 ADC_AVCC
     { 0,            0, 0x4D }, // INA226 ADC_AVCCAUX
     { 0,            0, 0x4E }, // INA226 DAC_AVCC
-    { 0,            2, 0x40 }, // IR38064 A
-    { 0,            2, 0x43 }, // IR38064 B
-    { 0,            2, 0x4C }, // IR38064 C
-    { 0,            2, 0x4C }, // PLACEHOLDER 1. Use the same address as above
-    { 0,            2, 0x43 }, // IRPS5401 A
-    { 0,            2, 0x44 }, // IRPS5401 B
-    { 0,            2, 0x45 }, // IRPS5401 C
+    { 0,            2, 0x43 }, // IR38164 A
+    { 0,            2, 0x4C }, // IR38164 B
+    { 0,            2, 0x4B }, // IR38163
+    { 0,            2, 0x40 }, // IR32215
+    { 0,            2, 0x44 }, // IRPS5401 A
+    { 0,            2, 0x45 }, // IRPS5401 B
     { 0,            3, 0x54 }, // SYSMON
     { 1,            0, 0x54 }, // EEPROM
     { 1,            1, 0x36 }, // SI5341

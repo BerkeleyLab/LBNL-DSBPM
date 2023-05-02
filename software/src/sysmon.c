@@ -48,8 +48,8 @@ static struct {
     uint8_t iReg;
     const char *name;
 } const pmbInfo[] = {
-    { IIC_INDEX_IRPS5401_B,   0, 0x88, 0xFF, "Board 12V"      },
-    { IIC_INDEX_IRPS5401_B,   0, 0x8B, 0x8C, "Utility 3.3V"   },
+    { IIC_INDEX_PMBUS_12V_MONIT,   0, 0x88, 0xFF, "Board 12V"      }, // Schematic page 50
+    { IIC_INDEX_PMBUS_12V_MONIT,   0, 0x8B, 0x8C, "Utility 1.2V"   }, // Schematic page 50
 };
 
 /*
@@ -171,7 +171,7 @@ sysmonFetch(uint32_t *args)
     args[aIndex++] = frequencyMonitorGet(3); // ADC AXI
     args[aIndex++] = GPIO_READ(GPIO_IDX_EVR_SYNC_CSR);
     aIndex += sfpGetStatus(args + aIndex);
-    for (i = IIC_INDEX_IR38064_A ; i <= IIC_INDEX_IRPS5401_C ; i++) {
+    for (i = IIC_INDEX_PMBUS_FIRST ; i <= IIC_INDEX_PMBUS_LAST ; i++) {
         if (shift > 16) {
             args[aIndex++] = v;
             v = 0;
@@ -298,12 +298,12 @@ sysmonDraw(int redrawAll, int page)
             float v, i;
             if (charRowIndex == (count-1)) {
                 if (page == 0) {
-                    v = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x88) / 256.0;
+                    v = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x88) / 256.0;
                     snprintf(cbuf, sizeof cbuf, "%4.1f", v);
                 }
                 else {
-                    v = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x8B) / 256.0;
-                    i = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x8C) / 256.0;
+                    v = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x8B) / 256.0;
+                    i = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x8C) / 256.0;
                     snprintf(cbuf, sizeof cbuf, "%4.2f%5.2f", v, i);
                 }
             }
