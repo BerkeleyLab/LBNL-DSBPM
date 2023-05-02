@@ -292,22 +292,17 @@ pmbusRead(unsigned int deviceIndex, unsigned int page, int reg)
     uint8_t ioBuf[2];
     int v;
 
-    if ((deviceIndex >= IIC_INDEX_IRPS5401_A)
-     && (deviceIndex <= IIC_INDEX_IRPS5401_C)
-     && (page <= 3)) {
-        static int8_t irps5401page[3] = { 0xFF, 0xFF, 0xFF };
-        int i = deviceIndex - IIC_INDEX_IRPS5401_A;
-        if (page != irps5401page[i]) {
-            unsigned char obuf[2];
-            obuf[0] = 0;
-            obuf[1] = page;
-            if (!iicWrite(IIC_INDEX_IRPS5401_B, obuf, 2)) {
-                irps5401page[i] = 0xFF;
-                return -1;
-            }
-            irps5401page[i] = page;
+    // set page if valid page. This only exists for
+    // specific devices
+    if (page <= 3) {
+        unsigned char obuf[2];
+        obuf[0] = 0;
+        obuf[1] = page;
+        if (!iicWrite(deviceIndex, obuf, 2)) {
+            return -1;
         }
-     }
+    }
+
     if (!iicRead(deviceIndex, reg, ioBuf, 2)) {
         return -1;
     }
