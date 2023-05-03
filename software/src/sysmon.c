@@ -25,20 +25,20 @@ static struct {
     int     ampsPerVolt; /* 1/Rshunt */
     const char *name;
 } const psInfo[] = {
-    { IIC_INDEX_INA226_VCCINT,          INA226_VCCINT_AMP_PER_VOLT,         "VccINT"          },
-    { IIC_INDEX_INA226_VCCINT_IO_BRAM,  INA226_VCCINT_IO_BRAM_AMP_PER_VOLT, "VccINT I/O BRAM" },
-    { IIC_INDEX_INA226_VCC1V8,          INA226_VCC1V8_AMP_PER_VOLT,         "VCC 1V8"         },
-    { IIC_INDEX_INA226_VCC1V2,          INA226_VCC1V2_AMP_PER_VOLT,         "VCC 1V2"         },
-    { IIC_INDEX_INA226_VADJ_FMC,        INA226_VADJ_FMC_AMP_PER_VOLT,       "FMC Vadj"        },
-    { IIC_INDEX_INA226_MGTAVCC,         INA226_MGTAVCC_AMP_PER_VOLT,        "MGT AVcc"        },
-    { IIC_INDEX_INA226_MGT1V2,          INA226_MGT1V2_AMP_PER_VOLT,         "MGT 1V2"         },
-    { IIC_INDEX_INA226_MGT1V8C,         INA226_MGT1V8C_AMP_PER_VOLT,        "MGT 1V8"         },
-    { IIC_INDEX_INA226_VCCINT_RF,       INA226_VCCINT_RF_AMP_PER_VOLT,      "VCCINT RF"       },
-    { IIC_INDEX_INA226_DAC_AVTT,        INA226_DAC_AVTT_AMP_PER_VOLT,       "DAC AVtt"        },
-    { IIC_INDEX_INA226_DAC_AVCCAUX,     INA226_DAC_AVCCAUX_AMP_PER_VOLT,    "DAC AVcc AUX"    },
-    { IIC_INDEX_INA226_ADC_AVCC,        INA226_ADC_AVCC_AMP_PER_VOLT,       "ADC AVcc"        },
-    { IIC_INDEX_INA226_ADC_AVCCAUX,     INA226_ADC_AVCCAUX_AMP_PER_VOLT,    "ADC AVcc AUX"    },
-    { IIC_INDEX_INA226_DAC_AVCC,        INA226_DAC_AVCC_AMP_PER_VOLT,       "DAC AVcc"        }
+    { IIC_INDEX_INA226_VCCINT,          INA226_VCCINT_AMPS_PER_VOLT,         "VccINT"          },
+    { IIC_INDEX_INA226_VCCINT_IO_BRAM,  INA226_VCCINT_IO_BRAM_AMPS_PER_VOLT, "VccINT I/O BRAM" },
+    { IIC_INDEX_INA226_VCC1V8,          INA226_VCC1V8_AMPS_PER_VOLT,         "VCC 1V8"         },
+    { IIC_INDEX_INA226_VCC1V2,          INA226_VCC1V2_AMPS_PER_VOLT,         "VCC 1V2"         },
+    { IIC_INDEX_INA226_VADJ_FMC,        INA226_VADJ_FMC_AMPS_PER_VOLT,       "FMC Vadj"        },
+    { IIC_INDEX_INA226_MGTAVCC,         INA226_MGTAVCC_AMPS_PER_VOLT,        "MGT AVcc"        },
+    { IIC_INDEX_INA226_MGT1V2,          INA226_MGT1V2_AMPS_PER_VOLT,         "MGT 1V2"         },
+    { IIC_INDEX_INA226_MGT1V8C,         INA226_MGT1V8C_AMPS_PER_VOLT,        "MGT 1V8"         },
+    { IIC_INDEX_INA226_VCCINT_RF,       INA226_VCCINT_RF_AMPS_PER_VOLT,      "VCCINT RF"       },
+    { IIC_INDEX_INA226_DAC_AVTT,        INA226_DAC_AVTT_AMPS_PER_VOLT,       "DAC AVtt"        },
+    { IIC_INDEX_INA226_DAC_AVCCAUX,     INA226_DAC_AVCCAUX_AMPS_PER_VOLT,    "DAC AVcc AUX"    },
+    { IIC_INDEX_INA226_ADC_AVCC,        INA226_ADC_AVCC_AMPS_PER_VOLT,       "ADC AVcc"        },
+    { IIC_INDEX_INA226_ADC_AVCCAUX,     INA226_ADC_AVCCAUX_AMPS_PER_VOLT,    "ADC AVcc AUX"    },
+    { IIC_INDEX_INA226_DAC_AVCC,        INA226_DAC_AVCC_AMPS_PER_VOLT,       "DAC AVcc"        }
 };
 
 static struct {
@@ -278,7 +278,7 @@ sysmonDraw(int redrawAll, int page)
                 st7789vShowString(DISPLAY_WIDTH-8*w, 0, "V    A");
             }
             if (charRowIndex == (count-1)) {
-                name = page == 0 ? "Board 12V" : "Utility 3.3V";
+                name = page == 0 ? "Board 12V" : "Utility 1.2V";
             }
             else {
                 name = psInfo[psIndex].name;
@@ -319,7 +319,7 @@ sysmonDraw(int redrawAll, int page)
             case 1: v = readInternalTemperature(XSYSMON_PL);    break;
             case 2: v = sfpGetTemperature();                    break;
             default:
-                v=(pmbusRead(IIC_INDEX_IR38064_A+charRowIndex-3, 0xFF, 0x8D)*10)/256;
+                v=(pmbusRead(IIC_INDEX_PMBUS_FIRST+charRowIndex-3, 0xFF, 0x8D)*10)/256;
                 break;
             case (sizeof p2labels / sizeof p2labels[0]) - 1:
                 v = sfpGetRxPower();
