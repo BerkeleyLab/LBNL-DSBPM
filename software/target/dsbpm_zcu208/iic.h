@@ -8,7 +8,7 @@
 
 // skip SYSMON readout that can get in the way
 // of streaming data for the DSBPM target
-#define SYSMON_SKIP_PSINFO
+// #define SYSMON_SKIP_PSINFO
 
 #define IIC_INDEX_TCA6416A_PORT           0
 #define IIC_INDEX_INA226_VCCINT           1
@@ -19,7 +19,7 @@
 #define IIC_INDEX_INA226_MGTAVCC          6
 #define IIC_INDEX_INA226_MGT1V2           7
 #define IIC_INDEX_INA226_MGT1V8C          8
-#define IIC_INDEX_INA226_VCCINT_RF        9
+#define IIC_INDEX_INA226_VCCINT_AMS       9
 #define IIC_INDEX_INA226_DAC_AVTT        10
 #define IIC_INDEX_INA226_DAC_AVCCAUX     11
 #define IIC_INDEX_INA226_ADC_AVCC        12
@@ -27,8 +27,8 @@
 #define IIC_INDEX_INA226_DAC_AVCC        14
 #define IIC_INDEX_IR38164_A              15
 #define IIC_INDEX_IR38164_B              16
-#define IIC_INDEX_IR38163                17
-#define IIC_INDEX_IR32215                18
+#define IIC_INDEX_IR38164_C              17
+#define IIC_INDEX_IR35215                18
 #define IIC_INDEX_PLACEHOLDER            19 // don't mess with the IIC order
 #define IIC_INDEX_IRPS5401_A             20
 #define IIC_INDEX_IRPS5401_B             21
@@ -65,7 +65,7 @@
 #define INA226_MGTAVCC_AMPS_PER_VOLT          500
 #define INA226_MGT1V2_AMPS_PER_VOLT           200
 #define INA226_MGT1V8C_AMPS_PER_VOLT          200
-#define INA226_VCCINT_RF_AMPS_PER_VOLT        2000
+#define INA226_VCCINT_AMS_AMPS_PER_VOLT       2000
 #define INA226_DAC_AVTT_AMPS_PER_VOLT         200
 #define INA226_DAC_AVCCAUX_AMPS_PER_VOLT      200
 #define INA226_ADC_AVCC_AMPS_PER_VOLT         200

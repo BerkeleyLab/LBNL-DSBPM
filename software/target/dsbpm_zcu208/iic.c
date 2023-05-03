@@ -59,19 +59,19 @@ static struct deviceInfo deviceTable[] = {
     { 0,            0, 0x46 }, // INA226 MGTAVCC
     { 0,            0, 0x47 }, // INA226 MGT1V2
     { 0,            0, 0x48 }, // INA226 MGT1V8C
-    { 0,            0, 0x49 }, // INA226 VCCINT_RF
+    { 0,            0, 0x49 }, // INA226 VCCINT_AMS
     { 0,            0, 0x4A }, // INA226 DAC_AVTT
     { 0,            0, 0x4B }, // INA226 DAC_AVCCAUX
     { 0,            0, 0x4C }, // INA226 ADC_AVCC
     { 0,            0, 0x4D }, // INA226 ADC_AVCCAUX
     { 0,            0, 0x4E }, // INA226 DAC_AVCC
-    { 0,            2, 0x43 }, // IR38164 A
-    { 0,            2, 0x4C }, // IR38164 B
-    { 0,            2, 0x4B }, // IR38163
-    { 0,            2, 0x40 }, // IR32215
+    { 0,            2, 0x43 }, // IR38164 A, U112
+    { 0,            2, 0x4C }, // IR38164 B, U123
+    { 0,            2, 0x4B }, // IR38164 C, U127
+    { 0,            2, 0x40 }, // IR35215, U104
     { 0,            2, 0x40 }, // PLACEHOLDER, don't mess with the IIC order
-    { 0,            2, 0x44 }, // IRPS5401 A
-    { 0,            2, 0x45 }, // IRPS5401 B
+    { 0,            2, 0x44 }, // IRPS5401 A, U53
+    { 0,            2, 0x45 }, // IRPS5401 B, U55
     { 0,            3, 0x54 }, // SYSMON
     { 1,            0, 0x54 }, // EEPROM
     { 1,            1, 0x36 }, // SI5341
