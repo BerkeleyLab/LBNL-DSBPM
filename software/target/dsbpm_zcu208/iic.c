@@ -69,6 +69,7 @@ static struct deviceInfo deviceTable[] = {
     { 0,            2, 0x4C }, // IR38164 B
     { 0,            2, 0x4B }, // IR38163
     { 0,            2, 0x40 }, // IR32215
+    { 0,            2, 0x40 }, // PLACEHOLDER, don't mess with the IIC order
     { 0,            2, 0x44 }, // IRPS5401 A
     { 0,            2, 0x45 }, // IRPS5401 B
     { 0,            3, 0x54 }, // SYSMON
