@@ -25,20 +25,20 @@ static struct {
     int     ampsPerVolt; /* 1/Rshunt */
     const char *name;
 } const psInfo[] = {
-    { IIC_INDEX_INA226_VCCINT,         500, "VccINT"          },
-    { IIC_INDEX_INA226_VCCINT_IO_BRAM, 200, "VccINT I/O BRAM" },
-    { IIC_INDEX_INA226_VCC1V8,         200, "VCC 1V8"         },
-    { IIC_INDEX_INA226_VCC1V2,         200, "VCC 1V2"         },
-    { IIC_INDEX_INA226_VADJ_FMC,       200, "FMC Vadj"        },
-    { IIC_INDEX_INA226_MGTAVCC,        500, "MGT AVcc"        },
-    { IIC_INDEX_INA226_MGT1V2,         200, "MGT 1V2"         },
-    { IIC_INDEX_INA226_MGT1V8C,        200, "MGT 1V8"         },
-    { IIC_INDEX_INA226_VCCINT_RF,      200, "VCCINT RF"       },
-    { IIC_INDEX_INA226_DAC_AVTT,       200, "DAC AVtt"        },
-    { IIC_INDEX_INA226_DAC_AVCCAUX,    200, "DAC AVcc AUX"    },
-    { IIC_INDEX_INA226_ADC_AVCC,       200, "ADC AVcc"        },
-    { IIC_INDEX_INA226_ADC_AVCCAUX,    200, "ADC AVcc AUX"    },
-    { IIC_INDEX_INA226_DAC_AVCC,       200, "DAC AVcc"        }
+    { IIC_INDEX_INA226_VCCINT,          INA226_VCCINT_AMPS_PER_VOLT,         "VccINT"          },
+    { IIC_INDEX_INA226_VCCINT_IO_BRAM,  INA226_VCCINT_IO_BRAM_AMPS_PER_VOLT, "VccINT I/O BRAM" },
+    { IIC_INDEX_INA226_VCC1V8,          INA226_VCC1V8_AMPS_PER_VOLT,         "VCC 1V8"         },
+    { IIC_INDEX_INA226_VCC1V2,          INA226_VCC1V2_AMPS_PER_VOLT,         "VCC 1V2"         },
+    { IIC_INDEX_INA226_VADJ_FMC,        INA226_VADJ_FMC_AMPS_PER_VOLT,       "FMC Vadj"        },
+    { IIC_INDEX_INA226_MGTAVCC,         INA226_MGTAVCC_AMPS_PER_VOLT,        "MGT AVcc"        },
+    { IIC_INDEX_INA226_MGT1V2,          INA226_MGT1V2_AMPS_PER_VOLT,         "MGT 1V2"         },
+    { IIC_INDEX_INA226_MGT1V8C,         INA226_MGT1V8C_AMPS_PER_VOLT,        "MGT 1V8"         },
+    { IIC_INDEX_INA226_VCCINT_AMS,      INA226_VCCINT_AMS_AMPS_PER_VOLT,     "VCCINT AMS"      },
+    { IIC_INDEX_INA226_DAC_AVTT,        INA226_DAC_AVTT_AMPS_PER_VOLT,       "DAC AVtt"        },
+    { IIC_INDEX_INA226_DAC_AVCCAUX,     INA226_DAC_AVCCAUX_AMPS_PER_VOLT,    "DAC AVcc AUX"    },
+    { IIC_INDEX_INA226_ADC_AVCC,        INA226_ADC_AVCC_AMPS_PER_VOLT,       "ADC AVcc"        },
+    { IIC_INDEX_INA226_ADC_AVCCAUX,     INA226_ADC_AVCCAUX_AMPS_PER_VOLT,    "ADC AVcc AUX"    },
+    { IIC_INDEX_INA226_DAC_AVCC,        INA226_DAC_AVCC_AMPS_PER_VOLT,       "DAC AVcc"        }
 };
 
 static struct {
@@ -48,8 +48,8 @@ static struct {
     uint8_t iReg;
     const char *name;
 } const pmbInfo[] = {
-    { IIC_INDEX_IRPS5401_B,   0, 0x88, 0xFF, "Board 12V"      },
-    { IIC_INDEX_IRPS5401_B,   0, 0x8B, 0x8C, "Utility 3.3V"   },
+    { IIC_INDEX_PMBUS_12V_MONIT,   0, 0x88, 0xFF, "Board 12V"      }, // Schematic page 50
+    { IIC_INDEX_PMBUS_12V_MONIT,   0, 0x8B, 0x8C, "Utility 1.2V"   }, // Schematic page 50
 };
 
 /*
@@ -171,7 +171,7 @@ sysmonFetch(uint32_t *args)
     args[aIndex++] = frequencyMonitorGet(3); // ADC AXI
     args[aIndex++] = GPIO_READ(GPIO_IDX_EVR_SYNC_CSR);
     aIndex += sfpGetStatus(args + aIndex);
-    for (i = IIC_INDEX_IR38064_A ; i <= IIC_INDEX_IRPS5401_C ; i++) {
+    for (i = IIC_INDEX_PMBUS_FIRST ; i <= IIC_INDEX_PMBUS_LAST ; i++) {
         if (shift > 16) {
             args[aIndex++] = v;
             v = 0;
@@ -278,7 +278,7 @@ sysmonDraw(int redrawAll, int page)
                 st7789vShowString(DISPLAY_WIDTH-8*w, 0, "V    A");
             }
             if (charRowIndex == (count-1)) {
-                name = page == 0 ? "Board 12V" : "Utility 3.3V";
+                name = page == 0 ? "Board 12V" : "Utility 1.2V";
             }
             else {
                 name = psInfo[psIndex].name;
@@ -298,12 +298,12 @@ sysmonDraw(int redrawAll, int page)
             float v, i;
             if (charRowIndex == (count-1)) {
                 if (page == 0) {
-                    v = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x88) / 256.0;
+                    v = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x88) / 256.0;
                     snprintf(cbuf, sizeof cbuf, "%4.1f", v);
                 }
                 else {
-                    v = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x8B) / 256.0;
-                    i = pmbusRead(IIC_INDEX_IRPS5401_B, 0, 0x8C) / 256.0;
+                    v = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x8B) / 256.0;
+                    i = pmbusRead(IIC_INDEX_PMBUS_12V_MONIT, 0, 0x8C) / 256.0;
                     snprintf(cbuf, sizeof cbuf, "%4.2f%5.2f", v, i);
                 }
             }
@@ -319,7 +319,7 @@ sysmonDraw(int redrawAll, int page)
             case 1: v = readInternalTemperature(XSYSMON_PL);    break;
             case 2: v = sfpGetTemperature();                    break;
             default:
-                v=(pmbusRead(IIC_INDEX_IR38064_A+charRowIndex-3, 0xFF, 0x8D)*10)/256;
+                v=(pmbusRead(IIC_INDEX_PMBUS_FIRST+charRowIndex-3, 0xFF, 0x8D)*10)/256;
                 break;
             case (sizeof p2labels / sizeof p2labels[0]) - 1:
                 v = sfpGetRxPower();

@@ -8,7 +8,7 @@
 
 // skip SYSMON readout that can get in the way
 // of streaming data for the DSBPM target
-#define SYSMON_SKIP_PSINFO
+// #define SYSMON_SKIP_PSINFO
 
 #define IIC_INDEX_TCA6416A_PORT           0
 #define IIC_INDEX_INA226_VCCINT           1
@@ -19,24 +19,23 @@
 #define IIC_INDEX_INA226_MGTAVCC          6
 #define IIC_INDEX_INA226_MGT1V2           7
 #define IIC_INDEX_INA226_MGT1V8C          8
-#define IIC_INDEX_INA226_VCCINT_RF        9
+#define IIC_INDEX_INA226_VCCINT_AMS       9
 #define IIC_INDEX_INA226_DAC_AVTT        10
 #define IIC_INDEX_INA226_DAC_AVCCAUX     11
 #define IIC_INDEX_INA226_ADC_AVCC        12
 #define IIC_INDEX_INA226_ADC_AVCCAUX     13
 #define IIC_INDEX_INA226_DAC_AVCC        14
-#define IIC_INDEX_IR38064_A              15
-#define IIC_INDEX_IR38064_B              16
-#define IIC_INDEX_IR38064_C              17
-// Only 3 IR38064 for ZCU208.
-#define IIC_INDEX_PLACEHOLDER_1          18
-#define IIC_INDEX_IRPS5401_A             19
-#define IIC_INDEX_IRPS5401_B             20
-#define IIC_INDEX_IRPS5401_C             21
+#define IIC_INDEX_IR38164_A              15
+#define IIC_INDEX_IR38164_B              16
+#define IIC_INDEX_IR38164_C              17
+#define IIC_INDEX_IR35215                18
+#define IIC_INDEX_PLACEHOLDER            19 // don't mess with the IIC order
+#define IIC_INDEX_IRPS5401_A             20
+#define IIC_INDEX_IRPS5401_B             21
 #define IIC_INDEX_SYSMON                 22
 #define IIC_INDEX_EEPROM                 23
 #define IIC_INDEX_SI5341                 24
-#define IIC_INDEX_USER_SI570             15
+#define IIC_INDEX_USER_SI570             25
 #define IIC_INDEX_USER_MGT_SI570         26
 #define IIC_INDEX_SI5382                 27
 #define IIC_INDEX_I2C2SPI                28
@@ -52,6 +51,26 @@
 #define IIC_INDEX_SFP_1_STATUS           38
 #define IIC_INDEX_SFP_0_INFO             39
 #define IIC_INDEX_SFP_0_STATUS           40
+
+#define IIC_INDEX_PMBUS_FIRST            IIC_INDEX_IR38164_A
+#define IIC_INDEX_PMBUS_LAST             IIC_INDEX_IRPS5401_B
+#define IIC_INDEX_PMBUS_12V_MONIT        IIC_INDEX_IRPS5401_A
+
+// AmpsPerVolt (1/Rshunt)
+#define INA226_VCCINT_AMPS_PER_VOLT           2000
+#define INA226_VCCINT_IO_BRAM_AMPS_PER_VOLT   2000
+#define INA226_VCC1V8_AMPS_PER_VOLT           500
+#define INA226_VCC1V2_AMPS_PER_VOLT           200
+#define INA226_VADJ_FMC_AMPS_PER_VOLT         200
+#define INA226_MGTAVCC_AMPS_PER_VOLT          500
+#define INA226_MGT1V2_AMPS_PER_VOLT           200
+#define INA226_MGT1V8C_AMPS_PER_VOLT          200
+#define INA226_VCCINT_AMS_AMPS_PER_VOLT       2000
+#define INA226_DAC_AVTT_AMPS_PER_VOLT         200
+#define INA226_DAC_AVCCAUX_AMPS_PER_VOLT      200
+#define INA226_ADC_AVCC_AMPS_PER_VOLT         200
+#define INA226_ADC_AVCCAUX_AMPS_PER_VOLT      200
+#define INA226_DAC_AVCC_AMPS_PER_VOLT         200
 
 #define SPI_MUX_2594_A_ADC    0
 #define SPI_MUX_2594_B_DAC    1

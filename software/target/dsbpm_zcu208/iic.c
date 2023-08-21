@@ -59,19 +59,19 @@ static struct deviceInfo deviceTable[] = {
     { 0,            0, 0x46 }, // INA226 MGTAVCC
     { 0,            0, 0x47 }, // INA226 MGT1V2
     { 0,            0, 0x48 }, // INA226 MGT1V8C
-    { 0,            0, 0x49 }, // INA226 VCCINT_RF
+    { 0,            0, 0x49 }, // INA226 VCCINT_AMS
     { 0,            0, 0x4A }, // INA226 DAC_AVTT
     { 0,            0, 0x4B }, // INA226 DAC_AVCCAUX
     { 0,            0, 0x4C }, // INA226 ADC_AVCC
     { 0,            0, 0x4D }, // INA226 ADC_AVCCAUX
     { 0,            0, 0x4E }, // INA226 DAC_AVCC
-    { 0,            2, 0x40 }, // IR38064 A
-    { 0,            2, 0x43 }, // IR38064 B
-    { 0,            2, 0x4C }, // IR38064 C
-    { 0,            2, 0x4C }, // PLACEHOLDER 1. Use the same address as above
-    { 0,            2, 0x43 }, // IRPS5401 A
-    { 0,            2, 0x44 }, // IRPS5401 B
-    { 0,            2, 0x45 }, // IRPS5401 C
+    { 0,            2, 0x43 }, // IR38164 A, U112
+    { 0,            2, 0x4C }, // IR38164 B, U123
+    { 0,            2, 0x4B }, // IR38164 C, U127
+    { 0,            2, 0x40 }, // IR35215, U104
+    { 0,            2, 0x40 }, // PLACEHOLDER, don't mess with the IIC order
+    { 0,            2, 0x44 }, // IRPS5401 A, U53
+    { 0,            2, 0x45 }, // IRPS5401 B, U55
     { 0,            3, 0x54 }, // SYSMON
     { 1,            0, 0x54 }, // EEPROM
     { 1,            1, 0x36 }, // SI5341
@@ -293,22 +293,17 @@ pmbusRead(unsigned int deviceIndex, unsigned int page, int reg)
     uint8_t ioBuf[2];
     int v;
 
-    if ((deviceIndex >= IIC_INDEX_IRPS5401_A)
-     && (deviceIndex <= IIC_INDEX_IRPS5401_C)
-     && (page <= 3)) {
-        static int8_t irps5401page[3] = { 0xFF, 0xFF, 0xFF };
-        int i = deviceIndex - IIC_INDEX_IRPS5401_A;
-        if (page != irps5401page[i]) {
-            unsigned char obuf[2];
-            obuf[0] = 0;
-            obuf[1] = page;
-            if (!iicWrite(IIC_INDEX_IRPS5401_B, obuf, 2)) {
-                irps5401page[i] = 0xFF;
-                return -1;
-            }
-            irps5401page[i] = page;
+    // set page if valid page. This only exists for
+    // specific devices
+    if (page <= 3) {
+        unsigned char obuf[2];
+        obuf[0] = 0;
+        obuf[1] = page;
+        if (!iicWrite(deviceIndex, obuf, 2)) {
+            return -1;
         }
-     }
+    }
+
     if (!iicRead(deviceIndex, reg, ioBuf, 2)) {
         return -1;
     }
