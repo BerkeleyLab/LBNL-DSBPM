@@ -6,9 +6,22 @@
 #include "systemParameters.h"
 #include "user_mgt_refclk.h"
 #include "util.h"
+#include "ffs.h"
 
 struct systemParameters systemParameters;
+
+/*
+ * Allow space for extra terminating '\0'
+ */
+#define MAX_SYSTEM_PARAMETERS_BUF_SIZE (1+MB(1))
+
 struct sysNetConfig netDefault;
+
+/*
+ * Buffer for file I/O
+ */
+static unsigned char systemParametersBuf[MAX_SYSTEM_PARAMETERS_BUF_SIZE];
+static int systemParametersGetTable(unsigned char *buf, int capacity);
 
 static int
 checksum(void)
@@ -34,7 +47,7 @@ void systemParametersUpdateChecksum(void)
  * If they aren't good then assign default values.
  */
 void
-systemParametersReadback(void)
+systemParametersCommit(void)
 {
     netDefault.ethernetMAC[0] = 0xAA;
     netDefault.ethernetMAC[1] = 'L';
@@ -45,8 +58,8 @@ systemParametersReadback(void)
     netDefault.ipv4.address = htonl((192<<24) | (168<<16) | (  1<< 8) | 128);
     netDefault.ipv4.netmask = htonl((255<<24) | (255<<16) | (255<< 8) | 0);
     netDefault.ipv4.gateway = htonl((192<<24) | (168<<16) | (  1<< 8) | 1);
-    if ((eepromRead(0, &systemParameters, sizeof systemParameters) < 0)
-     || (checksum() != systemParameters.checksum)) {
+
+    if (checksum() != systemParameters.checksum) {
         printf("\n====== ASSIGNING DEFAULT PARAMETERS ===\n\n");
         systemParameters.netConfig = netDefault;
         systemParameters.userMGTrefClkOffsetPPM = 0;
@@ -68,18 +81,6 @@ systemParametersReadback(void)
     debugFlags = systemParameters.startupDebugFlags;
     if (userMGTrefClkAdjust(systemParameters.userMGTrefClkOffsetPPM)) {
         systemParametersShowUserMGTrefClkOffsetPPM();
-    }
-}
-
-/*
- * Update EEPROM
- */
-void
-systemParametersStash(void)
-{
-    systemParametersUpdateChecksum();
-    if (eepromWrite(0, &systemParameters, sizeof systemParameters) < 0) {
-        printf("Unable to write system parameteres to EEPROM.\n");
     }
 }
 
@@ -151,6 +152,315 @@ parseIP(const char *str, void *val)
     }
 }
 
+static char *
+formatAtrim(const void *val)
+{
+    int i;
+    const int *ip = (const int *)val;
+    char *cp = cbuf;
+    for (i = 0 ; ; ) {
+        cp += sprintf(cp, "%g", (float)*ip++ / 4.0);
+        if (++i >=
+            sizeof systemParameters.afeTrim/sizeof systemParameters.afeTrim[0])
+            break;
+        *cp++ = ' ';
+    }
+    return cbuf;
+}
+
+static int
+parseAtrim(const char *str, void *val)
+{
+    const char *cp = str;
+    int *ip = (int *)val;
+    const char *term = " ";
+    int i = 0;
+    int n =  sizeof systemParameters.afeTrim/sizeof systemParameters.afeTrim[0];
+    double d;
+    char *endp;
+
+    for (;;) {
+        d = strtod(cp, &endp);
+        if ((d < 0) || (d >= 1.8)) return -1;
+        if ((endp != cp) && (strchr(term, *endp) != NULL)) {
+            *ip++ = (d * 4.0) + 0.5;
+            i++;
+            if (i == (n - 1)) term = "\r\n";
+            else if (i == n) return endp - str;
+        }
+        if (strchr("\r\n", *endp) != NULL) return -1;
+        cp = endp + 1;
+    }
+}
+
+#if 0  // Unused for now -- '#if'd out to inhibit unused function warning */
+static char *formatDouble(void *val)
+{
+    sprintf(cbuf, "%.15g", *(double *)val);
+    return cbuf;
+}
+#endif
+
+static int
+parseDouble(const char *str, void *val)
+{
+    char *endp;
+    double d = strtod(str, &endp);
+    if ((endp != str)
+     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
+        *(double *)val = d;
+        return endp - str;
+    }
+    return -1;
+}
+
+static char *
+formatFloat(const void *val)
+{
+    sprintf(cbuf, "%.7g", *(const float *)val);
+    return cbuf;
+}
+
+static int
+parseFloat(const char *str, void *val)
+{
+    int i;
+    double d;
+
+    i = parseDouble(str, &d);
+    if (i > 0)
+        *(float *)val = d;
+    return i;
+}
+
+static char *
+formatInt(const void *val)
+{
+    sprintf(cbuf, "%d", *(const int *)val);
+    return cbuf;
+}
+
+static int
+parseInt(const char *str, void *val)
+{
+    int i;
+    double d;
+
+    i = parseDouble(str, &d);
+    if ((i > 0) && ((int)d == d))
+        *(int *)val = d;
+    return i;
+}
+
+static char *
+formatInt4(const void *val)
+{
+    sprintf(cbuf, "%04d", *(const int *)val);
+    return cbuf;
+}
+
+static int
+parseHex(const char *str, void *val)
+{
+    char *endp;
+    int d = strtol(str, &endp, 16);
+    if ((endp != str)
+     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
+        *(unsigned long *)val = d;
+        return endp - str;
+    }
+    return -1;
+}
+
+static char *
+formatHex(const void *val)
+{
+    sprintf(cbuf, "0x%x", *(const int *)val);
+    return cbuf;
+}
+
+/*
+ * Conversion table
+ */
+static struct conv {
+    const char *name;
+    void       *addr;
+    char     *(*format)(const void *val);
+    int       (*parse)(const char *str, void *val);
+} conv[] = {
+  {"Ethernet Address", &systemParameters.netConfig.ethernetMAC,formatMAC,  parseMAC},
+  {"IP Address",       &systemParameters.netConfig.ipv4.address,    formatIP,   parseIP},
+  {"IP Netmask",       &systemParameters.netConfig.ipv4.netmask,    formatIP,   parseIP},
+  {"IP Gateway",       &systemParameters.netConfig.ipv4.gateway,    formatIP,   parseIP},
+  {"User MGT ref offset", &systemParameters.userMGTrefClkOffsetPPM,  formatInt,   parseInt},
+  {"Startup debug flags", &systemParameters.startupDebugFlags,  formatHex,   parseHex},
+  {"PLL RF divisor",   &systemParameters.rfDivisor,      formatInt,  parseInt},
+  {"PLL multiplier",   &systemParameters.pllMultiplier,  formatInt,  parseInt},
+  {"Single pass?",     &systemParameters.isSinglePass,   formatInt,  parseInt},
+  {"ADC clocks per heartbeat",
+                       &systemParameters.adcHeartbeatMarker, formatInt,  parseInt},
+  {"EVR clocks per fast acquisition",
+                       &systemParameters.evrPerFaMarker, formatInt,  parseInt},
+  {"EVR clocks per slow acquisition",
+                       &systemParameters.evrPerSaMarker, formatInt,  parseInt},
+  {"ADC for button ABCD",
+                       &systemParameters.adcOrder,      formatInt4,  parseInt},
+  {"X calibration (mm p.u.)",
+                       &systemParameters.xCalibration, formatFloat,parseFloat},
+  {"Y calibration (mm p.u.)",
+                       &systemParameters.yCalibration, formatFloat,parseFloat},
+  {"Q calibration (p.u.)",
+                       &systemParameters.qCalibration, formatFloat,parseFloat},
+  {"Button rotation (0 or 45)",
+                       &systemParameters.buttonRotation, formatInt,  parseInt},
+  {"AFE attenuator trims (dB)",
+                       &systemParameters.afeTrim[0],   formatAtrim,parseAtrim},
+};
+
+/*
+ * Serialize/deserialize complete table
+ */
+int
+systemParametersGetTable(unsigned char *buf, int capacity)
+{
+    char *cp = (char *)buf;
+    int i;
+
+    for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++)
+        cp += sprintf(cp, "%s,%s\n", conv[i].name, (*conv[i].format)(conv[i].addr));
+    return cp - (char *)buf;
+}
+
+/*
+ * EEPROM I/O
+ */
+int
+systemParametersFetchEEPROM(void)
+{
+    const char *name = SYSTEM_PARAMETERS_NAME;
+    int nRead;
+    FRESULT fr;
+    FIL fil;
+    UINT nWritten;
+
+    fr = f_open(&fil, name, FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr != FR_OK) {
+        return -1;
+    }
+
+    nRead = systemParametersGetTable((unsigned char *)systemParametersBuf,
+            sizeof(systemParametersBuf));
+    if (nRead <= 0) {
+        f_close(&fil);
+        return -1;
+    }
+
+    fr = f_write(&fil, systemParametersBuf, nRead, &nWritten);
+    if (fr != FR_OK) {
+        f_close(&fil);
+        return -1;
+    }
+
+    f_close(&fil);
+    return nWritten;
+}
+
+static int
+parseTable(unsigned char *buf, int size, char **err)
+{
+    const char *base = (const char *)buf;
+    const char *cp = base;
+    int i, l;
+    int line = 1;
+
+    for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++) {
+        l = strlen(conv[i].name);
+        if (((cp - base) + l + 2) >= size) {
+            *err = "Unexpected EOF";
+            return -line;
+        }
+        if (strncmp(cp, conv[i].name, l) != 0) {
+            *err = "Unexpected parameter name";
+            return -line;
+        }
+        cp += l;
+        if (*cp++ != ',') {
+            *err = "Missing comma after parameter name";
+            return -line;
+        }
+        l = (*conv[i].parse)(cp, conv[i].addr);
+        if (l <= 0) {
+            *err = "Invalid value";
+            return -line;
+        }
+        cp += l;
+        while (((cp - base) < size)
+            && (((isspace((unsigned char)*cp))) || (*cp == ','))) {
+            if (*cp == '\n')
+                line++;
+            cp++;
+        }
+    }
+    return cp - base;
+}
+
+static int
+systemParametersSetTable(unsigned char *buf, int size)
+{
+    char *err = "";
+    int i = parseTable(buf, size, &err);
+
+    if (i <= 0) {
+        printf("Bad file contents at line %d: %s\n", -i, err);
+        return -1;
+    }
+    if (systemParameters.buttonRotation == 90)
+        systemParameters.buttonRotation = 0;
+    if ((systemParameters.buttonRotation != 0)
+     && (systemParameters.buttonRotation != 45)) {
+        printf("Bad button rotation (must be 0 or 45)\n");
+        return -1;
+    }
+    systemParametersUpdateChecksum();
+    memcpy(buf, &systemParameters, sizeof systemParameters);
+    return sizeof(systemParameters);
+}
+
+int
+systemParametersStashEEPROM(void)
+{
+    const char *name = SYSTEM_PARAMETERS_NAME;
+    int nWrite;
+    FRESULT fr;
+    FIL fil;
+    UINT nRead;
+
+    fr = f_open(&fil, name, FA_READ);
+    if (fr != FR_OK) {
+        printf("System parameters file open failed, name = %s\n", name);
+        return -1;
+    }
+
+    fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf), &nRead);
+    if (fr != FR_OK) {
+        printf("System parameters file read failed\n");
+        f_close(&fil);
+        return -1;
+    }
+    if (nRead == 0) {
+        f_close(&fil);
+        return 0;
+    }
+
+    nWrite = systemParametersSetTable((unsigned char *)systemParametersBuf, nRead);
+    f_close(&fil);
+
+    return nWrite;
+}
+
+/*
+ * Print configuration routines
+ */
 void
 showNetworkConfiguration(const struct sysNetParms *ipv4)
 {

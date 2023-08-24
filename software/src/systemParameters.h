@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#define SYSTEM_PARAMETERS_NAME "sysParam.csv"
+
 struct sysNetParms {
     uint32_t  address;
     uint32_t  netmask;
@@ -39,8 +41,9 @@ extern struct systemParameters {
 } systemParameters;
 
 
-void systemParametersReadback(void);
-void systemParametersStash(void);
+int systemParametersFetchEEPROM(void);
+int systemParametersStashEEPROM(void);
+void systemParametersCommit(void);
 
 char *formatIP(const void *val);
 int   parseIP(const char *str, void *val);

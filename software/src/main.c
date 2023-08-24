@@ -90,7 +90,9 @@ main(void)
 
     /* Get configuration settings */
     iicInit();
-    systemParametersReadback();
+    /* Readback configurations from filesystem, if available */
+    filesystemReadbacks();
+
     if (isRecovery) {
         printf("==== Recovery mode -- Using default network parameters ====\n");
         enetMAC = netDefault.ethernetMAC;
@@ -101,9 +103,6 @@ main(void)
         ipv4 = &systemParameters.netConfig.ipv4;
     }
     drawIPv4Address(&ipv4->address, isRecovery);
-
-    /* Readback configurations from filesystem, if available */
-    filesystemReadbacks();
 
     /* Set up hardware */
     sysmonInit();

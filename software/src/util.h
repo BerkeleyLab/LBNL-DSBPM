@@ -8,6 +8,12 @@
 #include <stdint.h>
 
 /*
+ * Convenient macros
+ */
+#define MB(x) ((x)*1024*1024)
+#define kB(x) ((x)*1024)
+
+/*
  * Diagnostics
  */
 #define DEBUGFLAG_EPICS             0x01

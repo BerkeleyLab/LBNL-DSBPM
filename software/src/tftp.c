@@ -14,6 +14,7 @@
 #include "st7789v.h"
 #include "tftp.h"
 #include "util.h"
+#include "systemParameters.h"
 
 #define TFTP_PORT 69
 
@@ -51,6 +52,10 @@ static struct fileInfo fileTable[] = {
                                                     st7789vGrabScreen,
                                                     dummyPostReceive,
                                                     dummyCommit},
+   {SYSTEM_PARAMETERS_NAME, "System parameters",
+                                                    systemParametersFetchEEPROM,
+                                                    systemParametersStashEEPROM,
+                                                    systemParametersCommit},
    {AFE_EEPROM_NAME, "AFE data",
                                                     afeFetchEEPROM,
                                                     afeStashEEPROM,
