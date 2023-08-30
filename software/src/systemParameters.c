@@ -455,13 +455,11 @@ systemParametersStashEEPROM(void)
 
     fr = f_open(&fil, name, FA_READ);
     if (fr != FR_OK) {
-        printf("System parameters file open failed, name = %s\n", name);
         return -1;
     }
 
     fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf), &nRead);
     if (fr != FR_OK) {
-        printf("System parameters file read failed\n");
         f_close(&fil);
         return -1;
     }
