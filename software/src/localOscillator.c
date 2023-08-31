@@ -196,19 +196,13 @@ optimizeCicShift(int mtTableLength)
     uint32_t csr = GPIO_READ(GPIO_IDX_SUM_SHIFT_CSR);
     int nCICstages = (csr & SDACCUMULATOR_CIC_STAGE_COUNT_MASK) >>
                                             SDACCUMULATOR_CIC_STAGE_COUNT_SHIFT;
-    printf("optimizeCicShift: nCICstages = %d\n", nCICstages);
     int faDecimationConfig = (csr & SDACCUMULATOR_FA_DECIMATION_MASK) >>
                                             SDACCUMULATOR_FA_DECIMATION_SHIFT;
-    printf("optimizeCicShift: faDecimationConfig = %d\n", faDecimationConfig);
     unsigned int num = systemParameters.evrPerFaMarker *
                        systemParameters.pllMultiplier * 4;
-    printf("optimizeCicShift: num = %u\n", num);
     unsigned int den = mtTableLength * systemParameters.rfDivisor;
-    printf("optimizeCicShift: den = %u\n", den);
     int faDecimationActual = num / den;
-    printf("optimizeCicShift: faDecimationActual = %d\n", faDecimationActual);
     int remainder = num % den;
-    printf("optimizeCicShift: remainder = %d\n", remainder);
     int cicShiftConfig, cicShiftActual;
 
     if (remainder) printf("FA CIC DECIMATION FACTOR ISN'T AN INTEGER\n");
@@ -224,13 +218,22 @@ optimizeCicShift(int mtTableLength)
             printf("FA CIC SCALING OVERFLOW\n");
             printf("Increase pilot tone table length or attenuate filter inputs.\n\n");
         }
+        if (remainder) printf(" (remainder %d (!!!))", remainder);
         printf("FA CIC filter FPGA build decimation factor %d (shift %d).\n",
                                             faDecimationConfig, cicShiftConfig);
         printf("FA CIC filter actual decimation factor %d", faDecimationActual);
-        if (remainder) printf(" (remainder %d (!!!))", remainder);
         printf(" (shift %d).\n", cicShiftActual);
         printf("Set CIC shift to %d.\n", shift);
         sdAccumulateSetFaSumShift(shift);
+    }
+
+    if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
+        printf("optimizeCicShift: nCICstages = %d\n", nCICstages);
+        printf("optimizeCicShift: faDecimationConfig = %d\n", faDecimationConfig);
+        printf("optimizeCicShift: num = %u\n", num);
+        printf("optimizeCicShift: den = %u\n", den);
+        printf("optimizeCicShift: faDecimationActual = %d\n", faDecimationActual);
+        printf("optimizeCicShift: remainder = %d\n", remainder);
     }
 }
 
@@ -344,7 +347,9 @@ localOscRun()
     uint32_t v = NOBANK_RUN_BIT;
     if (systemParameters.isSinglePass) v |= NOBANK_SINGLE_PASS_BIT;
     writeCSR(v, NOBANK_SINGLE_PASS_BIT | NOBANK_RUN_BIT);
-    printf("Local oscillator running!\n");
+
+    if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW)
+        printf("Local oscillator running!\n");
 }
 
 static int
