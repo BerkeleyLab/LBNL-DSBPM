@@ -9,6 +9,7 @@
 #include "ffs.h"
 
 struct systemParameters systemParameters;
+struct systemParameters systemParametersCandidate;
 
 /*
  * Allow space for extra terminating '\0'
@@ -16,38 +17,38 @@ struct systemParameters systemParameters;
 #define MAX_SYSTEM_PARAMETERS_BUF_SIZE (1+MB(1))
 
 struct sysNetConfig netDefault;
+struct systemParameters systemParametersDefault;
 
 /*
  * Buffer for file I/O
  */
 static unsigned char systemParametersBuf[MAX_SYSTEM_PARAMETERS_BUF_SIZE];
-static int systemParametersGetTable(unsigned char *buf, int capacity);
+static int systemParametersGetTable(unsigned char *buf, int capacity,
+        const struct systemParameters* sysParams);
+static int systemParametersSetTable(struct systemParameters* sysParams,
+        const unsigned char *buf, int size);
 
 static int
-checksum(void)
+checksum(struct systemParameters *sysParams)
 {
     int i, sum = 0xCAFEF00D;
-    const int *ip = (int *)&systemParameters;
+    const int *ip = (int *)sysParams;
 
-    for (i = 0 ; i < ((sizeof systemParameters -
-                    sizeof systemParameters.checksum) / sizeof(*ip)) ; i++)
+    for (i = 0 ; i < ((sizeof *sysParams -
+                    sizeof sysParams->checksum) / sizeof(*ip)) ; i++)
         sum += *ip++ + i;
     if (sum == 0) sum = 0xABCD0341;
     return sum;
 }
 
-void systemParametersUpdateChecksum(void)
+static
+void systemParametersUpdateChecksum(struct systemParameters *sysParams)
 {
-    systemParameters.checksum = checksum();
+    sysParams->checksum = checksum(sysParams);
 }
 
-/*
- * Read and process values on system startup.
- * Perform sanity check on parameters read from EEPROM.
- * If they aren't good then assign default values.
- */
 void
-systemParametersCommit(void)
+systemParametersSetDefaults(void)
 {
     netDefault.ethernetMAC[0] = 0xAA;
     netDefault.ethernetMAC[1] = 'L';
@@ -58,27 +59,40 @@ systemParametersCommit(void)
     netDefault.ipv4.address = htonl((192<<24) | (168<<16) | (  1<< 8) | 128);
     netDefault.ipv4.netmask = htonl((255<<24) | (255<<16) | (255<< 8) | 0);
     netDefault.ipv4.gateway = htonl((192<<24) | (168<<16) | (  1<< 8) | 1);
+    systemParametersDefault.netConfig = netDefault;
+    systemParametersDefault.userMGTrefClkOffsetPPM = 0;
+    systemParametersDefault.startupDebugFlags = 0;
+    systemParametersDefault.rfDivisor = 328;
+    systemParametersDefault.pllMultiplier = 81;
+    systemParametersDefault.isSinglePass = 0;
+    systemParametersDefault.adcHeartbeatMarker = 152 * 82 * 2000;
+    systemParametersDefault.evrPerFaMarker = 152 * 82;
+    systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
+    // position calc order = A = 3, B = 1, C = 2, D = 0
+    systemParametersDefault.adcOrder = 3120;
+    systemParametersDefault.xCalibration = 16.0;
+    systemParametersDefault.yCalibration = 16.0;
+    systemParametersDefault.qCalibration = 16.0;
+    systemParametersDefault.buttonRotation = 45;
+    memset(systemParametersDefault.afeTrim, 0, sizeof systemParametersDefault.afeTrim);
+}
 
-    if (checksum() != systemParameters.checksum) {
+/*
+ * Read and process values on system startup.
+ * Perform sanity check on parameters read from EEPROM.
+ * If they aren't good then assign default values.
+ */
+void
+systemParametersCommit(void)
+{
+    if (checksum(&systemParametersCandidate) != systemParametersCandidate.checksum) {
         printf("\n====== ASSIGNING DEFAULT PARAMETERS ===\n\n");
-        systemParameters.netConfig = netDefault;
-        systemParameters.userMGTrefClkOffsetPPM = 0;
-        systemParameters.startupDebugFlags = 0;
-        systemParameters.rfDivisor = 328;
-        systemParameters.pllMultiplier = 81;
-        systemParameters.isSinglePass = 0;
-        systemParameters.adcHeartbeatMarker = 152 * 82 * 2000;
-        systemParameters.evrPerFaMarker = 152 * 82;
-        systemParameters.evrPerSaMarker = 152 * 82 * 1000;
-        // position calc order = A = 3, B = 1, C = 2, D = 0
-        systemParameters.adcOrder = 3120;
-        systemParameters.xCalibration = 16.0;
-        systemParameters.yCalibration = 16.0;
-        systemParameters.qCalibration = 16.0;
-        systemParameters.buttonRotation = 45;
-        memset(systemParameters.afeTrim, 0, sizeof systemParameters.afeTrim);
+        systemParametersCandidate = systemParametersDefault;
     }
+
+    systemParameters = systemParametersCandidate;
     debugFlags = systemParameters.startupDebugFlags;
+
     if (userMGTrefClkAdjust(systemParameters.userMGTrefClkOffsetPPM)) {
         systemParametersShowUserMGTrefClkOffsetPPM();
     }
@@ -284,50 +298,52 @@ formatHex(const void *val)
  */
 static struct conv {
     const char *name;
-    void       *addr;
+    size_t      offset;
     char     *(*format)(const void *val);
     int       (*parse)(const char *str, void *val);
 } conv[] = {
-  {"Ethernet Address", &systemParameters.netConfig.ethernetMAC,formatMAC,  parseMAC},
-  {"IP Address",       &systemParameters.netConfig.ipv4.address,    formatIP,   parseIP},
-  {"IP Netmask",       &systemParameters.netConfig.ipv4.netmask,    formatIP,   parseIP},
-  {"IP Gateway",       &systemParameters.netConfig.ipv4.gateway,    formatIP,   parseIP},
-  {"User MGT ref offset", &systemParameters.userMGTrefClkOffsetPPM,  formatInt,   parseInt},
-  {"Startup debug flags", &systemParameters.startupDebugFlags,  formatHex,   parseHex},
-  {"PLL RF divisor",   &systemParameters.rfDivisor,      formatInt,  parseInt},
-  {"PLL multiplier",   &systemParameters.pllMultiplier,  formatInt,  parseInt},
-  {"Single pass?",     &systemParameters.isSinglePass,   formatInt,  parseInt},
+  {"Ethernet Address", offsetof(struct systemParameters, netConfig.ethernetMAC), formatMAC,  parseMAC},
+  {"IP Address",       offsetof(struct systemParameters, netConfig.ipv4.address),     formatIP,   parseIP},
+  {"IP Netmask",       offsetof(struct systemParameters, netConfig.ipv4.netmask),     formatIP,   parseIP},
+  {"IP Gateway",       offsetof(struct systemParameters, netConfig.ipv4.gateway),     formatIP,   parseIP},
+  {"User MGT ref offset", offsetof(struct systemParameters, userMGTrefClkOffsetPPM),   formatInt,   parseInt},
+  {"Startup debug flags", offsetof(struct systemParameters, startupDebugFlags),   formatHex,   parseHex},
+  {"PLL RF divisor",   offsetof(struct systemParameters, rfDivisor),       formatInt,  parseInt},
+  {"PLL multiplier",   offsetof(struct systemParameters, pllMultiplier),   formatInt,  parseInt},
+  {"Single pass?",     offsetof(struct systemParameters, isSinglePass),    formatInt,  parseInt},
   {"ADC clocks per heartbeat",
-                       &systemParameters.adcHeartbeatMarker, formatInt,  parseInt},
+                       offsetof(struct systemParameters, adcHeartbeatMarker),  formatInt,  parseInt},
   {"EVR clocks per fast acquisition",
-                       &systemParameters.evrPerFaMarker, formatInt,  parseInt},
+                       offsetof(struct systemParameters, evrPerFaMarker),  formatInt,  parseInt},
   {"EVR clocks per slow acquisition",
-                       &systemParameters.evrPerSaMarker, formatInt,  parseInt},
+                       offsetof(struct systemParameters, evrPerSaMarker),  formatInt,  parseInt},
   {"ADC for button ABCD",
-                       &systemParameters.adcOrder,      formatInt4,  parseInt},
+                       offsetof(struct systemParameters, adcOrder),       formatInt4,  parseInt},
   {"X calibration (mm p.u.)",
-                       &systemParameters.xCalibration, formatFloat,parseFloat},
+                       offsetof(struct systemParameters, xCalibration),  formatFloat,parseFloat},
   {"Y calibration (mm p.u.)",
-                       &systemParameters.yCalibration, formatFloat,parseFloat},
+                       offsetof(struct systemParameters, yCalibration),  formatFloat,parseFloat},
   {"Q calibration (p.u.)",
-                       &systemParameters.qCalibration, formatFloat,parseFloat},
+                       offsetof(struct systemParameters, qCalibration),  formatFloat,parseFloat},
   {"Button rotation (0 or 45)",
-                       &systemParameters.buttonRotation, formatInt,  parseInt},
+                       offsetof(struct systemParameters, buttonRotation),  formatInt,  parseInt},
   {"AFE attenuator trims (dB)",
-                       &systemParameters.afeTrim[0],   formatAtrim,parseAtrim},
+                       offsetof(struct systemParameters, afeTrim[0]),   formatAtrim,parseAtrim},
 };
 
 /*
  * Serialize/deserialize complete table
  */
 int
-systemParametersGetTable(unsigned char *buf, int capacity)
+systemParametersGetTable(unsigned char *buf, int capacity,
+        const struct systemParameters* sysParams)
 {
     char *cp = (char *)buf;
     int i;
 
     for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++)
-        cp += sprintf(cp, "%s,%s\n", conv[i].name, (*conv[i].format)(conv[i].addr));
+        cp += sprintf(cp, "%s,%s\n", conv[i].name, (*conv[i].format)(
+                    (char *) sysParams) + conv[i].offset);
     return cp - (char *)buf;
 }
 
@@ -349,7 +365,7 @@ systemParametersFetchEEPROM(void)
     }
 
     nRead = systemParametersGetTable((unsigned char *)systemParametersBuf,
-            sizeof(systemParametersBuf));
+            sizeof(systemParametersBuf), &systemParameters);
     if (nRead <= 0) {
         f_close(&fil);
         return -1;
@@ -366,7 +382,8 @@ systemParametersFetchEEPROM(void)
 }
 
 static int
-parseTable(unsigned char *buf, int size, char **err)
+parseTable(struct systemParameters *sysParams,
+        const unsigned char *buf, int size, char **err)
 {
     const char *base = (const char *)buf;
     const char *cp = base;
@@ -388,7 +405,8 @@ parseTable(unsigned char *buf, int size, char **err)
             *err = "Missing comma after parameter name";
             return -line;
         }
-        l = (*conv[i].parse)(cp, conv[i].addr);
+
+        l = (*conv[i].parse)(cp, (char *)sysParams + conv[i].offset);
         if (l <= 0) {
             *err = "Invalid value";
             return -line;
@@ -404,26 +422,26 @@ parseTable(unsigned char *buf, int size, char **err)
     return cp - base;
 }
 
-static int
-systemParametersSetTable(unsigned char *buf, int size)
+int
+systemParametersSetTable(struct systemParameters *sysParams,
+        const unsigned char *buf, int size)
 {
     char *err = "";
-    int i = parseTable(buf, size, &err);
+    int i = parseTable(sysParams, buf, size, &err);
 
     if (i <= 0) {
         printf("Bad file contents at line %d: %s\n", -i, err);
         return -1;
     }
-    if (systemParameters.buttonRotation == 90)
-        systemParameters.buttonRotation = 0;
-    if ((systemParameters.buttonRotation != 0)
-     && (systemParameters.buttonRotation != 45)) {
+    if (sysParams->buttonRotation == 90)
+        sysParams->buttonRotation = 0;
+    if ((sysParams->buttonRotation != 0)
+     && (sysParams->buttonRotation != 45)) {
         printf("Bad button rotation (must be 0 or 45)\n");
         return -1;
     }
-    systemParametersUpdateChecksum();
-    memcpy(buf, &systemParameters, sizeof systemParameters);
-    return sizeof(systemParameters);
+    systemParametersUpdateChecksum(sysParams);
+    return sizeof (*sysParams);
 }
 
 int
@@ -452,7 +470,8 @@ systemParametersStashEEPROM(void)
         return 0;
     }
 
-    nWrite = systemParametersSetTable((unsigned char *)systemParametersBuf, nRead);
+    nWrite = systemParametersSetTable(&systemParametersCandidate,
+            (unsigned char *)systemParametersBuf, nRead);
     f_close(&fil);
 
     return nWrite;

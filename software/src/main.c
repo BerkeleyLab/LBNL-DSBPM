@@ -78,6 +78,8 @@ main(void)
     /* Set up infrastructure */
     init_platform();
     platform_enable_interrupts();
+    /* Must be called before filesystemReadbacks() */
+    systemParametersSetDefaults();
     isRecovery = resetRecoverySwitchPressed();
 
     /* Announce our presence */

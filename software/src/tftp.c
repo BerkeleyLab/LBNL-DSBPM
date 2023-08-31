@@ -32,6 +32,7 @@ struct fileInfo {
     int       (*preTransmit)(void);
     int       (*postReceive)(void);
     void      (*commit)(void);
+    void      (*defaults)(void);
 };
 
 static int dummyPreTransmit(void)
@@ -55,6 +56,7 @@ static struct fileInfo fileTable[] = {
    {SYSTEM_PARAMETERS_NAME, "System parameters",
                                                     systemParametersFetchEEPROM,
                                                     systemParametersStashEEPROM,
+                                                    systemParametersCommit,
                                                     systemParametersCommit},
    {AFE_EEPROM_NAME, "AFE data",
                                                     afeFetchEEPROM,
@@ -389,8 +391,12 @@ filesystemReadbacks(void)
         }
 
         void (*funcCommit)(void) = fileTable[i].commit;
+        void (*funcDefaults)(void) = fileTable[i].defaults;
         if (funcCommit && bytesTrans > 0) {
             (*funcCommit)();
+        }
+        else if (funcDefaults) {
+            (*funcDefaults)();
         }
     }
 }

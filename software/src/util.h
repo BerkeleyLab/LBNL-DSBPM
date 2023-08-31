@@ -13,6 +13,10 @@
 #define MB(x) ((x)*1024*1024)
 #define kB(x) ((x)*1024)
 
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
 /*
  * Diagnostics
  */

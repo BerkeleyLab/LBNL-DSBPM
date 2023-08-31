@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#define SYSTEM_PARAMETERS_NAME "sysParam.csv"
+#define SYSTEM_PARAMETERS_NAME "sysParms.csv"
 
 struct sysNetParms {
     uint32_t  address;
@@ -41,6 +41,7 @@ extern struct systemParameters {
 } systemParameters;
 
 
+void systemParametersSetDefaults(void);
 int systemParametersFetchEEPROM(void);
 int systemParametersStashEEPROM(void);
 void systemParametersCommit(void);
