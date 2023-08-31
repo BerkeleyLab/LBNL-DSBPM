@@ -26,14 +26,16 @@ initMarkers(void)
 
     microsecondSpin(1200*1000); /* Allow for heartbeat to occur */
 
-    printf("acqSync: csr FA: %u\n", GPIO_READ(GPIO_IDX_EVR_FA_RELOAD));
-    printf("acqSync: csr SA: %u\n", GPIO_READ(GPIO_IDX_EVR_SA_RELOAD));
+    if (debugFlags & DEBUGFLAG_ACQ_SYNC) {
+        printf("acqSync: csr FA: %u\n", GPIO_READ(GPIO_IDX_EVR_FA_RELOAD));
+        printf("acqSync: csr SA: %u\n", GPIO_READ(GPIO_IDX_EVR_SA_RELOAD));
 #ifdef GPIO_IDX_ADC_FA_RELOAD
-    printf("acqSync: csr ADC FA: %u\n", GPIO_READ(GPIO_IDX_ADC_FA_RELOAD));
+        printf("acqSync: csr ADC FA: %u\n", GPIO_READ(GPIO_IDX_ADC_FA_RELOAD));
 #endif
 #ifdef GPIO_IDX_ADC_SA_RELOAD
-    printf("acqSync: csr ADC SA: %u\n", GPIO_READ(GPIO_IDX_ADC_SA_RELOAD));
+        printf("acqSync: csr ADC SA: %u\n", GPIO_READ(GPIO_IDX_ADC_SA_RELOAD));
 #endif
+    }
 }
 
 void
