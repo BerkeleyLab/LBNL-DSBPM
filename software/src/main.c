@@ -113,14 +113,11 @@ main(void)
     mgtInit();
     evrInit();
     rfClkInit();
-    rfClkShow();
     mmcmInit();
     sysrefInit();
-    sysrefShow();
     rfADCinit();
     afeInit();
     rfADCrestart();
-    rfADCshow();
     rfADCsync();
     afeStart();
 

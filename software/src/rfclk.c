@@ -162,6 +162,8 @@ rfClkInit(void)
         lmx2594Config(lmx2594MuxSel[i], lmx2594Values[i],
                 lmx2594Sizes[i]);
     }
+
+    if (debugFlags & DEBUGFLAG_RF_CLK_SHOW) rfClkShow();
 }
 
 void

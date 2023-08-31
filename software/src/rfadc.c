@@ -195,6 +195,8 @@ rfADCinit(void)
 
     rfADCCfgDefaults();
     initDone = 1;
+
+    if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
 }
 
 
