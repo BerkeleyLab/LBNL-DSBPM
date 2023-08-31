@@ -205,18 +205,18 @@ optimizeCicShift(int mtTableLength)
     int remainder = num % den;
     int cicShiftConfig, cicShiftActual;
 
-    if (remainder) printf("FA CIC DECIMATION FACTOR ISN'T AN INTEGER\n");
+    if (remainder) warn("FA CIC DECIMATION FACTOR ISN'T AN INTEGER\n");
     if (faDecimationActual != faDecimationConfig) {
         int shift;
-        printf("\nCIC filter stage count: %d\n", nCICstages);
+        printf("FA CIC filter stage count: %d\n", nCICstages);
         cicShiftConfig = cicShift(faDecimationConfig, nCICstages);
         cicShiftActual = cicShift(faDecimationActual, nCICstages);
         shift = cicShiftConfig - cicShiftActual;
         if (shift > 15) shift = 15;
         if (shift < 0) {
             shift = 0;
-            printf("FA CIC SCALING OVERFLOW\n");
-            printf("Increase pilot tone table length or attenuate filter inputs.\n\n");
+            warn("FA CIC SCALING OVERFLOW\n");
+            warn("Increase pilot tone table length or attenuate filter inputs.\n\n");
         }
         if (remainder) printf(" (remainder %d (!!!))", remainder);
         printf("FA CIC filter FPGA build decimation factor %d (shift %d).\n",
