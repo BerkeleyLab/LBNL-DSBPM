@@ -14,6 +14,7 @@
 #include "st7789v.h"
 #include "tftp.h"
 #include "util.h"
+#include "systemParameters.h"
 
 #define TFTP_PORT 69
 
@@ -31,6 +32,7 @@ struct fileInfo {
     int       (*preTransmit)(void);
     int       (*postReceive)(void);
     void      (*commit)(void);
+    void      (*defaults)(void);
 };
 
 static int dummyPreTransmit(void)
@@ -51,6 +53,11 @@ static struct fileInfo fileTable[] = {
                                                     st7789vGrabScreen,
                                                     dummyPostReceive,
                                                     dummyCommit},
+   {SYSTEM_PARAMETERS_NAME, "System parameters",
+                                                    systemParametersFetchEEPROM,
+                                                    systemParametersStashEEPROM,
+                                                    systemParametersCommit,
+                                                    systemParametersCommit},
    {AFE_EEPROM_NAME, "AFE data",
                                                     afeFetchEEPROM,
                                                     afeStashEEPROM,
@@ -384,8 +391,12 @@ filesystemReadbacks(void)
         }
 
         void (*funcCommit)(void) = fileTable[i].commit;
+        void (*funcDefaults)(void) = fileTable[i].defaults;
         if (funcCommit && bytesTrans > 0) {
             (*funcCommit)();
+        }
+        else if (funcDefaults) {
+            (*funcDefaults)();
         }
     }
 }

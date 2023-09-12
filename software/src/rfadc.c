@@ -186,7 +186,7 @@ rfADCinit(void)
         fatal("metal_init failed");
     }
     metal_set_log_handler(myLogHandler);
-    metal_set_log_level(METAL_LOG_DEBUG);
+    metal_set_log_level(METAL_LOG_INFO);
 
     configp = XRFdc_LookupConfig(XPAR_XRFDC_0_DEVICE_ID);
     if (!configp) fatal("XRFdc_LookupConfig");
@@ -195,6 +195,8 @@ rfADCinit(void)
 
     rfADCCfgDefaults();
     initDone = 1;
+
+    if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
 }
 
 

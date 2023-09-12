@@ -78,6 +78,8 @@ main(void)
     /* Set up infrastructure */
     init_platform();
     platform_enable_interrupts();
+    /* Must be called before filesystemReadbacks() */
+    systemParametersSetDefaults();
     isRecovery = resetRecoverySwitchPressed();
 
     /* Announce our presence */
@@ -90,7 +92,9 @@ main(void)
 
     /* Get configuration settings */
     iicInit();
-    systemParametersReadback();
+    /* Readback configurations from filesystem, if available */
+    filesystemReadbacks();
+
     if (isRecovery) {
         printf("==== Recovery mode -- Using default network parameters ====\n");
         enetMAC = netDefault.ethernetMAC;
@@ -102,9 +106,6 @@ main(void)
     }
     drawIPv4Address(&ipv4->address, isRecovery);
 
-    /* Readback configurations from filesystem, if available */
-    filesystemReadbacks();
-
     /* Set up hardware */
     sysmonInit();
     sfpChk();
@@ -112,14 +113,11 @@ main(void)
     mgtInit();
     evrInit();
     rfClkInit();
-    rfClkShow();
     mmcmInit();
     sysrefInit();
-    sysrefShow();
     rfADCinit();
     afeInit();
     rfADCrestart();
-    rfADCshow();
     rfADCsync();
     afeStart();
 

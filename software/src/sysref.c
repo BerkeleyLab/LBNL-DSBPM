@@ -17,6 +17,8 @@ sysrefInit(void)
                ((REFCLK_OUT_PER_SYSREF-1) << SYSREF_CSR_REF_CLK_DIVISOR_SHIFT));
     GPIO_WRITE(GPIO_IDX_SYSREF_CSR, SYSREF_CSR_ADC_CLK_FAULT |
                                     SYSREF_CSR_REF_CLK_FAULT);
+
+    if (debugFlags & DEBUGFLAG_SHOW_SYSREF) sysrefShow();
 }
 
 void

@@ -8,6 +8,16 @@
 #include <stdint.h>
 
 /*
+ * Convenient macros
+ */
+#define MB(x) ((x)*1024*1024)
+#define kB(x) ((x)*1024)
+
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
+/*
  * Diagnostics
  */
 #define DEBUGFLAG_EPICS             0x01
@@ -24,6 +34,7 @@
 #define DEBUGFLAG_RF_CLK_SHOW       0x2000
 #define DEBUGFLAG_RF_ADC_SHOW       0x4000
 #define DEBUGFLAG_SHOW_DRP          0x8000
+#define DEBUGFLAG_ACQ_SYNC          0x10000
 #define DEBUGFLAG_SLIDE_MGT         0x20000
 #define DEBUGFLAG_RESTART_AFE_ADC   0x100000
 #define DEBUGFLAG_RESTART_TILES     0x200000
@@ -33,6 +44,7 @@
 #define DEBUGFLAG_RECORDER_DIAG     0x2000000
 #define DEBUGFLAG_WAVEFORM_XFER     0x4000000
 #define DEBUGFLAG_WAVEFORM_HEAD     0x8000000
+#define DEBUGFLAG_LOCAL_OSC_SHOW    0x10000000
 
 extern int debugFlags;
 
