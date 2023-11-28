@@ -162,7 +162,7 @@ vpath %.sh $(GW_SCRIPTS_DIR)
 # a top-level target in top_rules.mk. .v and .sv files will be used as
 # prerequisites as well as a system_top.xdc file
 $(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) rmsBandSelect.xci trimMultiplier.xci positionCalcDivider.xci positionCalcMultiplier.xci adcCordic.xci adcToSysFIFO.xci ila_td256_s4096_cap.xci
-$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(IP_CORES_TOP_LVL_SRCS) $(BD_TOP_LVL_SRCS) cordicg_b22.v
+$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(IP_CORES_TOP_LVL_SRCS) $(BD_TOP_LVL_SRCS) cordicg_b22.v
 
 $(EXTRA_VFLAGS_DEP): % : %.in
 	sed -e 's|$$BEDROCK_DIR|$(BEDROCK_DIR:/=)|g' \
@@ -176,6 +176,9 @@ system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(IP_CORES_XDCS) $(SYSTEM_TOP_TIM_XDC)
 # Generate firmware date and parameters
 %firmwareBuildDate.v: set_firmware_build_date.tcl
 	$(VIVADO_CMD) -source $< -tclargs $@
+
+%gitHash.vh: gitHashVerilog.sh
+	sh $(GW_SCRIPTS_DIR)/gitHashVerilog.sh > $@
 
 %gpioIDX.v: $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/config.h $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/gpio.h
 	sh $(GW_SCRIPTS_DIR)/createVerilogIDX.sh $^ > $@
@@ -223,6 +226,7 @@ CLEAN += *.bit
 CLEAN += system_top.xdc
 CLEAN += $(TOP_LVL_DIR)/firmwareBuildDate.v
 CLEAN += $(TOP_LVL_DIR)/gpioIDX.v
+CLEAN += $(TOP_LVL_DIR)/gitHash.vh
 CLEAN += cordicg_b22.v
 CLEAN += $(IP_CORES_CUSTOM)
 CLEAN += $(VFLAGS_COMMAND_FILE)
