@@ -95,11 +95,11 @@ end
 always @(posedge clk)
 begin
     ai_ddd   <= ai_dd;
-  ai_dddd  <= ai_ddd;
-  addi     <= br_ddd + bi_ddd;
-  multi    <= addi * ai_dddd;
-  commonr2 <= common;
-  pi_int   <= multi + commonr2 + old_result_im;
+    ai_dddd  <= ai_ddd;
+    addi     <= br_ddd + bi_ddd;
+    multi    <= addi * ai_dddd;
+    commonr2 <= common;
+    pi_int   <= multi + commonr2 + old_result_im;
 end
 
 assign pr = pr_int;
