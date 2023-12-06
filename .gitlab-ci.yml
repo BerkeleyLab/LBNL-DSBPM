@@ -53,4 +53,4 @@ sw_dsbpm_zcu208:
       - software/app/dsbpm/dsbpm_zcu208/platform/zynqmp_fsbl/fsbl_a53.elf
       - software/app/dsbpm/dsbpm_zcu208/platform/export/platform/sw/platform/boot/pmufw.elf
       - software/app/dsbpm/dsbpm_zcu208.elf
-      - software/app/dsbpm/BOOT.bin
+      - software/app/dsbpm/dsbpm_zcu208*.bin
