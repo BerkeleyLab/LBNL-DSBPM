@@ -35,6 +35,7 @@
 #define GPIO_IDX_ADC_FA_RELOAD           21 // Fast acquisition divider reload
 #define GPIO_IDX_ADC_SA_RELOAD           22 // Slow acquisition divider reload
 #define GPIO_IDX_ADC_HEARTBEAT_RELOAD    23 // ADC heartbeat counter
+#define GPIO_IDX_GITHASH                 24 // Git 32-bit hash
 
 /*
  * Per DSBPM registers

@@ -124,6 +124,10 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             replyp->args[0] = SOFTWARE_BUILD_DATE;
             break;
 
+        case DSBPM_PROTOCOL_CMD_LONGIN_IDX_GIT_HASH_ID:
+            replyp->args[0] = GPIO_READ(GPIO_IDX_GITHASH);
+            break;
+
         case DSBPM_PROTOCOL_CMD_LONGIN_IDX_LMX2594_STATUS:
             replyp->args[0] = lmx2594Status();
             break;
