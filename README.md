@@ -85,18 +85,31 @@ The following system parameters can be updated via TFTP:
 
 * RF table
 * Pilot Tone table
+* System parameters
 * Gateware + Software boot file (BOOT.bin)
+
+#### Update System parameters table
+
+An example of the parameters used can be found at: `software/app/dsbpm/scripts/sysParms.csv`
+
+```bash
+tftp -v -m binary <system IP> -c put sysParms.csv sysParms.csv
+```
 
 #### Update RF table
 
+An example of the RF table can be found at: `software/app/dsbpm/scripts/rfTableSR_81_328_bin_20_conjugate.csv`
+
 ```bash
-tftp -v -m binary <system IP> -c put rfTable.csv rfTable.csv
+tftp -v -m binary <system IP> -c put <RF TABLE>.csv rfTable.csv
 ```
 
 #### Update Pilot tone table
 
+An example of the PT table can be found at: `software/app/dsbpm/scripts/ptTableSR_81_328_11_19_bin_20_conjugate.csv`
+
 ```bash
-tftp -v -m binary <system IP> -c put ptTable.csv ptTable.csv
+tftp -v -m binary <system IP> -c put <PT TABLE>.csv ptTable.csv
 ```
 
 #### Update system image file (BOOT.bin):
