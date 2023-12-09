@@ -265,7 +265,8 @@ for (i = 0 ; i < NADC ; i = i + 1) begin : adcDemod
 //    scale negative value.
 wire [ADC_WIDTH-1:0] adc = adcs[i*ADC_WIDTH+:ADC_WIDTH];
 wire [ADC_WIDTH-1:0] adcQ = adcsQ[i*ADC_WIDTH+:ADC_WIDTH];
-wire [LO_WIDTH-1:0] adcLO={adc[ADC_WIDTH-1], adc, {LO_WIDTH-ADC_WIDTH-1{1'b0}}};
+wire [LO_WIDTH-1:0]  adcLO  ={adc[ADC_WIDTH-1], adc, {LO_WIDTH-ADC_WIDTH-1{1'b0}}};
+wire [LO_WIDTH-1:0]  adcQLO ={adcQ[ADC_WIDTH-1], adcQ, {LO_WIDTH-ADC_WIDTH-1{1'b0}}};
 wire [ADC_WIDTH-1:0] rfADC = adcPtWarning || (adcUseRMS && !adcUseThisSample) ?
                                                         {ADC_WIDTH{1'b0}} : adc;
 wire [ADC_WIDTH-1:0] rfADCQ = adcPtWarning || (adcUseRMS && !adcUseThisSample) ?
@@ -286,6 +287,18 @@ wire signed [PRODUCT_WIDTH-1:0] adcPlPrdI, adcPlPrdQ, adcPhPrdI, adcPhPrdQ;
 
 if (IQ_DATA == "TRUE") begin
 
+// For RMS we need PrdI = I^2 and PrdQ = Q^2. But complex multiplcation
+// doesn't give us that if we 0 cos or sin. So, when calculating RMS,
+// PrdI comes for free by making cos = I and sin = 0
+// ProdQ needs to come from a different multiplier.
+wire signed [PRODUCT_WIDTH-1:0] adcRfPrdIComplex, adcRfPrdQComplex;
+wire signed [PRODUCT_WIDTH-1:0] adcPlPrdIComplex, adcPlPrdQComplex;
+wire signed [PRODUCT_WIDTH-1:0] adcPhPrdIComplex, adcPhPrdQComplex;
+
+wire signed [PRODUCT_WIDTH-1:0] adcRfPrdISquared, adcRfPrdQSquared;
+wire signed [PRODUCT_WIDTH-1:0] adcPlPrdISquared, adcPlPrdQSquared;
+wire signed [PRODUCT_WIDTH-1:0] adcPhPrdISquared, adcPhPrdQSquared;
+
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
                .SIZEOUT(PRODUCT_WIDTH))
@@ -295,8 +308,28 @@ complexMixer #(.AWIDTH(ADC_WIDTH),
     .ai(rfADCQ),
     .br(rfLOcos),
     .bi(rfLOsin),
-    .pr(adcRfPrdI),
-    .pi(adcRfPrdQ));
+    .pr(adcRfPrdIComplex),
+    .pi(adcRfPrdQComplex));
+
+mixer #(.dwi(ADC_WIDTH),
+        .davr(LO_WIDTH-1),
+        .dwlo(LO_WIDTH))
+  dmMulRfISquare(.clk(adcClk),
+    .adcf(rfADC),
+    .mult(adcLO),
+    .mixout(adcRfPrdISquared));
+
+mixer #(.dwi(ADC_WIDTH),
+        .davr(LO_WIDTH-1),
+        .dwlo(LO_WIDTH))
+  dmMulRfQSquare(.clk(adcClk),
+    .adcf(rfADCQ),
+    .mult(adcQLO),
+    .mixout(adcRfPrdQSquared));
+
+assign adcRfPrdI = adcUseRMS ? adcRfPrdISquared : adcRfPrdIComplex;
+assign adcRfPrdQ = adcUseRMS ? adcRfPrdQSquared : adcRfPrdQComplex;
+
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
                .SIZEOUT(PRODUCT_WIDTH))
@@ -306,8 +339,28 @@ complexMixer #(.AWIDTH(ADC_WIDTH),
     .ai(ptADCQ),
     .br(plLOcos),
     .bi(plLOsin),
-    .pr(adcPlPrdI),
-    .pi(adcPlPrdQ));
+    .pr(adcPlPrdIComplex),
+    .pi(adcPlPrdQComplex));
+
+mixer #(.dwi(ADC_WIDTH),
+        .davr(LO_WIDTH-1),
+        .dwlo(LO_WIDTH))
+  dmMulPlISquare(.clk(adcClk),
+    .adcf(ptADC),
+    .mult(adcLO),
+    .mixout(adcPlPrdISquared));
+
+mixer #(.dwi(ADC_WIDTH),
+        .davr(LO_WIDTH-1),
+        .dwlo(LO_WIDTH))
+  dmMulPlQSquared(.clk(adcClk),
+    .adcf(ptADCQ),
+    .mult(adcQLO),
+    .mixout(adcPlPrdQSquared));
+
+assign adcPlPrdI = adcUseRMS ? adcPlPrdISquared : adcPlPrdIComplex;
+assign adcPlPrdQ = adcUseRMS ? adcPlPrdQSquared : adcPlPrdQComplex;
+
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
                .SIZEOUT(PRODUCT_WIDTH))
@@ -317,8 +370,15 @@ complexMixer #(.AWIDTH(ADC_WIDTH),
     .ai(ptADCQ),
     .br(phLOcos),
     .bi(phLOsin),
-    .pr(adcPhPrdI),
-    .pi(adcPhPrdQ));
+    .pr(adcPhPrdIComplex),
+    .pi(adcPhPrdQComplex));
+
+// Pilot Tone High = Pilot Tone Low is RMS is on
+assign adcPhPrdISquared = adcPlPrdISquared;
+assign adcPhPrdQSquared = adcPlPrdQSquared;
+
+assign adcPhPrdI = adcUseRMS ? adcPhPrdISquared : adcPhPrdIComplex;
+assign adcPhPrdQ = adcUseRMS ? adcPhPrdQSquared : adcPhPrdQComplex;
 
 end
 else if (IQ_DATA == "FALSE") begin
