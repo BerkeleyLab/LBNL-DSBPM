@@ -3,7 +3,10 @@
 VFLAGS_DEP += -I. -y . -y$(DSP_DIR)
 VFLAGS += -I. -y . -y$(DSP_DIR) -I$(AUTOGEN_DIR)
 
-TEST_BENCH = csrTestMaster_tb genericWaveformRecorder_tb
+TEST_BENCH = \
+	csrTestMaster_tb \
+	genericWaveformRecorder_tb \
+	adcProcessing_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =

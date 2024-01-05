@@ -1,0 +1,91 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Fri Jan  5 19:33:42 2024
+[*]
+[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/adcProcessing.vcd"
+[dumpfile_mtime] "Fri Jan  5 19:32:02 2024"
+[dumpfile_size] 150942
+[savefile] "/home/lrusso/repos/dsbpm/gateware/modules/adcProcessing.gtkw"
+[timestart] 287
+[size] 1721 1223
+[pos] -1 -1
+*-5.000000 324 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] adcProcessing_tb.
+[treeopen] adcProcessing_tb.DUT.
+[treeopen] adcProcessing_tb.DUT.mag[0].
+[sst_width] 214
+[signals_width] 204
+[sst_expanded] 1
+[sst_vpaned_height] 371
+@22
+adcProcessing_tb.CSR[31:0]
+adcProcessing_tb.GPIO_OUT[31:0]
+@28
+adcProcessing_tb.GPIO_STROBES
+@421
+adcProcessing_tb.adc0In[15:0]
+adcProcessing_tb.adc0Out[15:0]
+@22
+adcProcessing_tb.adc0QIn[15:0]
+adcProcessing_tb.adc0QOut[15:0]
+adcProcessing_tb.adc1In[15:0]
+adcProcessing_tb.adc1Out[15:0]
+adcProcessing_tb.adc1QIn[15:0]
+adcProcessing_tb.adc1QOut[15:0]
+adcProcessing_tb.adc2In[15:0]
+adcProcessing_tb.adc2Out[15:0]
+adcProcessing_tb.adc2QIn[15:0]
+adcProcessing_tb.adc2QOut[15:0]
+adcProcessing_tb.adc3In[15:0]
+adcProcessing_tb.adc3Out[15:0]
+adcProcessing_tb.adc3QIn[15:0]
+adcProcessing_tb.adc3QOut[15:0]
+@420
+adcProcessing_tb.adcCC
+@28
+adcProcessing_tb.adcClk
+adcProcessing_tb.adcExceedsThreshold
+adcProcessing_tb.adcUseThisSample
+adcProcessing_tb.adcValidIn
+adcProcessing_tb.adcValidOut
+@420
+adcProcessing_tb.cc
+@28
+adcProcessing_tb.clk
+@420
+adcProcessing_tb.errors
+@28
+adcProcessing_tb.module_done
+adcProcessing_tb.module_ready
+@200
+-
+@420
+adcProcessing_tb.DUT.latch[0].adcLatchedDataQ[13:0]
+@28
+adcProcessing_tb.DUT.latch[0].adcLatchedDataValid
+@420
+adcProcessing_tb.DUT.latch[0].adcLatchedData[13:0]
+adcProcessing_tb.DUT.latch[0].adcRawDataQ[13:0]
+@28
+adcProcessing_tb.DUT.latch[0].adcRawDataValid
+@420
+adcProcessing_tb.DUT.latch[0].adcRawData[13:0]
+@200
+-
+@420
+adcProcessing_tb.DUT.sample[0].adcQVal[13:0]
+adcProcessing_tb.DUT.sample[0].adcVal[13:0]
+@28
+adcProcessing_tb.DUT.sample[0].adcValid
+@200
+-
+@28
+adcProcessing_tb.DUT.mag[0].adcAboveThreshold
+@420
+adcProcessing_tb.DUT.mag[0].adcFakeMagFull[28:0]
+adcProcessing_tb.DUT.mag[0].adcFakeMag[27:0]
+adcProcessing_tb.DUT.mag[0].adcSquaredQ[26:0]
+adcProcessing_tb.DUT.mag[0].adcSquared[26:0]
+adcProcessing_tb.DUT.threshold[27:0]
+[pattern_trace] 1
+[pattern_trace] 0
