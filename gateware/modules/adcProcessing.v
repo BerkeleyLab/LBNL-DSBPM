@@ -3,9 +3,8 @@
 // RMS calculation
 //
 // Values starting with adc or ADC are in ADC clock domain.
-// Value starting with evr is in event receiver clock domain.
 // Values starting with anything else are in system clock domain.
-//
+
 module adcProcessing #(
     // Actual number of ADC bits, without any padding
     parameter ADC_WIDTH                   = -1,
@@ -25,8 +24,8 @@ module adcProcessing #(
     output                            adcValidOut,
     output           [DATA_WIDTH-1:0] adc0Out, adc1Out, adc2Out, adc3Out,
     output           [DATA_WIDTH-1:0] adc0QOut, adc1QOut, adc2QOut, adc3QOut,
-    output reg                       adcUseThisSample,
-    output reg                       adcExceedsThreshold);
+    output reg                       adcUseThisSample = 0,
+    output reg                       adcExceedsThreshold = 0);
 
 localparam NUM_CHANNELS = 4;
 
@@ -66,9 +65,9 @@ wire signed [ADC_WIDTH-1:0] adcRawData;
 wire signed [ADC_WIDTH-1:0] adcRawDataQ;
 wire adcRawDataValid;
 always @(posedge adcClk) begin
+    adcLatchedDataValid <= sample[i].adcValid;
     adcLatchedData <= sample[i].adcVal;
     adcLatchedDataQ <= sample[i].adcQVal;
-    adcLatchedDataValid <= sample[i].adcValid;
 end
 
 assign adcRawData = adcLatchedData;
@@ -86,15 +85,19 @@ localparam THRESHOLD_WIDTH = 2*ADC_WIDTH;
 
 wire      [THRESHOLD_WIDTH-1:0] adcThreshold;
 wire   [NUM_CHANNELS-1:0] adcsAboveThreshold;
+wire                      adcsAboveThresholdValid;
 
 generate
 for (i = 0 ; i < NUM_CHANNELS ; i = i + 1) begin : mag
 
 wire adcAboveThreshold = (adcFakeMag > adcThreshold);
+wire adcAboveThresholdValid = adcFakeMagValid;
 
 //
 // Calculate proportional magnitude for I/Q signal pair.
 //
+
+localparam MIXER_LATENCY_CYCLES = 4;
 
 wire signed [(2*ADC_WIDTH-1)-1:0] adcSquared;
 mixer #(
@@ -118,16 +121,34 @@ mixer #(
     .mult(latch[i].adcRawDataQ),
     .mixout(adcSquaredQ));
 
+wire adcSquaredValid;
+reg_delay #(
+    .dw(1),
+    .len(MIXER_LATENCY_CYCLES)
+) mixerValidDelay (
+    .clk(adcClk),
+    .reset(1'b0),
+    .gate(1'b1),
+    .din(latch[i].adcRawDataValid),
+    .dout(adcSquaredValid)
+);
+
 `define SAT(x,old,new) ((~|x[old:new] | &x[old:new]) ? x[new:0] : {x[old],{new{~x[old]}}})
 
+reg adcFakeMagFullValid = 0;
 reg signed [2*ADC_WIDTH:0] adcFakeMagFull;
+reg adcFakeMagValid = 0;
 reg signed [2*ADC_WIDTH-1:0] adcFakeMag;
 always @(posedge adcClk) begin
+    adcFakeMagFullValid <= adcSquaredValid;
     adcFakeMagFull <= adcSquared + adcSquaredQ;
+
+    adcFakeMagValid <= adcFakeMagFullValid;
     adcFakeMag <= `SAT(adcFakeMagFull, 2*ADC_WIDTH, 2*ADC_WIDTH-1);
 end
 
 assign adcsAboveThreshold[i] = adcAboveThreshold;
+assign adcsAboveThresholdValid = adcAboveThresholdValid;
 
 end
 endgenerate
@@ -174,18 +195,20 @@ forwardData #(.DATA_WIDTH(THRESHOLD_WIDTH)) fwThreshold(.inClk(sysClk),
 // by the trigger computation before the RMS summation blocks.
 reg [4:0] adcUseSampleCounter = 0;
 always @(posedge adcClk) begin
-    if (|adcsAboveThreshold) begin
-        adcExceedsThreshold <= 1;
-        adcUseThisSample <= 1;
-        adcUseSampleCounter <= 18;
-    end
-    else begin
-        adcExceedsThreshold <= 0;
-        if (adcUseSampleCounter != 0) begin
-            adcUseSampleCounter <= adcUseSampleCounter - 1;
+    if (adcsAboveThresholdValid) begin
+        if (|adcsAboveThreshold) begin
+            adcExceedsThreshold <= 1;
+            adcUseThisSample <= 1;
+            adcUseSampleCounter <= 18;
         end
         else begin
-            adcUseThisSample <= 0;
+            adcExceedsThreshold <= 0;
+            if (adcUseSampleCounter != 0) begin
+                adcUseSampleCounter <= adcUseSampleCounter - 1;
+            end
+            else begin
+                adcUseThisSample <= 0;
+            end
         end
     end
 end
