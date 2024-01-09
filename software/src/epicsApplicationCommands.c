@@ -103,6 +103,10 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             acquisitionSetEarlySegmentInterval(idx, cmdp->args[0]);
             break;
 
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_RMS_THRSH:
+            adcProcessingRMSThrs(idx, cmdp->args[0]);
+            break;
+
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_LATER_SEGMENT_INTERVAL:
             acquisitionSetLaterSegmentInterval(idx, cmdp->args[0]);
             break;
@@ -115,7 +119,7 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
                 break;
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_TBT_SUM_SHIFT:
-                 sdAccumulateSetTbtSumShift(cmdp->args[0]);
+                sdAccumulateSetTbtSumShift(cmdp->args[0]);
                 break;
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_MT_SUM_SHIFT:
@@ -127,7 +131,7 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
                 break;
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_AUTOTRIM_CTL:
-                 autotrimEnable(0, cmdp->args[0]);
+                autotrimEnable(0, cmdp->args[0]);
                 break;
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_AUTOTRIM_THRS:
