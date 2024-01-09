@@ -79,8 +79,9 @@
 #define GPIO_IDX_RMS_X_NARROW            68 // RMS X narrow bandwidth
 #define GPIO_IDX_RMS_Y_NARROW            69 // RMS Y narrow bandwidth
 #define GPIO_IDX_WFR_SOFT_TRIGGER        70 // WFR soft trigger
+#define GPIO_IDX_ADC_PROCESSING          71 // ADC processing
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_WFR_SOFT_TRIGGER-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_ADC_PROCESSING-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 /*
  * Per ADC registers

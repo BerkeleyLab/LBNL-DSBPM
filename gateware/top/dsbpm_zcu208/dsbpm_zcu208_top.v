@@ -1750,6 +1750,44 @@ localparam ADC_SIGNALS_PER_DSP = CFG_ADC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_chain
 
+wire [(BD_ADC_CHANNEL_COUNT*SAMPLES_WIDTH)-1:0] adcsProcTDATA;
+wire                                            adcsProcTVALID;
+wire adcUseThisSample;
+wire adcExceedsThreshold;
+
+adcProcessing #(
+    .ADC_WIDTH(ADC_WIDTH),
+    .DATA_WIDTH(AXI_SAMPLE_WIDTH))
+  adcProcessing (
+    .sysClk(sysClk),
+    .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .GPIO_OUT(GPIO_OUT),
+    .sysReadout(GPIO_IN[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
+
+    .adcClk(adcClk),
+    .adcValidIn(1'b1),
+    .adc0In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I0
+    .adc1In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I1
+    .adc2In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I2
+    .adc3In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I3
+    .adc0QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q0
+    .adc1QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q1
+    .adc2QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q2
+    .adc3QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q3
+
+    .adcValidOut(adcsProcTVALID),
+    .adc0Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I0
+    .adc1Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I1
+    .adc2Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I2
+    .adc3Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I3
+    .adc0QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q0
+    .adc1QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q1
+    .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q2
+    .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q3
+
+    .adcUseThisSample(adcUseThisSample),
+    .adcExceedsThreshold(adcExceedsThreshold));
+
 assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
     {32-1{1'b0}},
     prelimProcOverflow[dsbpm] };
@@ -1792,14 +1830,14 @@ preliminaryProcessing #(.SYSCLK_RATE(SYSCLK_RATE),
   prelimProc(
     .clk(sysClk),
     .adcClk(adcClk),
-    .adc0(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I0
-    .adc1(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I1
-    .adc2(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I2
-    .adc3(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I3
-    .adcQ0(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q0
-    .adcQ1(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q1
-    .adcQ2(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q2
-    .adcQ3(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q3
+    .adc0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I0
+    .adc1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I1
+    .adc2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I2
+    .adc3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // I3
+    .adcQ0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q0
+    .adcQ1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q1
+    .adcQ2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q2
+    .adcQ3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*SAMPLES_WIDTH+:SAMPLES_WIDTH]), // Q3
     // All ADC data clocked with adcClk
     .adc0Out(prelimProcADC0[dsbpm]),
     .adc1Out(prelimProcADC1[dsbpm]),
@@ -1813,8 +1851,8 @@ preliminaryProcessing #(.SYSCLK_RATE(SYSCLK_RATE),
     .adc1OutMag(prelimProcADC1Mag[dsbpm]),
     .adc2OutMag(prelimProcADC2Mag[dsbpm]),
     .adc3OutMag(prelimProcADC3Mag[dsbpm]),
-    .adcExceedsThreshold(1'b0),
-    .adcUseThisSample(1'b1),
+    .adcExceedsThreshold(adcExceedsThreshold),
+    .adcUseThisSample(adcUseThisSample),
     .evrClk(evrClk),
     .evrFaMarker(evrFaMarker),
     .evrSaMarker(evrSaMarker),
