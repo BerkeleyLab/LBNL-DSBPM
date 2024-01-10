@@ -25,7 +25,6 @@
 #define GPIO_IDX_DISPLAY_DATA            11 // Display I/O (R/W)
 #define GPIO_IDX_AFE_SPI_CSR             12 // AFE SPI devices (R/W)
 #define GPIO_IDX_INTERLOCK_CSR           13 // Interlock (R/W)
-#define GPIO_IDX_CALIBRATION_CSR         14 // ADC calibration (R/W)
 #define GPIO_IDX_EVENT_LOG_CSR           15 // Event logger control/seconds
 #define GPIO_IDX_EVENT_LOG_TICKS         16 // Event logger ticks
 #define GPIO_IDX_ADC_RANGE_CSR           17 // Monitor ADC ranges
@@ -82,19 +81,6 @@
 #define GPIO_IDX_ADC_PROCESSING          71 // ADC processing
 
 #define GPIO_IDX_PER_DSBPM               (GPIO_IDX_ADC_PROCESSING-GPIO_IDX_LOTABLE_ADDRESS+1)
-
-/*
- * Per ADC registers
- */
-#define GPIO_IDX_ADC_0_CSR               128 // Acquisition control(W)/status(R)
-#define GPIO_IDX_ADC_0_DATA              129 // Acquisition data(R)
-#define GPIO_IDX_ADC_0_TRIGGER_CONFIG    130 // Acquisition trigger info (W)
-#define GPIO_IDX_ADC_0_TRIGGER_LOCATION  130 // Acquisition trigger location (R)
-#define GPIO_IDX_ADC_0_SECONDS           131 // Acquisition trigger time (R)
-#define GPIO_IDX_ADC_0_CONFIG_1          131 // Acquisition configuration 1 (W)
-#define GPIO_IDX_ADC_0_TICKS             132 // Acquisition trigger time (R)
-#define GPIO_IDX_ADC_0_CONFIG_2          132 // Acquisition configuration 2 (W)
-#define GPIO_IDX_PER_ADC                 (GPIO_IDX_ADC_0_CONFIG_2-GPIO_IDX_ADC_0_CSR+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK         1 // 1 sample per clock
 #define CFG_LO_RF_ROW_CAPACITY           1024

@@ -276,58 +276,6 @@ sysrefSync #(
     .user_sysref_adc(user_sysref_adc));
 
 /////////////////////////////////////////////////////////////////////////////
-// Triggers
-localparam ACQ_TRIGGER_BUS_WIDTH = 7;
-reg [ACQ_TRIGGER_BUS_WIDTH-1:0] adcEventTriggerStrobes = 0;
-// Software trigger
-reg [3:0] sysSoftTriggerCounter = 0;
-wire sysSoftTrigger = sysSoftTriggerCounter[3];
-always @(posedge sysClk) begin
-    if (GPIO_STROBES[GPIO_IDX_SOFT_TRIGGER]) begin
-        sysSoftTriggerCounter = ~0;
-    end
-    else if (sysSoftTrigger) begin
-        sysSoftTriggerCounter <= sysSoftTriggerCounter - 1;
-    end
-end
-
-// Get event and soft triggers into ADC clock domain
-(*ASYNC_REG="TRUE"*) reg [ACQ_TRIGGER_BUS_WIDTH-1:0] adcEventTriggers_m = 0;
-(*ASYNC_REG="TRUE"*) reg [ACQ_TRIGGER_BUS_WIDTH-1:0] adcEventTriggers = 0;
-reg [ACQ_TRIGGER_BUS_WIDTH-1:0] adcEventTriggers_d = 0;
-always @(posedge adcClk) begin
-    adcEventTriggers_m <= { evrTriggerBus[7:2], sysSoftTrigger };
-    adcEventTriggers   <= adcEventTriggers_m;
-    adcEventTriggers_d <= adcEventTriggers;
-    adcEventTriggerStrobes <= (adcEventTriggers & ~adcEventTriggers_d);
-end
-
-/////////////////////////////////////////////////////////////////////////////
-// Acquisition common
-localparam SAMPLES_WIDTH    = CFG_AXI_SAMPLES_PER_CLOCK * AXI_SAMPLE_WIDTH;
-localparam ACQ_SAMPLES_WIDTH = ACQ_WIDTH;
-wire [(BD_ADC_CHANNEL_COUNT*SAMPLES_WIDTH)-1:0] adcsTDATA;
-wire                 [BD_ADC_CHANNEL_COUNT-1:0] adcsTVALID;
-
-// Calibration support
-calibration #(
-    .ADC_COUNT(CFG_ADC_CHANNEL_COUNT),
-    .SAMPLES_PER_CLOCK(CFG_AXI_SAMPLES_PER_CLOCK),
-    .ADC_WIDTH(ACQ_SAMPLES_WIDTH),
-    .AXI_SAMPLE_WIDTH(ACQ_SAMPLES_WIDTH))
-  calibration (
-    .sysClk(sysClk),
-    .csrStrobe(GPIO_STROBES[GPIO_IDX_CALIBRATION_CSR]),
-    .GPIO_OUT(GPIO_OUT),
-    .readout(GPIO_IN[GPIO_IDX_CALIBRATION_CSR]),
-    .prbsClk(prbsClk),
-    .trainingSignal(TRAINING_SIGNAL),
-    // The first CFG_ADC_CHANNEL_COUNT channels are I/Q ADC samples
-    .adcClk(acqTCLK[0]),
-    .adcsTVALID(acqTVALID[0]),
-    .adcsTDATA(acqTDATA[0+:CFG_ADC_CHANNEL_COUNT*ACQ_SAMPLES_WIDTH]));
-
-/////////////////////////////////////////////////////////////////////////////
 // Monitor range of signals at ADC inputs
 wire [(CFG_ADC_PHYSICAL_COUNT*AXI_SAMPLE_WIDTH)-1:0] adcsMagTDATA;
 wire                    [CFG_DSBPM_COUNT-1:0] adcsMagTVALID;
@@ -359,67 +307,6 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : adc_data
     assign adcsMagTCLK[dsbpm] = adcClk;
 end
 endgenerate
-
-/////////////////////////////////////////////////////////////////////////////
-// Acquisition per style of firmware
-
-`ifdef FIRMWARE_STYLE_HSD
-//
-// High speed digitizer acquisition
-//
-localparam NUMBER_OF_BONDED_GROUPS =
-                    (CFG_DSP_CHANNEL_COUNT + CFG_DSPS_PER_BONDED_GROUP -1 ) /
-                                                      CFG_DSPS_PER_BONDED_GROUP;
-genvar dsp;
-//generate
-for (dsbpm = 0; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin
- for (i = 0 ; i < NUMBER_OF_BONDED_GROUPS ; i = i + 1) begin
-  wire bondedWriteEnable[0:CFG_DSPS_PER_BONDED_GROUP-1];
-  wire [$clog2(CFG_ACQUISITION_BUFFER_CAPACITY/CFG_AXI_SAMPLES_PER_CLOCK)-1:0]
-                               bondedWriteAddress[0:CFG_DSPS_PER_BONDED_GROUP-1];
-  for (dsp = (dsbpm * CFG_DSP_CHANNEL_COUNT) + i * CFG_DSPS_PER_BONDED_GROUP ;
-                              (dsp <
-                                ((dsbpm * CFG_DSP_CHANNEL_COUNT) +
-                                (i + 1) * CFG_DSPS_PER_BONDED_GROUP)) &&
-                              (dsp < CFG_DSP_CHANNEL_COUNT * CFG_DSBPM_COUNT); dsp = dsp + 1) begin
-     localparam integer rOff = dsp * GPIO_IDX_PER_ADC;
-     acquisitionHSD #(
-         .ACQUISITION_BUFFER_CAPACITY(CFG_ACQUISITION_BUFFER_CAPACITY),
-         .LONG_SEGMENT_CAPACITY(CFG_LONG_SEGMENT_CAPACITY),
-         .SHORT_SEGMENT_CAPACITY(CFG_SHORT_SEGMENT_CAPACITY),
-         .EARLY_SEGMENTS_COUNT(CFG_EARLY_SEGMENTS_COUNT),
-         .SEGMENT_PRETRIGGER_COUNT(CFG_SEGMENT_PRETRIGGER_COUNT),
-         .AXI_SAMPLES_PER_CLOCK(CFG_AXI_SAMPLES_PER_CLOCK),
-         .AXI_SAMPLE_WIDTH(ACQ_SAMPLES_WIDTH),
-         .ADC_WIDTH(ACQ_SAMPLES_WIDTH),
-         .TRIGGER_BUS_WIDTH(ACQ_TRIGGER_BUS_WIDTH),
-         .DEBUG((dsp == 0) ? ADC_CHANNEL_DEBUG : "false"))
-       dspChannel (
-         .sysClk(sysClk),
-         .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_0_CSR+rOff]),
-         .sysTriggerConfigStrobe(GPIO_STROBES[GPIO_IDX_ADC_0_TRIGGER_CONFIG+rOff]),
-         .sysAcqConfig1Strobe(GPIO_STROBES[GPIO_IDX_ADC_0_CONFIG_1+rOff]),
-         .sysAcqConfig2Strobe(GPIO_STROBES[GPIO_IDX_ADC_0_CONFIG_2+rOff]),
-         .GPIO_OUT(GPIO_OUT),
-         .sysStatus(GPIO_IN[GPIO_IDX_ADC_0_CSR+rOff]),
-         .sysData(GPIO_IN[GPIO_IDX_ADC_0_DATA+rOff]),
-         .sysTriggerLocation(GPIO_IN[GPIO_IDX_ADC_0_TRIGGER_LOCATION+rOff]),
-         .sysTriggerTimestamp({GPIO_IN[GPIO_IDX_ADC_0_SECONDS+rOff],
-                               GPIO_IN[GPIO_IDX_ADC_0_TICKS+rOff]}),
-         .evrClk(evrClk),
-         .evrTimestamp(evrTimestamp),
-         .adcClk(acqTCLK[dsp]),
-         .axiValid(acqTVALID[dsp]),
-         .axiData(acqTDATA[dsp*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH]),
-         .eventTriggerStrobes(adcEventTriggerStrobes),
-         .bondedWriteEnableIn(bondedWriteEnable[0]),
-         .bondedWriteAddressIn(bondedWriteAddress[0]),
-         .bondedWriteEnableOut(bondedWriteEnable[dsp%CFG_DSPS_PER_BONDED_GROUP]),
-         .bondedWriteAddressOut(bondedWriteAddress[dsp%CFG_DSPS_PER_BONDED_GROUP]));
-  end
- end
-end
-`endif
 
 //
 // Forward the EVR trigger bus and time stamp to the ADC clock domain.
@@ -538,6 +425,11 @@ assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
                                                   interlockRelayOpen,
                                                   1'b0,
                                                   interlockResetButton };
+
+/////////////////////////////////////////////////////////////////////////////
+// Acquisition common
+localparam SAMPLES_WIDTH    = CFG_AXI_SAMPLES_PER_CLOCK * AXI_SAMPLE_WIDTH;
+localparam ACQ_SAMPLES_WIDTH = ACQ_WIDTH;
 
 //////////////////////////////////////////////////////////////////////////////
 // Waveform recorders
@@ -946,6 +838,8 @@ end // for
 endgenerate
 
 //////////////////////////////////////////////////////////////////////////////
+wire [(BD_ADC_CHANNEL_COUNT*SAMPLES_WIDTH)-1:0] adcsTDATA;
+wire                 [BD_ADC_CHANNEL_COUNT-1:0] adcsTVALID;
 
 // Make this a black box for simulation
 `ifndef SIMULATE
@@ -1397,205 +1291,6 @@ endgenerate
 
 `endif // `ifndef SIMULATE
 
-
-generate
-for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : acq_data
-
-//
-// ADC I raw data
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 0] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 0] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 0)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADC0[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADC0[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 1] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 1] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 1)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADC1[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADC1[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 2] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 2] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 2)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADC2[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADC2[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 3] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 3] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 3)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADC3[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADC3[dsbpm]
-};
-
-//
-// ADC Q raw data
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 4] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 4] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 4)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADCQ0[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADCQ0[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 5] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 5] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 5)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADCQ1[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADCQ1[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 6] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 6] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 6)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADCQ2[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADCQ2[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 7] = adcClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 7] = 1'b1;
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 7)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-AXI_SAMPLE_WIDTH{prelimProcADCQ3[dsbpm][AXI_SAMPLE_WIDTH-1]}},
-    prelimProcADCQ3[dsbpm]
-};
-
-//
-// Tbt Mags
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 8] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 8] = prelimProcRfTbtMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 8)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfTbtMag0[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfTbtMag0[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 9] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 9] = prelimProcRfTbtMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 9)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfTbtMag1[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfTbtMag1[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 10] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 10] = prelimProcRfTbtMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 10)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfTbtMag2[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfTbtMag2[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 11] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 11] = prelimProcRfTbtMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 11)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfTbtMag3[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfTbtMag3[dsbpm]
-};
-
-//
-// Tbt Positions
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 12] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 12] = positionCalcTbtValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 12)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcTbtX[dsbpm][MAG_WIDTH-1]}},
-    positionCalcTbtX[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 13] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 13] = positionCalcTbtValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 13)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcTbtY[dsbpm][MAG_WIDTH-1]}},
-    positionCalcTbtY[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 14] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 14] = positionCalcTbtValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 14)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcTbtQ[dsbpm][MAG_WIDTH-1]}},
-    positionCalcTbtQ[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 15] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 15] = positionCalcTbtValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 15)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcTbtS[dsbpm][MAG_WIDTH-1]}},
-    positionCalcTbtS[dsbpm]
-};
-
-//
-// Fa Mags
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 16] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 16] = prelimProcRfFaMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 16)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfFaMag0[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfFaMag0[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 17] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 17] = prelimProcRfFaMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 17)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfFaMag1[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfFaMag1[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 18] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 18] = prelimProcRfFaMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 18)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfFaMag2[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfFaMag2[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 19] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 19] = prelimProcRfFaMagValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 19)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{prelimProcRfFaMag3[dsbpm][MAG_WIDTH-1]}},
-    prelimProcRfFaMag3[dsbpm]
-};
-
-//
-// Fa Positions
-//
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 20] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 20] = positionCalcFaValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 20)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcFaX[dsbpm][MAG_WIDTH-1]}},
-    positionCalcFaX[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 21] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 21] = positionCalcFaValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 21)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcFaY[dsbpm][MAG_WIDTH-1]}},
-    positionCalcFaY[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 22] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 22] = positionCalcFaValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 22)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcFaQ[dsbpm][MAG_WIDTH-1]}},
-    positionCalcFaQ[dsbpm]
-};
-
-assign acqTCLK[dsbpm*CFG_DSP_CHANNEL_COUNT + 23] = sysClk;
-assign acqTVALID[dsbpm*CFG_DSP_CHANNEL_COUNT + 23] = positionCalcFaValid[dsbpm];
-assign acqTDATA[(dsbpm*CFG_DSP_CHANNEL_COUNT + 23)*ACQ_SAMPLES_WIDTH+:ACQ_SAMPLES_WIDTH] = {
-    {ACQ_SAMPLES_WIDTH-MAG_WIDTH{positionCalcFaS[dsbpm][MAG_WIDTH-1]}},
-    positionCalcFaS[dsbpm]
-};
-
-end // for
-endgenerate // generate
-
 //
 // Create slow (SA) and fast (FA) acquistion triggers
 // based on event system trigger 0 (heartbeat).
@@ -1735,9 +1430,6 @@ wire [8*MAG_WIDTH-1:0] tbtSums[0:CFG_DSBPM_COUNT-1];
 wire tbtSumsValid[0:CFG_DSBPM_COUNT-1];
 wire [4*MAG_WIDTH-1:0] tbtMags[0:CFG_DSBPM_COUNT-1];
 wire tbtMagsValid[0:CFG_DSBPM_COUNT-1];
-wire [(CFG_DSBPM_COUNT*CFG_DSP_CHANNEL_COUNT*ACQ_SAMPLES_WIDTH)-1:0] acqTDATA;
-wire [CFG_DSBPM_COUNT*CFG_DSP_CHANNEL_COUNT-1:0] acqTVALID;
-wire [CFG_DSBPM_COUNT*CFG_DSP_CHANNEL_COUNT-1:0] acqTCLK;
 
 generate
 if (IQ_DATA != "TRUE") begin

@@ -1,21 +1,4 @@
 /*
- * Configuration values specific to a particular site or  application.
- * Same restrictions as noted in gpio.h.
- */
-#define VERILOG_FIRMWARE_STYLE_HSD
-#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<10)
-#define CFG_LONG_SEGMENT_CAPACITY           (1<<8)
-#define CFG_SHORT_SEGMENT_CAPACITY          (1<<5)
-#define CFG_EARLY_SEGMENTS_COUNT            5
-#define CFG_SEGMENT_PRETRIGGER_COUNT        32
-#define CFG_DSPS_PER_BONDED_GROUP           4
-
-/*
- * For softwre compatibility:
- */
-#define CFG_ADCS_PER_BONDED_GROUP CFG_DSPS_PER_BONDED_GROUP
-
-/*
  * ADC AXI MMCM (adcClk source) configuration
  * Values are scaled by a factor of 1000.
  */
