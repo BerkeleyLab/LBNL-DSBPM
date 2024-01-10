@@ -28,7 +28,6 @@
 #define DEBUGFLAG_DRP               0x40
 #define DEBUGFLAG_CALIBRATION       0x80
 #define DEBUGFLAG_SHOW_TEST         0x100
-#define DEBUGFLAG_SHOW_AFE_REG      0x200
 #define DEBUGFLAG_SHOW_SYSREF       0x400
 #define DEBUGFLAG_ADC_MMCM_SHOW     0x1000
 #define DEBUGFLAG_RF_CLK_SHOW       0x2000

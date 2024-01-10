@@ -9,7 +9,6 @@
 #include "dsbpmProtocol.h"
 #include "cellComm.h"
 #include "publisher.h"
-#include "afe.h"
 #include "evr.h"
 #include "gpio.h"
 #include "localOscillator.h"
