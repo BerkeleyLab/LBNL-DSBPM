@@ -1448,7 +1448,9 @@ wire adcUseThisSample;
 wire adcExceedsThreshold;
 
 adcProcessing #(
-    .ADC_WIDTH(ADC_WIDTH),
+    // because we are using DDC, the ADC samples are 16-bits, even though
+    // the ADC is 14-bits
+    .ADC_WIDTH(AXI_SAMPLE_WIDTH),
     .DATA_WIDTH(AXI_SAMPLE_WIDTH))
   adcProcessing (
     .sysClk(sysClk),
