@@ -138,12 +138,13 @@ reg_delay #(
 reg adcFakeMagFullValid = 0;
 reg signed [2*ADC_WIDTH:0] adcFakeMagFull;
 reg adcFakeMagValid = 0;
-reg signed [2*ADC_WIDTH-1:0] adcFakeMag;
+reg [2*ADC_WIDTH-1:0] adcFakeMag;
 always @(posedge adcClk) begin
     adcFakeMagFullValid <= adcSquaredValid;
     adcFakeMagFull <= adcSquared + adcSquaredQ;
 
     adcFakeMagValid <= adcFakeMagFullValid;
+    // NOTE: adcFakeMagFull is signed and adcFakeMag is unsigned.
     adcFakeMag <= `SAT(adcFakeMagFull, 2*ADC_WIDTH, 2*ADC_WIDTH-1);
 end
 
