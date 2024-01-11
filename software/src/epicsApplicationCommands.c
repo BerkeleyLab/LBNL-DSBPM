@@ -26,57 +26,11 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
     int replyArgCount = 0;
 
     switch (cmdp->command & DSBPM_PROTOCOL_CMD_MASK_HI) {
-    case DSBPM_PROTOCOL_CMD_HI_LONGIN:
-        if (commandArgCount != 0) return -1;
-        replyArgCount = 1;
-        switch (idx) {
-        case DSBPM_PROTOCOL_CMD_LONGIN_IDX_ACQ_STATUS:
-            break;
-
-        default: return -1;
-        }
-        break;
-
     case DSBPM_PROTOCOL_CMD_HI_LONGOUT:
         if (commandArgCount != 1) return -1;
         switch (lo) {
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_NO_VALUE:
-            switch (idx) {
-            case DSBPM_PROTOCOL_CMD_LONGOUT_NV_IDX_SOFT_TRIGGER:
-                break;
-            default: return -1;
-            }
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_PRETRIGGER_SAMPLES:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_INPUT_BONDING:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_TRIGGER_EDGE:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_TRIGGER_LEVEL:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_TRIGGER_ENABLES:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_REARM:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_SEGMENTED_MODE:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_EARLY_SEGMENT_INTERVAL:
-            break;
-
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_RMS_THRSH:
             adcProcessingRMSThrs(idx, cmdp->args[0]);
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_LATER_SEGMENT_INTERVAL:
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC:

@@ -165,12 +165,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             evrSetTriggerDelay(idx, cmdp->args[0]);
             break;
 
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_GAIN:
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_COUPLING:
-            break;
-
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC:
             switch (idx) {
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_IDX_REBOOT:
@@ -179,12 +173,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_EVR_CLK_PER_TURN:
                 GPIO_WRITE(GPIO_IDX_EVR_SYNC_CSR, cmdp->args[0]<<16);
-                break;
-
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_ENABLE_TRAINING_TONE:
-                break;
-
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_SET_CALIBRATION_DAC:
                 break;
 
             default: return -1;
@@ -218,9 +206,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
         default: return -1;
         }
-        break;
-
-    case DSBPM_PROTOCOL_CMD_HI_WAVEFORM:
         break;
 
     default: return -1;
