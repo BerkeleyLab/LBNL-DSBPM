@@ -88,6 +88,7 @@
 
 // Waveform recorders
 // Capacities must be powers of two
+#define CFG_NUM_RECORDERS                5 // ADC, TbT, FA, PL, PH
 #define GPIO_IDX_PER_RECORDER            8
 
 #define GPIO_IDX_ADC_RECORDER_BASE       512  // ADC recorder

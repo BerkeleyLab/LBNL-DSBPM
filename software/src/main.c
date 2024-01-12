@@ -69,6 +69,7 @@ int
 main(void)
 {
     int isRecovery;
+    int bpm;
     unsigned char *enetMAC;
     const struct sysNetParms *ipv4;
     static ip_addr_t ipaddr, netmask, gateway;
@@ -145,11 +146,11 @@ main(void)
     tftpInit();
     publisherInit();
     acqSyncInit();
-    wfrInit();
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         localOscillatorInit(bpm);
         positionCalcInit(bpm);
+        wfrInit(bpm);
     }
 
     /*
