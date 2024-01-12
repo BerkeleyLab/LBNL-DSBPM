@@ -33,47 +33,42 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             adcProcessingRMSThrs(idx, cmdp->args[0]);
             break;
 
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC:
-            switch (idx) {
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_LOB_THRSH:
+            lossOfBeamThreshold(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_LOB_THRSH:
-                lossOfBeamThreshold(-1, cmdp->args[0]);
-                break;
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_TBT_SUM_SHIFT:
+            sdAccumulateSetTbtSumShift(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_TBT_SUM_SHIFT:
-                sdAccumulateSetTbtSumShift(cmdp->args[0]);
-                break;
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_MT_SUM_SHIFT:
+            sdAccumulateSetMtSumShift(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_MT_SUM_SHIFT:
-                sdAccumulateSetMtSumShift(cmdp->args[0]);
-                break;
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_BUTTON_DSP:
+            localOscSetDspAlgorithm(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_BUTTON_DSP:
-                localOscSetDspAlgorithm(cmdp->args[0]);
-                break;
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AUTOTRIM_CTL:
+            autotrimEnable(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_AUTOTRIM_CTL:
-                autotrimEnable(0, cmdp->args[0]);
-                break;
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AUTOTRIM_THRS:
+            autotrimSetThreshold(idx, cmdp->args[0]);
+            break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_AUTOTRIM_THRS:
-                autotrimSetThreshold(0, cmdp->args[0]);
-                break;
-
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_AUTOTRIM_FILT_SHFT:
-                autotrimSetFilterShift(0, cmdp->args[0]);
-                break;
-
-            default: return -1;
-            }
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AUTOTRIM_FILT_SHFT:
+            autotrimSetFilterShift(idx, cmdp->args[0]);
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_TRIM:
-            autotrimSetStaticGains(0, idx, cmdp->args[0]);
+            autotrimSetStaticGains(idx / CFG_ADC_PER_BPM_COUNT,
+                    idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DSA:
-            rfADCSetDSADSBPM(0, idx, cmdp->args[0]);
+            rfADCSetDSADSBPM(idx / CFG_ADC_PER_BPM_COUNT,
+                    idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
             break;
 
         default: return -1;

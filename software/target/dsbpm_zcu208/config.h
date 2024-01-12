@@ -45,6 +45,22 @@
 #define CFG_DSBPM_COUNT         ((CFG_ADC_PHYSICAL_COUNT + 3)/4)
 
 /*
+ * Number of ADCs per tile
+ */
+#define CFG_ADC_PER_TILE        2
+
+/*
+ * Number of tiles
+ */
+#define CFG_TILES_COUNT         (((CFG_ADC_PHYSICAL_COUNT)+(CFG_ADC_PER_TILE)-1)/(CFG_ADC_PER_TILE))
+
+/*
+ * Number of ADCs per BPM
+ */
+
+#define CFG_ADC_PER_BPM_COUNT   ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
+
+/*
  * ADC sampling clock frequency
  */
 /*

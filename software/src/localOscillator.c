@@ -89,31 +89,29 @@ checkSum(const int32_t *ip, int rowCount, int colCount)
  * Write to local osciallator RAM
  */
 static void
-writeTable(int bankIndex, int row, int isSin, int value)
+writeTable(unsigned int bpm, int bankIndex, int row, int isSin, int value)
 {
-    int ch;
     uint32_t address = (row << 1) | (isSin != 0);
     uint32_t csr = (bankIndex << BANKSELECT_SHIFT) | (value & VALUE_MASK);
-    for (ch = 0 ; ch < CFG_DSBPM_COUNT ; ch++) {
-        GPIO_WRITE(REG(GPIO_IDX_LOTABLE_ADDRESS, ch), address);
-        GPIO_WRITE(REG(GPIO_IDX_LOTABLE_CSR, ch), csr);
-    }
+
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    GPIO_WRITE(REG(GPIO_IDX_LOTABLE_ADDRESS, bpm), address);
+    GPIO_WRITE(REG(GPIO_IDX_LOTABLE_CSR, bpm), csr);
 }
 
 /*
  * Write selected bits in 'bank none'
  */
 static void
-writeCSR(uint32_t value, uint32_t mask)
+writeCSR(unsigned int bpm, uint32_t value, uint32_t mask)
 {
-    int ch;
     uint32_t v;
-    for (ch = 0 ; ch < CFG_DSBPM_COUNT ; ch++) {
-        v = GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, ch));
-        v = (v & ~mask) | (value & mask);
-        GPIO_WRITE(REG(GPIO_IDX_LOTABLE_CSR, ch),
-                (BANKINDEX_NONE << BANKSELECT_SHIFT) | v);
-    }
+
+    v = GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, bpm));
+    v = (v & ~mask) | (value & mask);
+    GPIO_WRITE(REG(GPIO_IDX_LOTABLE_CSR, bpm),
+            (BANKINDEX_NONE << BANKSELECT_SHIFT) | v);
 }
 
 /*
@@ -134,39 +132,39 @@ scale(double x)
 }
 
 static void
-setSumShift(int sumShift, uint32_t mask, int shift)
+setSumShift(unsigned int bpm, int sumShift, uint32_t mask, int shift)
 {
-    int ch;
     uint32_t csr;
-    for (ch = 0 ; ch < CFG_DSBPM_COUNT ; ch++) {
-        csr = GPIO_READ(REG(GPIO_IDX_SUM_SHIFT_CSR, ch));
-        if (sumShift < 0) sumShift = 0;
-        else if (sumShift > 15) sumShift = 15;
-        csr &= ~mask;
-        csr |= sumShift << shift;
-        GPIO_WRITE(REG(GPIO_IDX_SUM_SHIFT_CSR, ch), csr);
-    }
+
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    csr = GPIO_READ(REG(GPIO_IDX_SUM_SHIFT_CSR, bpm));
+    if (sumShift < 0) sumShift = 0;
+    else if (sumShift > 15) sumShift = 15;
+    csr &= ~mask;
+    csr |= sumShift << shift;
+    GPIO_WRITE(REG(GPIO_IDX_SUM_SHIFT_CSR, bpm), csr);
 }
 
 void
-sdAccumulateSetTbtSumShift(int shift)
+sdAccumulateSetTbtSumShift(unsigned int bpm, int shift)
 {
-    setSumShift(shift, SDACCUMULATOR_TBT_SUM_SHIFT_MASK,
-                       SDACCUMULATOR_TBT_SUM_SHIFT_SHIFT);
+    setSumShift(bpm, shift, SDACCUMULATOR_TBT_SUM_SHIFT_MASK,
+                            SDACCUMULATOR_TBT_SUM_SHIFT_SHIFT);
 }
 
 void
-sdAccumulateSetMtSumShift(int shift)
+sdAccumulateSetMtSumShift(unsigned int bpm, int shift)
 {
-    setSumShift(shift, SDACCUMULATOR_MT_SUM_SHIFT_MASK,
-                       SDACCUMULATOR_MT_SUM_SHIFT_SHIFT);
+    setSumShift(bpm, shift, SDACCUMULATOR_MT_SUM_SHIFT_MASK,
+                            SDACCUMULATOR_MT_SUM_SHIFT_SHIFT);
 }
 
 void
-sdAccumulateSetFaSumShift(int shift)
+sdAccumulateSetFaSumShift(unsigned int bpm, int shift)
 {
-    setSumShift(shift, SDACCUMULATOR_FA_CIC_SHIFT_MASK,
-                       SDACCUMULATOR_FA_CIC_SHIFT_SHIFT);
+    setSumShift(bpm, shift, SDACCUMULATOR_FA_CIC_SHIFT_MASK,
+                            SDACCUMULATOR_FA_CIC_SHIFT_SHIFT);
 }
 
 /*
@@ -191,9 +189,9 @@ cicShift(int decimationFactor, int nStages)
  * exceeds the configured value.
  */
 static void
-optimizeCicShift(int mtTableLength)
+optimizeCicShift(unsigned int bpm, int mtTableLength)
 {
-    uint32_t csr = GPIO_READ(GPIO_IDX_SUM_SHIFT_CSR);
+    uint32_t csr = GPIO_READ(REG(GPIO_IDX_SUM_SHIFT_CSR, bpm));
     int nCICstages = (csr & SDACCUMULATOR_CIC_STAGE_COUNT_MASK) >>
                                             SDACCUMULATOR_CIC_STAGE_COUNT_SHIFT;
     int faDecimationConfig = (csr & SDACCUMULATOR_FA_DECIMATION_MASK) >>
@@ -224,7 +222,7 @@ optimizeCicShift(int mtTableLength)
         printf("FA CIC filter actual decimation factor %d", faDecimationActual);
         printf(" (shift %d).\n", cicShiftActual);
         printf("Set CIC shift to %d.\n", shift);
-        sdAccumulateSetFaSumShift(shift);
+        sdAccumulateSetFaSumShift(bpm, shift);
     }
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
@@ -342,20 +340,20 @@ localOscGetPtTable(unsigned char *buf, int size)
  * Start oscillators
  */
 static void
-localOscRun()
+localOscRun(unsigned int bpm)
 {
     uint32_t v = NOBANK_RUN_BIT;
     if (systemParameters.isSinglePass) v |= NOBANK_SINGLE_PASS_BIT;
-    writeCSR(v, NOBANK_SINGLE_PASS_BIT | NOBANK_RUN_BIT);
+    writeCSR(bpm, v, NOBANK_SINGLE_PASS_BIT | NOBANK_RUN_BIT);
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW)
-        printf("Local oscillator running!\n");
+        printf("Local oscillator %u running!\n", bpm);
 }
 
 static int
-isLocalOscRun()
+isLocalOscRun(unsigned int bpm)
 {
-    uint32_t v = GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, 0));
+    uint32_t v = GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, bpm));
     return (v & NOBANK_RUN_BIT) == NOBANK_RUN_BIT;
 }
 
@@ -363,7 +361,7 @@ isLocalOscRun()
  * Commit table to FPGA
  */
 static void
-localOscWrite(int32_t *dst, const int32_t *src, int capacity,
+localOscWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity,
         int isPt)
 {
     int r, c, rowCount;
@@ -394,7 +392,7 @@ localOscWrite(int32_t *dst, const int32_t *src, int capacity,
                 else {
                     bankIndex = BANKINDEX_RF;
                 }
-                writeTable(bankIndex, r, c & 0x1, *src);
+                writeTable(bpm, bankIndex, r, c & 0x1, *src);
 
                 if(dst) *dst++ = *src;
                 src++;
@@ -405,8 +403,8 @@ localOscWrite(int32_t *dst, const int32_t *src, int capacity,
         printf("CORRUPT LOCAL OSCILLATOR TABLE\n");
     }
 
-    if (goodTables == 2) localOscRun();
-    if (isPt) optimizeCicShift(rowCount);
+    if (goodTables == 2) localOscRun(bpm);
+    if (isPt) optimizeCicShift(bpm, rowCount);
 }
 
 
@@ -415,56 +413,85 @@ localOscWrite(int32_t *dst, const int32_t *src, int capacity,
  */
 
 static void
-localOscCommit(int isPt)
+localOscCommit(unsigned int bpm, int isPt)
 {
     int32_t *src = isPt ? ptTable : rfTable;
     int capacity = isPt ? CFG_LO_PT_ROW_CAPACITY : CFG_LO_RF_ROW_CAPACITY;
 
-    localOscWrite(NULL, src, capacity, isPt);
+    localOscWrite(bpm, NULL, src, capacity, isPt);
 }
 
 void
-localOscRfCommit(void)
+localOscRfCommit(unsigned int bpm)
 {
-    localOscCommit(0);
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    localOscCommit(bpm, 0);
 }
 
 void
-localOscPtCommit(void)
+localOscRfCommitAll(void)
 {
-    localOscCommit(1);
+    int i;
+    for (i = 0; i < CFG_DSBPM_COUNT; i++) {
+        localOscCommit(i, 0);
+    }
+}
+
+void
+localOscPtCommit(unsigned int bpm)
+{
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    localOscCommit(bpm, 1);
+}
+
+void
+localOscPtCommitAll(void)
+{
+    int i;
+    for (i = 0; i < CFG_DSBPM_COUNT; i++) {
+        localOscCommit(i, 1);
+    }
 }
 
 int
-localOscGetDspAlgorithm(void)
+localOscGetDspAlgorithm(unsigned int bpm)
 {
-    return (GPIO_READ(GPIO_IDX_LOTABLE_CSR) & NOBANK_DSP_USE_RMS_BIT) != 0;
+    if (bpm >= CFG_DSBPM_COUNT) return 0;
+
+    return (GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, bpm)) &
+            NOBANK_DSP_USE_RMS_BIT) != 0;
 }
 
 void
-localOscSetDspAlgorithm(int useRMS)
+localOscSetDspAlgorithm(unsigned int bpm, int useRMS)
 {
-    writeCSR(useRMS ? NOBANK_DSP_USE_RMS_BIT : 0, NOBANK_DSP_USE_RMS_BIT);
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    writeCSR(bpm, useRMS ? NOBANK_DSP_USE_RMS_BIT : 0, NOBANK_DSP_USE_RMS_BIT);
 }
 
 int
-localOscGetSdSyncStatus(void)
+localOscGetSdSyncStatus(unsigned int bpm)
 {
-    return (GPIO_READ(GPIO_IDX_LOTABLE_CSR) & NOBANK_SD_STATUS_MASK) >>
+    if (bpm >= CFG_DSBPM_COUNT) return 0;
+
+    return (GPIO_READ(REG(GPIO_IDX_LOTABLE_CSR, bpm)) & NOBANK_SD_STATUS_MASK) >>
                                               NOBANK_SD_STATUS_SHIFT;
 }
 
-void localOscillatorInit(void)
+void localOscillatorInit(unsigned int bpm)
 {
     /*
      * If running, it was already initilized by the filesystem
      * readback
      */
-    if (!isLocalOscRun()) {
+    if (!isLocalOscRun(bpm)) {
         localOscSetRfTable(rfTableSR, sizeof(rfTableSR)-1);
         localOscSetPtTable(rfTablePT, sizeof(rfTablePT)-1);
-        localOscRfCommit();
-        localOscPtCommit();
+        localOscRfCommit(bpm);
+        localOscPtCommit(bpm);
     }
 }
 

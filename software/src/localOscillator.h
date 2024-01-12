@@ -12,17 +12,19 @@ int localOscGetRfTable(unsigned char *buf, int capacity);
 int localOscSetRfTable(unsigned char *buf, int size);
 int localOscGetPtTable(unsigned char *buf, int capacity);
 int localOscSetPtTable(unsigned char *buf, int size);
-void localOscRfCommit(void);
-void localOscPtCommit(void);
-int localOscGetDspAlgorithm(void);
-void localOscSetDspAlgorithm(int useRMS);
-int localOscGetSdSyncStatus(void);
+void localOscRfCommit(unsigned int bpm);
+void localOscPtCommit(unsigned int bpm);
+void localOscRfCommitAll(void);
+void localOscPtCommitAll(void);
+int localOscGetDspAlgorithm(unsigned int bpm);
+void localOscSetDspAlgorithm(unsigned int bpm, int useRMS);
+int localOscGetSdSyncStatus(unsigned int bpm);
 
-void localOscillatorInit(void);
+void localOscillatorInit(unsigned int bpm);
 
-void sdAccumulateSetTbtSumShift(int shift);
-void sdAccumulateSetMtSumShift(int shift);
-void sdAccumulateSetFaSumShift(int shift);
+void sdAccumulateSetTbtSumShift(unsigned int bpm, int shift);
+void sdAccumulateSetMtSumShift(unsigned int bpm, int shift);
+void sdAccumulateSetFaSumShift(unsigned int bpm, int shift);
 
 int localOscillatorFetchEEPROM(int isPt);
 int localOscillatorFetchRfEEPROM(void);

@@ -144,10 +144,13 @@ main(void)
     epicsInit();
     tftpInit();
     publisherInit();
-    localOscillatorInit();
     acqSyncInit();
-    positionCalcInit();
     wfrInit();
+
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        localOscillatorInit(bpm);
+        positionCalcInit(bpm);
+    }
 
     /*
      * Main processing loop

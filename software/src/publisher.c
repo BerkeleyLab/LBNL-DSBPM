@@ -60,12 +60,11 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
         pk->lossOfBeamStatus[i] = GPIO_READ(REG(GPIO_IDX_LOSS_OF_BEAM_TRIGGER, chainNumber));
         pk->prelimProcStatus[i] = GPIO_READ(REG(GPIO_IDX_PRELIM_STATUS, chainNumber));
         pk->recorderStatus[i] = wfrStatus(i);
+        pk->autotrimStatus[i] = autotrimStatus(i);
+        pk->sdSyncStatus[i] = localOscGetSdSyncStatus(i);
+        pk->cellCommStatus[i] = 0;
     }
-    pk->syncStatus = 0;
     pk->clipStatus = rfADCstatus();
-    pk->sdSyncStatus = localOscGetSdSyncStatus();
-    pk->cellCommStatus = 0;
-    pk->autotrimStatus = autotrimStatus(0);
     for (i = 0 ; i < DSBPM_PROTOCOL_ADC_COUNT ; i++) {
         adcChannel = i % MAX_CHANNELS_PER_CHAIN;
         chainNumber = i / MAX_CHANNELS_PER_CHAIN;
