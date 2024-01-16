@@ -1457,7 +1457,7 @@ adcProcessing #(
     .sysReadout(GPIO_IN[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
 
     .adcClk(adcClk),
-    .adcValidIn(1'b1),
+    .adcValidIn(adcsTVALID[dsbpm*ADC_SIGNALS_PER_DSP]),
     .adc0In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I0
     .adc1In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I1
     .adc2In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*SAMPLES_WIDTH+:SAMPLES_WIDTH]),  // I2
