@@ -343,7 +343,7 @@ systemParametersGetTable(unsigned char *buf, int capacity,
 
     for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++)
         cp += sprintf(cp, "%s,%s\n", conv[i].name, (*conv[i].format)(
-                    (char *) sysParams) + conv[i].offset);
+                    (char *) sysParams + conv[i].offset));
     return cp - (char *)buf;
 }
 
