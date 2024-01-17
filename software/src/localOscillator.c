@@ -367,13 +367,14 @@ localOscWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity,
     int r, c, rowCount;
     size_t hdrSizeWords = 2; // Row count and checksum
     int colCount = isPt ? 4 : 2;
-    static int goodTables = 0;
+    // FIXME...
+    static int goodTables[CFG_DSBPM_COUNT] = { 0 };
 
     rowCount = src[0];
     if ((rowCount >= 29)
      && (rowCount < capacity)
      && (src[1] == checkSum(src, rowCount, colCount))) {
-        goodTables++;
+        goodTables[bpm]++;
         if (dst) {
             memcpy(dst, src, hdrSizeWords*sizeof(*src));
             dst+=hdrSizeWords;
@@ -403,7 +404,7 @@ localOscWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity,
         printf("CORRUPT LOCAL OSCILLATOR TABLE\n");
     }
 
-    if (goodTables == 2) localOscRun(bpm);
+    if (goodTables[bpm] == 2) localOscRun(bpm);
     if (isPt) optimizeCicShift(bpm, rowCount);
 }
 
