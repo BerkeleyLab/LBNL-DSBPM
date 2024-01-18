@@ -576,19 +576,26 @@ wfrCheckForWork(void)
  * Called from server packet handler
  */
 int
-waveformRecorderCommand(unsigned int bpm, int waveformCommand, unsigned int recorder,
+waveformRecorderCommand(int waveformCommand, unsigned int index,
         epicsUInt32 val, uint32_t reply[], int capacity)
 {
     struct recorderData *rp;
     int replyArgCount = 0;
+    unsigned int bpm = index / CFG_NUM_RECORDERS;
+    unsigned int recorder = index % CFG_NUM_RECORDERS;
 
     if (bpm >= CFG_DSBPM_COUNT) return 0;
     if (recorder >= CFG_NUM_RECORDERS) return 0;
 
     if (waveformCommand == DSBPM_PROTOCOL_CMD_RECORDERS_LO_SOFT_TRIGGER) {
+        /* For this command we use index directly */
+        if (index >= CFG_DSBPM_COUNT)
+            return 0;
+
         if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
             printf("Recorder soft trigger\n");
-        GPIO_WRITE(bpm*GPIO_IDX_PER_DSBPM+GPIO_IDX_WFR_SOFT_TRIGGER,
+
+        GPIO_WRITE(index*GPIO_IDX_PER_DSBPM+GPIO_IDX_WFR_SOFT_TRIGGER,
                 0);
         return 0;
     }

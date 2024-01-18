@@ -10,7 +10,7 @@
 
 void wfrInit(unsigned int bpm);
 
-int waveformRecorderCommand(unsigned int bpm, int waveformCommand, unsigned int recorder,
+int waveformRecorderCommand(int waveformCommand, unsigned int index,
         epicsUInt32 val, uint32_t reply[], int capacity);
 
 struct pbuf *wfrAckPacket(struct dsbpmWaveformAck *ackp);

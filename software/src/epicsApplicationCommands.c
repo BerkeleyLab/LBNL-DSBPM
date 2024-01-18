@@ -76,8 +76,7 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         break;
 
     case DSBPM_PROTOCOL_CMD_HI_RECORDERS:
-        replyArgCount = waveformRecorderCommand(idx / CFG_NUM_RECORDERS, lo,
-                idx % CFG_NUM_RECORDERS,
+        replyArgCount = waveformRecorderCommand(lo, idx,
                 cmdp->args[0], replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY);
         break;
 
