@@ -205,7 +205,7 @@ iicSend(struct controller *cp, int address, const uint8_t *buf, int n)
         if (status != XST_SUCCESS) printf(" FAILED");
         printf("\n");
     }
-    microsecondSpin(10000);
+    microsecondSpin(100);
     return status == XST_SUCCESS;
 }
 
@@ -226,7 +226,7 @@ iicRecv(struct controller *cp, int address, uint8_t *buf, int n)
         }
         printf("\n");
     }
-    microsecondSpin(10000);
+    microsecondSpin(100);
     return status == XST_SUCCESS;
 }
 
@@ -449,6 +449,8 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
     iicBuf[0] = 0x8 >> muxSelect;
     memcpy(&iicBuf[1], buf, n);
     if (!iicWrite(IIC_INDEX_I2C2SPI, iicBuf, n + 1)) return 0;
+
+    microsecondSpin(10000);
     return 1;
 }
 
