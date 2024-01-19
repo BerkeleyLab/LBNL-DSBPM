@@ -1,21 +1,4 @@
 /*
- * Configuration values specific to a particular site or  application.
- * Same restrictions as noted in gpio.h.
- */
-#define VERILOG_FIRMWARE_STYLE_HSD
-#define CFG_ACQUISITION_BUFFER_CAPACITY     (1<<10)
-#define CFG_LONG_SEGMENT_CAPACITY           (1<<8)
-#define CFG_SHORT_SEGMENT_CAPACITY          (1<<5)
-#define CFG_EARLY_SEGMENTS_COUNT            5
-#define CFG_SEGMENT_PRETRIGGER_COUNT        32
-#define CFG_DSPS_PER_BONDED_GROUP           4
-
-/*
- * For softwre compatibility:
- */
-#define CFG_ADCS_PER_BONDED_GROUP CFG_DSPS_PER_BONDED_GROUP
-
-/*
  * ADC AXI MMCM (adcClk source) configuration
  * Values are scaled by a factor of 1000.
  */
@@ -62,6 +45,22 @@
 #define CFG_DSBPM_COUNT         ((CFG_ADC_PHYSICAL_COUNT + 3)/4)
 
 /*
+ * Number of ADCs per tile
+ */
+#define CFG_ADC_PER_TILE        2
+
+/*
+ * Number of tiles
+ */
+#define CFG_TILES_COUNT         (((CFG_ADC_PHYSICAL_COUNT)+(CFG_ADC_PER_TILE)-1)/(CFG_ADC_PER_TILE))
+
+/*
+ * Number of ADCs per BPM
+ */
+
+#define CFG_ADC_PER_BPM_COUNT   ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
+
+/*
  * ADC sampling clock frequency
  */
 /*
@@ -93,7 +92,7 @@
  *  the write address by the correct sample size (usually 4
  *  32-bit samples).
  */
-#define CFG_RECORDER_ADC_SAMPLE_CAPACITY 64*1024*1024
+#define CFG_RECORDER_ADC_SAMPLE_CAPACITY 32*1024*1024
 #define CFG_RECORDER_TBT_SAMPLE_CAPACITY 32*1024*1024
 #define CFG_RECORDER_FA_SAMPLE_CAPACITY  32*1024*1024
 #define CFG_RECORDER_PT_SAMPLE_CAPACITY  4*1024*1024

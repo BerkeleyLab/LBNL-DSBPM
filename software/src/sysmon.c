@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <xsysmonpsu.h>
-#include "acquisition.h"
 #include "cellComm.h"
 #include "display.h"
 #include "evr.h"

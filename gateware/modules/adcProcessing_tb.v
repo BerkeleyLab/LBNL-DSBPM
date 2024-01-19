@@ -106,7 +106,7 @@ wire [DATA_WIDTH-1:0] adc0Out,
 assign GPIO_IN[WR_REG_OFFSET_CSR] = CSR;
 
 adcProcessing #(
-    .ADC_WIDTH(ADC_WIDTH),
+    .ADC_WIDTH(DATA_WIDTH),
     .DATA_WIDTH(DATA_WIDTH)
 ) DUT (
     .sysClk(clk),
@@ -162,52 +162,52 @@ initial begin
 
     @(posedge adcClk);
     adcValidIn <= 1'b1;
-    adc0In     <= {14'd0, 2'b00};
+    adc0In     <= 16'd0;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
     adcValidIn <= 1'b1;
-    adc0In     <= {14'd20, 2'b00};
+    adc0In     <= 16'd20;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd40, 2'b00};
+    adc0In     <= 16'd40;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd60, 2'b00};
+    adc0In     <= 16'd60;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd80, 2'b00};
+    adc0In     <= 16'd80;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd80, 2'b00};
+    adc0In     <= 16'd80;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd100, 2'b00};
+    adc0In     <= 16'd100;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd200, 2'b00};
+    adc0In     <= 16'd200;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd50, 2'b00};
+    adc0In     <= 16'd50;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd80, 2'b00};
+    adc0In     <= 16'd80;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd40, 2'b00};
+    adc0In     <= 16'd40;
     adc0QIn    <= 0;
 
     @(posedge adcClk);
-    adc0In     <= {14'd30, 2'b00};
+    adc0In     <= 16'd30;
     adc0QIn    <= 0;
 
     repeat(10) begin
@@ -215,7 +215,7 @@ initial begin
     end
 
     @(posedge adcClk);
-    adc0In     <= {14'd0, 2'b00};
+    adc0In     <= 16'd0;
     adc0QIn    <= 0;
 end
 

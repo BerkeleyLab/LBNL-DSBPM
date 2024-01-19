@@ -3,7 +3,6 @@
 #include <lwip/init.h>
 #include <lwip/inet.h>
 #include <netif/xadapter.h>
-#include "acquisition.h"
 #include "afe.h"
 #include "console.h"
 #include "display.h"
@@ -70,6 +69,7 @@ int
 main(void)
 {
     int isRecovery;
+    int bpm;
     unsigned char *enetMAC;
     const struct sysNetParms *ipv4;
     static ip_addr_t ipaddr, netmask, gateway;
@@ -121,7 +121,6 @@ main(void)
     afeInit();
     rfADCrestart();
     rfADCsync();
-    afeStart();
 
     /* Start network */
     lwip_init();
@@ -146,12 +145,13 @@ main(void)
     epicsInit();
     tftpInit();
     publisherInit();
-    acquisitionInit();
-    localOscillatorInit();
     acqSyncInit();
-    positionCalcInit();
-    wfrInit();
-    for (int i = 0 ; i < CFG_ADC_PHYSICAL_COUNT ; i++) { afeSetGain(i, 16); }
+
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        localOscillatorInit(bpm);
+        positionCalcInit(bpm);
+        wfrInit(bpm);
+    }
 
     /*
      * Main processing loop
@@ -163,7 +163,6 @@ main(void)
     }
     for (;;) {
         checkForReset();
-        acquisitionCrank();
         mgtCrankRxAligner();
         xemacif_input(&netif);
         publisherCheck();
