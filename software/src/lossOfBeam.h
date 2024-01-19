@@ -7,6 +7,6 @@
 
 #include <stdint.h>
 
-void lossOfBeamThreshold(int bpm, uint32_t thrs);
+void lossOfBeamThreshold(unsigned int bpm, uint32_t thrs);
 
 #endif

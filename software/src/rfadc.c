@@ -12,15 +12,12 @@ typedef int64_t __s64;
 #include <xrfdc.h>
 #include <xrfdc_mts.h>
 #include "gpio.h"
+#include "config.h"
 #include "rfadc.h"
 #include "util.h"
 
 #define XRFDC_ADC_OVR_VOLTAGE_MASK  0x04000000U
 #define XRFDC_ADC_OVR_RANGE_MASK    0x08000000U
-
-#define ADC_PER_TILE    2
-#define NTILES (((CFG_ADC_PHYSICAL_COUNT)+(ADC_PER_TILE)-1)/(ADC_PER_TILE))
-#define ADC_PER_BPM ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
 
 #define REG_W_MASTER_RESET   0x0004
 #define REG_R_POWER_ON_STATE 0x0004
@@ -55,7 +52,7 @@ rfADCshow(void)
         printf("Can't get IP status.\n");
         return;
     }
-    for (tile = 0 ; tile < NTILES ; tile++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (!IPStatus.ADCTileStatus[tile].IsEnabled) continue;
         printf("Tile %d (%d) enabled\n", tile, 224 + tile);
         printf("   Tile state: %#X\n", IPStatus.ADCTileStatus[tile].TileState);
@@ -68,8 +65,8 @@ rfADCshow(void)
             XRFdc_GetPLLLockStatus(&rfDC, XRFDC_ADC_TILE, tile, &v);
             printf("       PLL locked state %d\n", (int)v);
         }
-        for (adc = 0 ; adc < ADC_PER_TILE ; adc++) {
-            int adcIdx = (tile * ADC_PER_TILE) + adc;
+        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
+            int adcIdx = (tile * CFG_ADC_PER_TILE) + adc;
             int i;
             XRFdc_Mixer_Settings mixer;
             XRFdc_Cal_Freeze_Settings cfs;
@@ -123,9 +120,9 @@ rfADClinkCouplingIsAC(void)
         printf("Can't get IP status -- assuming AC coupling.\n");
         return 1;
     }
-    for (tile = 0 ; tile < NTILES ; tile++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (!IPStatus.ADCTileStatus[tile].IsEnabled) continue;
-        for (adc = 0 ; adc < ADC_PER_TILE ; adc++) {
+        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             XRFdc_GetLinkCoupling(&rfDC, tile, adc, &v);
             if (firstTime) {
                 firstTime = 0;
@@ -144,7 +141,7 @@ static void rfADCCfgDefaults(void)
 {
     int i, tile, adc;
 
-    for (tile = 0 ; tile < NTILES ; tile++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_ADC_TILE, tile,
                                           XRFDC_EXTERNAL_CLK,
                                           CFG_ADC_REF_CLK_FREQ,
@@ -153,7 +150,7 @@ static void rfADCCfgDefaults(void)
 
         // Override GUI mixer settings
 #ifdef CFG_ADC_NCO_FREQ
-        for (adc = 0 ; adc < ADC_PER_TILE ; adc++) {
+        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             XRFdc_Mixer_Settings mixer;
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile, adc, &mixer);
             if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings()=%d", i);
@@ -228,7 +225,7 @@ rfADCsync(void)
     }
     XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL);
     XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL);
-    for (tile = 0 ; tile < NTILES ; tile++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (IPStatus.ADCTileStatus[tile].IsEnabled) {
             adcConfig.Tiles |= 1 << tile;
         }
@@ -263,7 +260,7 @@ rfADCsync(void)
      * Sync API Use".
      */
     latency = -1;
-    for (tile = 0 ; tile < NTILES ; tile++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (adcConfig.Latency[tile] > latency) {
             latency = adcConfig.Latency[tile];
         }
@@ -292,8 +289,8 @@ rfADCfreezeCalibration(int channel, int freeze)
 {
     int i;
     XRFdc_Cal_Freeze_Settings cfs;
-    int tile = channel / ADC_PER_TILE;
-    int adc = channel % ADC_PER_TILE;
+    int tile = channel / CFG_ADC_PER_TILE;
+    int adc = channel % CFG_ADC_PER_TILE;
 
     freeze = (freeze != 0);
     cfs.DisableFreezePin = 1;
@@ -330,10 +327,10 @@ rfADCstatus(void)
     int statusShift = 0;
     uint32_t v;
 
-    for (tile = 0 ; tile < NTILES ; tile++) {
-        for (adc = 0 ; adc < ADC_PER_TILE ; adc++) {
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             int b = 0;
-            if (((tile * ADC_PER_TILE) + adc) >= CFG_ADC_PHYSICAL_COUNT) break;
+            if (((tile * CFG_ADC_PER_TILE) + adc) >= CFG_ADC_PHYSICAL_COUNT) break;
             XRFdc_GetIntrStatus(&rfDC, XRFDC_ADC_TILE, tile, adc, &v);
             if (v) {
                 b |= (v & XRFDC_ADC_OVR_RANGE_MASK) ? 0x1 : 0;
@@ -352,8 +349,8 @@ rfADCGetDSA(int channel)
 {
     int i;
     XRFdc_DSA_Settings dsa;
-    int tile = channel / ADC_PER_TILE;
-    int adc = channel % ADC_PER_TILE;
+    int tile = channel / CFG_ADC_PER_TILE;
+    int adc = channel % CFG_ADC_PER_TILE;
 
     i = XRFdc_GetDSA(&rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
@@ -369,8 +366,8 @@ rfADCSetDSA(int channel, float att)
 {
     int i;
     XRFdc_DSA_Settings dsa;
-    int tile = channel / ADC_PER_TILE;
-    int adc = channel % ADC_PER_TILE;
+    int tile = channel / CFG_ADC_PER_TILE;
+    int adc = channel % CFG_ADC_PER_TILE;
 
     i = XRFdc_GetDSA(&rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
@@ -395,7 +392,7 @@ rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt)
     if (bpm >= CFG_DSBPM_COUNT) return;
 
     att = ((float) mDbAtt) / 1000;
-    ch = bpm * ADC_PER_BPM + channel;
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     rfADCSetDSA(ch, att);
 }
 
@@ -406,7 +403,7 @@ rfADCGetDSADSBPM(unsigned int bpm, int channel)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
 
-    ch = bpm * ADC_PER_BPM + channel;
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     att = rfADCGetDSA(ch);
 
     return att * 1000;

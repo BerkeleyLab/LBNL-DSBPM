@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <lwip/udp.h>
+#include "adcProcessing.h"
+#include "afe.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
-#include "afe.h"
-#include "acquisition.h"
 #include "epics.h"
 #include "epicsApplicationCommands.h"
 #include "evr.h"
@@ -165,14 +165,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             evrSetTriggerDelay(idx, cmdp->args[0]);
             break;
 
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_GAIN:
-            afeSetGain(idx, cmdp->args[0]);
-            break;
-
-        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_COUPLING:
-            afeSetCoupling(idx, cmdp->args[0]);
-            break;
-
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC:
             switch (idx) {
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_IDX_REBOOT:
@@ -181,16 +173,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
             case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_EVR_CLK_PER_TURN:
                 GPIO_WRITE(GPIO_IDX_EVR_SYNC_CSR, cmdp->args[0]<<16);
-                break;
-
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_ENABLE_TRAINING_TONE:
-                afeEnableTrainingTone(cmdp->args[0]);
-                break;
-
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_SET_CALIBRATION_DAC:
-                if (afeSetDAC(cmdp->args[0]) < 0) {
-                    return -1;
-                }
                 break;
 
             default: return -1;
@@ -224,12 +206,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
         default: return -1;
         }
-        break;
-
-    case DSBPM_PROTOCOL_CMD_HI_WAVEFORM:
-        if (commandArgCount != 2) return -1;
-        replyArgCount = acquisitionFetch(replyp->args,
-                  DSBPM_PROTOCOL_ARG_CAPACITY, idx, cmdp->args[0], cmdp->args[1]);
         break;
 
     default: return -1;

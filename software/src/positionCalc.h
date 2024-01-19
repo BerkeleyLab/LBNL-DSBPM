@@ -5,6 +5,6 @@
 #ifndef _POSITIONCALC_H_
 #define _POSITIONCALC_H_
 
-void positionCalcInit(void);
+void positionCalcInit(unsigned int bpm);
 
 #endif

@@ -9,7 +9,6 @@
 #include <lwip/udp.h>
 #include <xparameters.h>
 #include <xuartps_hw.h>
-#include "acquisition.h"
 #include "afe.h"
 #include "display.h"
 #include "evr.h"
@@ -152,32 +151,6 @@ cmdBOOT(int argc, char **argv)
 }
 
 static int
-cmdCAL(int argc, char **argv)
-{
-    char *endp;
-    int d;
-
-    for ( ; argc > 1 ; argc--, argv++) {
-        if (strcmp(argv[1], "-t") == 0) {
-            afeEnableTrainingTone(1);
-        }
-        else {
-            d = strtol(argv[1], &endp, 0);
-            if (*endp != '\0') {
-                printf("Bad DAC value argument.\n");
-            }
-            else {
-                if (d < 0) d = 0;
-                if (d > 0xFFFF) d = 0xFFFF;
-                printf("Set calibration DAC to 0x%x (%d)\n", d, d);
-                afeSetDAC(d);
-            }
-        }
-    }
-    return 0;
-}
-
-static int
 cmdDEBUG(int argc, char **argv)
 {
     char *endp;
@@ -200,7 +173,6 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_ADC_MMCM_SHOW) mmcmShow();
     if (debugFlags & DEBUGFLAG_SHOW_DRP) eyescanCommand(0, NULL);
     if (debugFlags & DEBUGFLAG_RF_CLK_SHOW) rfClkShow();
-    if (debugFlags & DEBUGFLAG_SHOW_AFE_REG) afeShow();
     if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
     if (debugFlags & DEBUGFLAG_SHOW_SYSREF) sysrefShow();
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
@@ -540,7 +512,6 @@ struct commandInfo {
 };
 static struct commandInfo commandTable[] = {
   { "boot",   cmdBOOT,  "Reboot FPGA"                        },
-  { "cal"  ,  cmdCAL,   "Set calibration signals"            },
   { "DIR",    ffsShow,  "Show micro SD cards files"          },
   { "debug",  cmdDEBUG, "Set debug flags"                    },
   { "evr",    cmdEVR,   "Show EVR configuration"             },

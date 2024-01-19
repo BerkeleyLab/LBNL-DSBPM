@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <lwip/udp.h>
-#include "afe.h"
 #include "localOscillator.h"
 #include "ffs.h"
 #include "st7789v.h"
@@ -58,18 +57,14 @@ static struct fileInfo fileTable[] = {
                                                     systemParametersStashEEPROM,
                                                     systemParametersCommit,
                                                     systemParametersCommit},
-   {AFE_EEPROM_NAME, "AFE data",
-                                                    afeFetchEEPROM,
-                                                    afeStashEEPROM,
-                                                    dummyCommit},
    {RF_TABLE_EEPROM_NAME, "Local oscillator table (RF)",
                                                     localOscillatorFetchRfEEPROM,
                                                     localOscillatorStashRfEEPROM,
-                                                    localOscRfCommit},
+                                                    localOscRfCommitAll},
    {PT_TABLE_EEPROM_NAME, "Local oscillator table (Pilot Tones)",
                                                     localOscillatorFetchPtEEPROM,
                                                     localOscillatorStashPtEEPROM,
-                                                    localOscPtCommit},
+                                                    localOscPtCommitAll},
    {"BOOT.bin", "Bitsream + Software image",
                                                     dummyPreTransmit,
                                                     dummyPostReceive,

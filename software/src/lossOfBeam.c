@@ -8,16 +8,8 @@
 
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
-void lossOfBeamThreshold(int bpm, uint32_t thrs)
+void lossOfBeamThreshold(unsigned int bpm, uint32_t thrs)
 {
-    int ch;
-
-    if (bpm < 0) {
-        for (ch = 0 ; ch < CFG_DSBPM_COUNT ; ch++) {
-            GPIO_WRITE(REG(GPIO_IDX_LOSS_OF_BEAM_THRSH, ch), thrs);
-        }
-    }
-    else if (bpm < CFG_DSBPM_COUNT) {
-        GPIO_WRITE(REG(GPIO_IDX_LOSS_OF_BEAM_THRSH, bpm), thrs);
-    }
+    if (bpm >= CFG_DSBPM_COUNT) return;
+    GPIO_WRITE(REG(GPIO_IDX_LOSS_OF_BEAM_THRSH, bpm), thrs);
 }

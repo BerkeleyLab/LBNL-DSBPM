@@ -27,7 +27,7 @@
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 void
-positionCalcInit(void)
+positionCalcInit(unsigned int bpm)
 {
     int ch;
     int buttonA = ((systemParameters.adcOrder / 1000) % 10) & 0x3;
@@ -37,6 +37,8 @@ positionCalcInit(void)
     int xCalc, yCalc, qCalc;
     int xFactor, yFactor, qFactor;
     int rotationCompensation;
+
+    if (bpm >= CFG_DSBPM_COUNT) return;
 
     if (systemParameters.buttonRotation == 0) {
         /*
@@ -77,14 +79,12 @@ positionCalcInit(void)
     yFactor = systemParameters.yCalibration * 1.0e6 * rotationCompensation;
     qFactor = systemParameters.qCalibration * 1.0e6;
 
-    for (ch = 0 ; ch < CFG_DSBPM_COUNT ; ch++) {
-        GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_CSR, ch), ((qCalc << (2 * CALC_SHIFT)) |
-                                                         (yCalc <<      CALC_SHIFT)  |
-                                                         xCalc));
-        GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_XCAL, ch), xFactor);
-        GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_YCAL, ch), yFactor);
-        GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_QCAL, ch), qFactor);
-    }
+    GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_CSR, bpm), ((qCalc << (2 * CALC_SHIFT)) |
+                                                     (yCalc <<      CALC_SHIFT)  |
+                                                     xCalc));
+    GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_XCAL, bpm), xFactor);
+    GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_YCAL, bpm), yFactor);
+    GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_QCAL, bpm), qFactor);
 
-    lossOfBeamThreshold(-1, 1000); /* all BPMs, Reasonable default */
+    lossOfBeamThreshold(bpm, 1000); /* all BPMs, Reasonable default */
 }
