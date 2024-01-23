@@ -7,6 +7,7 @@ Startup debug flags,0
 PLL RF divisor,328
 PLL multiplier,81
 Single pass?,0
+Single pass event,0
 ADC clocks per heartbeat,24928000
 EVR clocks per fast acquisition,12464
 EVR clocks per slow acquisition,12464000
