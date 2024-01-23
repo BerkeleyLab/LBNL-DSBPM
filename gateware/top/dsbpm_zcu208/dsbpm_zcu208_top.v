@@ -183,10 +183,13 @@ evrGTYwrapper #(.DEBUG("false"))
     .evrCharIsK(evrCharIsK),
     .evrCharIsComma(evrCharIsComma));
 
-// EVR triggers
+// EVR triggers. Events 4 to 7 are reesrved for the user,
+// and they are forwarded to other the waveform recorder
 wire [7:0] evrTriggerBus;
 wire evrHeartbeat = evrTriggerBus[0];
 wire evrPulsePerSecond = evrTriggerBus[1];
+wire evrSinglePass = evrTriggerBus[2];
+wire evrSpare = evrTriggerBus[3];
 wire evrSROCsynced;
 assign GPIO_LEDS[0] = evrHeartbeat;
 assign GPIO_LEDS[1] = evrPulsePerSecond;
@@ -1551,7 +1554,7 @@ preliminaryProcessing #(.SYSCLK_RATE(SYSCLK_RATE),
     .evrFaMarker(evrFaMarker),
     .evrSaMarker(evrSaMarker),
     .evrTimestamp(evrTimestamp),
-    .evrSinglePassTrigger(1'b0),
+    .evrSinglePassTrigger(evrSinglePass),
     .evrHbMarker(evrHeartbeat),
     .sysSingleTrig(sysSingleTrig[dsbpm]),
     .adcSingleTrig(adcSingleTrig[dsbpm]),
