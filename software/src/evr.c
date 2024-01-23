@@ -91,7 +91,7 @@ evrInit(void)
             case EVENT_PPS:       evGot(&pps);       break;
             default:
                 /*
-                 * For unknown reasons the event receiver often (always?) 
+                 * For unknown reasons the event receiver often (always?)
                  * emits a spurious event 0 on startup.
                  */
                 if ((eventCode == 0) && firstEvent0) {
@@ -129,14 +129,24 @@ evrInit(void)
     evrSetEventAction(EVENT_PPS, EVR_RAM_TRIGGER_1);
 
     /*
+     * Trigger 2 is a single pass event.
+     */
+    evrSetTriggerDelay(2, 1);
+    evrSetTriggerWidth(2, 100);
+    if ((systemParameters.singlePassEvent > 0)
+     && (systemParameters.singlePassEvent < EVR_EVENT_COUNT)) {
+        evrSetEventAction(systemParameters.singlePassEvent, EVR_RAM_TRIGGER_2);
+    }
+
+    /*
      * Remaining triggers are available as ADC recorder event triggers.
      * Make the outputs nice and wide since for the bunch current monitor
      * the 'injection event' trigger must overlap the 'acquisition event'
      * trigger to indicate that this is a true injection event.
      */
-    for (t = 2 ; t < 8 ; t++) {
+    for (t = 3 ; t < 8 ; t++) {
         evrSetTriggerDelay(t, 1);
-        evrSetTriggerWidth(t, 12500000);
+        evrSetTriggerWidth(t, 100);
     }
 }
 
