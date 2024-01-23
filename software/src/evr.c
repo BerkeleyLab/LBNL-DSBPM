@@ -5,6 +5,7 @@
 #include "evr.h"
 #include "gpio.h"
 #include "util.h"
+#include "systemParameters.h"
 
 #define EVENT_HEARTBEAT         122
 #define EVENT_PPS               125
