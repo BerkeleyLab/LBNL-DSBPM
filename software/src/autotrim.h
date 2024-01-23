@@ -19,7 +19,6 @@
 
 void         autotrimEnable(unsigned int bpm, int flag);
 void         autotrimSetStaticGains(unsigned int bpm, unsigned int channel, int gain);
-void         autotrimUsePulsePilot(unsigned int bpm, int flag);
 int          autotrimStatus(unsigned int bpm);
 void         autotrimSetThreshold(unsigned int bpm, unsigned int threshold);
 unsigned int autotrimGetThreshold(unsigned int bpm);
