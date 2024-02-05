@@ -45,8 +45,7 @@ module preliminaryProcessing #(
     input                        evrClk,
     input                        evrFaMarker, evrSaMarker,
     input                 [63:0] evrTimestamp,
-    input                        evrPtTrigger,evrSinglePassTrigger,evrHbMarker,
-    output wire                  PT_P, PT_N,
+    input                        evrSinglePassTrigger,evrHbMarker,
     output reg                   sysSingleTrig,
     output wire                  adcSingleTrig,
     output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg, plProductsDbg, phProductsDbg,
@@ -78,8 +77,6 @@ module preliminaryProcessing #(
 
 wire sysUseRMS           = localOscillatorCsr[2];
 wire sysIsSinglePassMode = localOscillatorCsr[1];
-wire sysPtTimeMuxMode    = autotrimCsr[2];
-wire sysUsePulsePt       = autotrimCsr[3];
 wire sysPtSimulateBeam   = autotrimCsr[31];
 
 //////////////////////////////////////////////////////////////////////////////
@@ -90,36 +87,18 @@ wire sysPtSimulateBeam   = autotrimCsr[31];
 // Latch in EVR clock domain to ensure that all BPMs
 // have exactly the same SA timestamp.
 reg  adcMtLoadAndLatchToggle = 0;
-(* ASYNC_REG="TRUE" *) reg evrMtLoadAndLatchToggle_m, evrUsePulsePt_m;
-reg evrMtLoadAndLatchToggle, evrMtLoadAndLatchToggle_d, evrUsePulsePt;
+(* ASYNC_REG="TRUE" *) reg evrMtLoadAndLatchToggle_m;
+reg evrMtLoadAndLatchToggle, evrMtLoadAndLatchToggle_d;
 reg [63:0] evrSaTimestamp;
 reg evrSaMarker_d;
 always @(posedge evrClk) begin
     evrMtLoadAndLatchToggle_m <= adcMtLoadAndLatchToggle;
     evrMtLoadAndLatchToggle   <= evrMtLoadAndLatchToggle_m;
     evrMtLoadAndLatchToggle_d <= evrMtLoadAndLatchToggle;
-    evrUsePulsePt_m <= sysUsePulsePt;
-    evrUsePulsePt   <= evrUsePulsePt_m;
 
     evrSaMarker_d <= evrSaMarker;
     if (evrSaMarker && !evrSaMarker_d) evrSaTimestamp <= evrTimestamp;
 end
-
-//
-// Time-multiplexed pilot tone and simulated beam
-//
-wire evrPtWarning, evrPtStable;
-//pilotTone pilotTone(
-//    .evrClk(evrClk),
-//    .aEnable(sysPtTimeMuxMode),
-//    .aSimulate(sysPtSimulateBeam),
-//    .usePulsePt(evrUsePulsePt),
-//    .trigger(evrPtTrigger),
-//    .pulseStrobe(evrMtLoadAndLatchToggle != evrMtLoadAndLatchToggle_d),
-//    .ptWarning(evrPtWarning),
-//    .ptStable(evrPtStable),
-//    .PT_P(PT_P),
-//    .PT_N(PT_N));
 
 //////////////////////////////////////////////////////////////////////////////
 //                              ADC CLOCK DOMAIN                            //
@@ -128,12 +107,12 @@ wire evrPtWarning, evrPtStable;
 //
 // Get assorted timing values into ADC clock domain.
 //
-(* ASYNC_REG="TRUE" *) reg adcUseRMS_m = 0, adcUsePulsePt_m = 0;
-(* ASYNC_REG="TRUE" *) reg adcIsSinglePassMode_m = 0, adcPtWarning_m = 0;
+(* ASYNC_REG="TRUE" *) reg adcUseRMS_m = 0;
+(* ASYNC_REG="TRUE" *) reg adcIsSinglePassMode_m = 0;
 (* ASYNC_REG="TRUE" *) reg adcFaEvent_m = 0, adcSaEvent_m = 0;
 (* ASYNC_REG="TRUE" *) reg adcHbEvent_m = 0, adcSpEvent_m = 0;
-reg adcUseRMS = 0, adcUsePulsePt = 0;
-reg adcIsSinglePassMode = 0, adcPtWarning = 0;
+reg adcUseRMS = 0;
+reg adcIsSinglePassMode = 0;
 reg adcFaEvent = 0, adcFaEvent_d1 = 0, adcFaSync = 0;
 reg adcSaEvent = 0, adcSaEvent_d1 = 0, adcSaSync = 0;
 reg adcHbEvent = 0, adcHbEvent_d1 = 0;
@@ -146,10 +125,6 @@ always @(posedge adcClk) begin
     adcUseRMS             <= adcUseRMS_m;
     adcIsSinglePassMode_m <= sysIsSinglePassMode;
     adcIsSinglePassMode   <= adcIsSinglePassMode_m;
-    adcUsePulsePt_m       <= sysUsePulsePt;
-    adcUsePulsePt         <= adcUsePulsePt_m;
-    adcPtWarning_m        <= evrPtWarning;
-    adcPtWarning          <= adcPtWarning_m;
 
     adcFaEvent_m  <= evrFaMarker;
     adcFaEvent    <= adcFaEvent_m;
@@ -209,7 +184,7 @@ end
 // Local oscillator
 //
 reg adcHoldoff = 0;
-wire adcSinglePassStart = adcIsSinglePassMode && !adcPtWarning && !adcHoldoff &&
+wire adcSinglePassStart = adcIsSinglePassMode && !adcHoldoff &&
                    ((adcExceedsThreshold && !adcUsingEvrTrigger) || adcSpEvent);
 wire [LO_WIDTH-1:0] adcRfCos, adcRfSin, adcPlCos, adcPlSin, adcPhCos, adcPhSin;
 (*mark_debug="false"*)
@@ -267,13 +242,13 @@ wire [ADC_WIDTH-1:0] adc = adcs[i*ADC_WIDTH+:ADC_WIDTH];
 wire [ADC_WIDTH-1:0] adcQ = adcsQ[i*ADC_WIDTH+:ADC_WIDTH];
 wire [LO_WIDTH-1:0]  adcLO  ={adc[ADC_WIDTH-1], adc, {LO_WIDTH-ADC_WIDTH-1{1'b0}}};
 wire [LO_WIDTH-1:0]  adcQLO ={adcQ[ADC_WIDTH-1], adcQ, {LO_WIDTH-ADC_WIDTH-1{1'b0}}};
-wire [ADC_WIDTH-1:0] rfADC = adcPtWarning || (adcUseRMS && !adcUseThisSample) ?
+wire [ADC_WIDTH-1:0] rfADC = (adcUseRMS && !adcUseThisSample) ?
                                                         {ADC_WIDTH{1'b0}} : adc;
-wire [ADC_WIDTH-1:0] rfADCQ = adcPtWarning || (adcUseRMS && !adcUseThisSample) ?
+wire [ADC_WIDTH-1:0] rfADCQ = (adcUseRMS && !adcUseThisSample) ?
                                                         {ADC_WIDTH{1'b0}} : adcQ;
-wire [ADC_WIDTH-1:0] ptADC = adcUsePulsePt && adcUseRMS && !adcUseThisSample ?
+wire [ADC_WIDTH-1:0] ptADC = (adcUseRMS && !adcUseThisSample) ?
                                                         {ADC_WIDTH{1'b0}} : adc;
-wire [ADC_WIDTH-1:0] ptADCQ = adcUsePulsePt && adcUseRMS && !adcUseThisSample ?
+wire [ADC_WIDTH-1:0] ptADCQ = (adcUseRMS && !adcUseThisSample) ?
                                                         {ADC_WIDTH{1'b0}} : adcQ;
 // Set multiplier to ADC value for RMS computation or table entry for I-Q.
 wire [LO_WIDTH-1:0] rfLOcos = adcUseRMS ? adcLO : adcRfCos;
@@ -756,23 +731,15 @@ faDecimate #(.DATA_WIDTH(MAG_WIDTH),
     .outputToggle(ptDecimatedToggle),
     .outputData(decimatedPhMags));
 
-// In time-multiplexed pilot tone mode use only the pilot tone
-// magnitudes computed at the end of the pilot tone interval.
-(* ASYNC_REG="TRUE" *) reg sysPtStable_m = 0;
-reg sysPtStable = 0, sysPtStable_d = 0;
+// Pilot tone toggle.
 reg ptDecimatedMatch = 0;
 reg [(4*MAG_WIDTH)-1:0] trimPlMags, trimPhMags;
 always @(posedge clk) begin
-    sysPtStable_m  <= evrPtStable;
-    sysPtStable    <= sysPtStable_m;
     if (ptDecimatedMatch != ptDecimatedToggle) begin
         ptDecimatedMatch <= ptDecimatedToggle;
-        sysPtStable_d <= sysPtStable;
-        if (!sysPtTimeMuxMode || (!sysPtStable && sysPtStable_d)) begin
-            {plMag3, plMag2, plMag1, plMag0} <= decimatedPlMags;
-            {phMag3, phMag2, phMag1, phMag0} <= decimatedPhMags;
-            ptToggle <= !ptToggle;
-        end
+        {plMag3, plMag2, plMag1, plMag0} <= decimatedPlMags;
+        {phMag3, phMag2, phMag1, phMag0} <= decimatedPhMags;
+        ptToggle <= !ptToggle;
     end
 end
 
@@ -945,8 +912,7 @@ always @(posedge clk) begin
          * of single-pass button acquisition for use when we send
          * the SA values.
          */
-        if ((!sysPtStable && sysPtStable_d)
-         || (sysHoldoff && !sysHoldoff_d)) begin
+        if (sysHoldoff && !sysHoldoff_d) begin
             sysSinglePassTimestamp <= sysTimestamp;
         end
         if (saSend) begin
@@ -1022,9 +988,6 @@ end
 //    .probe0(probe)
 //);
 //
-//assign probe[0] = sysPtTimeMuxMode;
-//assign probe[1] = sysPtStable;
-//assign probe[2] = sysPtStable_d;
 //assign probe[3] = ptToggle;
 //assign probe[4] = ptToggle_d;
 //assign probe[5] = sysPtStable;

@@ -28,6 +28,7 @@ extern struct systemParameters {
     int                 rfDivisor;
     int                 pllMultiplier;
     int                 isSinglePass;
+    int                 singlePassEvent;
     int                 adcHeartbeatMarker;
     int                 evrPerFaMarker;
     int                 evrPerSaMarker;

@@ -8,12 +8,10 @@
 #include "util.h"
 
 #define AUTOTRIM_CSR_MODE_MASK              0x7
-#define AUTOTRIM_CSR_TIME_MUX_PILOT_PULSES  0x8
 #define AUTOTRIM_CSR_STATUS_MASK            0x70
 #define AUTOTRIM_CSR_STATUS_SHIFT           4
 #define AUTOTRIM_CSR_FILTER_SHIFT_MASK      0x700
 #define AUTOTRIM_CSR_FILTER_SHIFT_SHIFT     8
-#define AUTOTRIM_CSR_TIME_MUX_SIMULATE_BEAM 0x80000000
 
 #define AUTOTRIM_CSR_STATUS_OFF             0x0
 #define AUTOTRIM_CSR_STATUS_NO_TONE         0x1
@@ -30,21 +28,6 @@ autotrimSetStaticGains(unsigned int bpm, unsigned int channel, int gain)
     if (bpm >= CFG_DSBPM_COUNT) return;
     GPIO_WRITE(REG(GPIO_IDX_ADC_GAIN_FACTOR_0 + channel, bpm),
             gain);
-}
-
-void
-autotrimUsePulsePilot(unsigned int bpm, int flag)
-{
-    uint32_t csr;
-
-    if (bpm >= CFG_DSBPM_COUNT) return;
-    csr = GPIO_READ(REG(GPIO_IDX_AUTOTRIM_CSR, bpm));
-
-    if (flag)
-        csr |=  AUTOTRIM_CSR_TIME_MUX_PILOT_PULSES;
-    else
-        csr &= ~AUTOTRIM_CSR_TIME_MUX_PILOT_PULSES;
-    GPIO_WRITE(REG(GPIO_IDX_AUTOTRIM_CSR, bpm), csr);
 }
 
 static void

@@ -29,7 +29,6 @@
 void
 positionCalcInit(unsigned int bpm)
 {
-    int ch;
     int buttonA = ((systemParameters.adcOrder / 1000) % 10) & 0x3;
     int buttonB = ((systemParameters.adcOrder / 100 ) % 10) & 0x3;
     int buttonC = ((systemParameters.adcOrder / 10  ) % 10) & 0x3;

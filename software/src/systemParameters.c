@@ -65,6 +65,7 @@ systemParametersSetDefaults(void)
     systemParametersDefault.rfDivisor = 328;
     systemParametersDefault.pllMultiplier = 81;
     systemParametersDefault.isSinglePass = 0;
+    systemParameters.singlePassEvent = 0;
     systemParametersDefault.adcHeartbeatMarker = 152 * 82 * 2000;
     systemParametersDefault.evrPerFaMarker = 152 * 82;
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
@@ -311,6 +312,7 @@ static struct conv {
   {"PLL RF divisor",   offsetof(struct systemParameters, rfDivisor),       formatInt,  parseInt},
   {"PLL multiplier",   offsetof(struct systemParameters, pllMultiplier),   formatInt,  parseInt},
   {"Single pass?",     offsetof(struct systemParameters, isSinglePass),    formatInt,  parseInt},
+  {"Single pass event",offsetof(struct systemParameters, singlePassEvent), formatInt,  parseInt},
   {"ADC clocks per heartbeat",
                        offsetof(struct systemParameters, adcHeartbeatMarker),  formatInt,  parseInt},
   {"EVR clocks per fast acquisition",
