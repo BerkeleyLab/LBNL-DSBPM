@@ -6,7 +6,8 @@ VFLAGS += -I. -y . -y$(DSP_DIR) -I$(AUTOGEN_DIR)
 TEST_BENCH = \
 	csrTestMaster_tb \
 	genericWaveformRecorder_tb \
-	adcProcessing_tb
+	adcProcessing_tb \
+	genericDPRAM_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =
