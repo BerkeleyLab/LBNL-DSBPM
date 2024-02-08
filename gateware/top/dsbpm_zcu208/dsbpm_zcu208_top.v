@@ -275,8 +275,8 @@ sysrefSync #(
     .sysStatusReg(GPIO_IN[GPIO_IDX_SYSREF_CSR]),
     .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
     .SYSREF_FPGA_C_UNBUF(SYSREF_FPGA_C_unbuf),
-    .adcClk(adcClk),
-    .user_sysref_adc(user_sysref_adc));
+    .clk(adcClk),
+    .user_sysref_resampled(user_sysref_adc));
 
 /////////////////////////////////////////////////////////////////////////////
 // Monitor range of signals at ADC inputs
