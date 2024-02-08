@@ -18,10 +18,10 @@ module genericDACStreamer #(
     input                        evrHbMarker,
 
     // axis_CLK synchronous signals
-    input                             axis_CLK,
-    output reg [AXIS_DATA_WIDTH-1:0]  axis_TDATA,
-    output reg                        axis_TVALID,
-    input                             axis_READY);
+    input                              axis_CLK,
+    output wire [AXIS_DATA_WIDTH-1:0]  axis_TDATA,
+    output wire                        axis_TVALID,
+    input                              axis_TREADY);
 
 //////////////////////////////////////////////////////////////////////////////
 //                             SYS CLOCK DOMAIN                             //
@@ -52,8 +52,11 @@ reg [WRITE_ADDRESS_WIDTH-1:0] sysMemWrAddress;
 //
 // Instantiate the DAC lookup tables
 //
-reg [READ_ADDRESS_WIDTH-1:0] axisIndex = 0;
+reg [READ_ADDRESS_WIDTH-1:0] axisNextIndex = 0;
+reg [READ_ADDRESS_WIDTH-1:0] axisCurrentIndex = 0;
+wire [READ_ADDRESS_WIDTH-1:0] axisIndex;
 wire [READ_DATA_WIDTH-1:0] axisData;
+reg axisValid = 0;
 genericDPRAM #(.WRITE_ADDRESS_WIDTH(WRITE_ADDRESS_WIDTH),
                .WRITE_DATA_WIDTH(WRITE_DATA_WIDTH),
                .READ_ADDRESS_WIDTH(READ_ADDRESS_WIDTH),
@@ -66,6 +69,8 @@ genericDPRAM #(.WRITE_ADDRESS_WIDTH(WRITE_ADDRESS_WIDTH),
     .rClk(axis_CLK),
     .rAddr(axisIndex),
     .rData(axisData));
+
+assign axisIndex = axis_TREADY? axisNextIndex : axisCurrentIndex;
 
 //
 // CSR
@@ -125,26 +130,30 @@ forwardData #(
 reg axisSynced = 0;
 always @(posedge axis_CLK)
 begin
+    axisCurrentIndex <= axisIndex;
+
     if (axisRun) begin
         if (axisSyncMarker) begin
-            if (axisIndex == 0) begin
+            if (axisNextIndex == 0) begin
                 axisSynced <= 1;
             end else begin
                 axisSynced <= 0;
             end
-            axisIndex <= 1;
+            axisNextIndex <= 1;
         end
         else begin
-            axisIndex <= (axisIndex == axisLastIdx) ? 0 : axisIndex + 1;
+            if (axis_TREADY) begin
+                axisNextIndex <= (axisNextIndex == axisLastIdx) ? 0 : axisNextIndex + 1;
+                axisValid <= 1;
+            end
         end
-
-        axis_TDATA <= axisData;
-        axis_TVALID <= 1;
     end else begin
-        axis_TDATA <= 0;
-        axis_TVALID <= 0;
+        axisValid <= 0;
     end
 end
+
+assign axis_TDATA = axisData;
+assign axis_TVALID = axisValid;
 
 //
 // axis_CLK to sysClk

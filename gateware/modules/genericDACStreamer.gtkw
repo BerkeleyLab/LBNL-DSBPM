@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Thu Feb  8 00:35:56 2024
+[*] Thu Feb  8 23:11:55 2024
 [*]
 [dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericDACStreamer.vcd"
-[dumpfile_mtime] "Thu Feb  8 00:32:08 2024"
-[dumpfile_size] 257709
+[dumpfile_mtime] "Thu Feb  8 23:08:21 2024"
+[dumpfile_size] 332920
 [savefile] "/home/lrusso/repos/dsbpm/gateware/modules/genericDACStreamer.gtkw"
-[timestart] 7557
+[timestart] 8022200
 [size] 2171 991
-[pos] 53 -517
-*-6.000000 7806 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 53 0
+*-15.000000 7843200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] genericDACStreamer_tb.
 [sst_width] 214
 [signals_width] 763
@@ -29,10 +29,8 @@ genericDACStreamer_tb.axis_clk
 genericDACStreamer_tb.axis_TDATA[255:0]
 @28
 genericDACStreamer_tb.axis_TVALID
+genericDACStreamer_tb.axis_TREADY
 genericDACStreamer_tb.evr_clk
-@22
-genericDACStreamer_tb.evrHbCnt[4:0]
-@28
 genericDACStreamer_tb.evrHbComb
 genericDACStreamer_tb.evrHbMarker
 @420
@@ -42,14 +40,16 @@ genericDACStreamer_tb.errors
 genericDACStreamer_tb.module_done
 genericDACStreamer_tb.module_start_fill_table
 genericDACStreamer_tb.module_start_run_table
+genericDACStreamer_tb.module_table_run_done
 @200
 -
 @28
 genericDACStreamer_tb.DUT.sysClk
 genericDACStreamer_tb.DUT.sysAddressStrobe
 genericDACStreamer_tb.DUT.sysGpioStrobe
-@22
+@23
 genericDACStreamer_tb.DUT.sysGpioData[31:0]
+@22
 genericDACStreamer_tb.DUT.sysGpioCsr[31:0]
 genericDACStreamer_tb.DUT.sysLastIdx[9:0]
 genericDACStreamer_tb.DUT.sysMemWrAddress[13:0]
@@ -64,16 +64,18 @@ genericDACStreamer_tb.DUT.sysSynced
 genericDACStreamer_tb.DUT.axis_CLK
 @22
 genericDACStreamer_tb.DUT.axisData[255:0]
-@23
 genericDACStreamer_tb.DUT.axis_TDATA[255:0]
 @28
-genericDACStreamer_tb.DUT.axis_READY
 genericDACStreamer_tb.DUT.axis_TVALID
+genericDACStreamer_tb.DUT.axis_TREADY
 genericDACStreamer_tb.DUT.axisHbEvent
 genericDACStreamer_tb.DUT.axisHbEvent_d1
 genericDACStreamer_tb.DUT.axisHbEvent_m
-@22
+@24
 genericDACStreamer_tb.DUT.axisIndex[9:0]
+genericDACStreamer_tb.DUT.axisCurrentIndex[9:0]
+genericDACStreamer_tb.DUT.axisNextIndex[9:0]
+@22
 genericDACStreamer_tb.DUT.axisLastIdx[9:0]
 @28
 genericDACStreamer_tb.DUT.axisRun
