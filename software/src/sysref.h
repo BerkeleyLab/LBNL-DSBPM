@@ -4,7 +4,7 @@
 #ifndef _SYSREF_H_
 #define _SYSREF_H_
 
-void sysrefInit(void);
-void sysrefShow(void);
+void sysrefInit(unsigned int type);
+void sysrefShow(unsigned int type);
 
 #endif  /* _SYSREF_H_ */

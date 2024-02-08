@@ -17,7 +17,7 @@
 #define GPIO_IDX_USER_GPIO_CSR            3 // Diagnostic LEDS/switches
 #define GPIO_IDX_GTY_CSR                  4 // GTY control/status
 #define GPIO_IDX_EVR_SYNC_CSR             5 // Event receiver synchronization
-#define GPIO_IDX_SYSREF_CSR               6 // SYSREF generation control/status
+#define GPIO_IDX_SYSREF_ADC_CSR           6 // SYSREF ADC generation control/status
 #define GPIO_IDX_FREQ_MONITOR_CSR         7 // Frequency measurement CSR
 #define GPIO_IDX_EVR_GTY_DRP              8 // EVR GTY dynamic reconfig (R/W)
 #define GPIO_IDX_SOFT_TRIGGER             9 // Acquisition software trigger (W)
@@ -35,6 +35,7 @@
 #define GPIO_IDX_ADC_SA_RELOAD           22 // Slow acquisition divider reload
 #define GPIO_IDX_ADC_HEARTBEAT_RELOAD    23 // ADC heartbeat counter
 #define GPIO_IDX_GITHASH                 24 // Git 32-bit hash
+#define GPIO_IDX_SYSREF_DAC_CSR          25 // SYSREF DAC generation control/status
 
 /*
  * Per DSBPM registers

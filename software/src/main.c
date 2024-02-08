@@ -116,7 +116,8 @@ main(void)
     evrInit();
     rfClkInit();
     mmcmInit();
-    sysrefInit();
+    sysrefInit(0);
+    sysrefInit(1);
     rfADCinit();
     afeInit();
     rfADCrestart();

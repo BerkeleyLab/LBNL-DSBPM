@@ -174,7 +174,8 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_SHOW_DRP) eyescanCommand(0, NULL);
     if (debugFlags & DEBUGFLAG_RF_CLK_SHOW) rfClkShow();
     if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
-    if (debugFlags & DEBUGFLAG_SHOW_SYSREF) sysrefShow();
+    if (debugFlags & DEBUGFLAG_SHOW_ADC_SYSREF) sysrefShow(0);
+    if (debugFlags & DEBUGFLAG_SHOW_DAC_SYSREF) sysrefShow(1);
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
     if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfADCsync();
