@@ -247,6 +247,7 @@ wire isPPSvalid = evrSyncStatus[2];
 wire FPGA_REFCLK_OUT_C;
 wire FPGA_REFCLK_OUT_C_unbuf;
 wire user_sysref_adc;
+wire user_sysref_dac;
 
 IBUFDS FPGA_REFCLK_IBUFDS(
     .I(FPGA_REFCLK_OUT_C_P),
@@ -268,15 +269,28 @@ IBUFDS SYSREF_FPGA_IBUFDS(
 sysrefSync #(
     .DEBUG("false"),
     .COUNTER_WIDTH(10)) // up to 1023 SYSREF poeriods
-  sysrefSync (
+  sysrefSyncADC (
     .sysClk(sysClk),
-    .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_SYSREF_CSR]),
+    .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_SYSREF_ADC_CSR]),
     .GPIO_OUT(GPIO_OUT),
-    .sysStatusReg(GPIO_IN[GPIO_IDX_SYSREF_CSR]),
+    .sysStatusReg(GPIO_IN[GPIO_IDX_SYSREF_ADC_CSR]),
     .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
     .SYSREF_FPGA_C_UNBUF(SYSREF_FPGA_C_unbuf),
     .clk(adcClk),
     .user_sysref_resampled(user_sysref_adc));
+
+sysrefSync #(
+    .DEBUG("false"),
+    .COUNTER_WIDTH(10)) // up to 1023 SYSREF poeriods
+  sysrefSyncDAC (
+    .sysClk(sysClk),
+    .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_SYSREF_DAC_CSR]),
+    .GPIO_OUT(GPIO_OUT),
+    .sysStatusReg(GPIO_IN[GPIO_IDX_SYSREF_DAC_CSR]),
+    .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
+    .SYSREF_FPGA_C_UNBUF(SYSREF_FPGA_C_unbuf),
+    .clk(dacClk),
+    .user_sysref_resampled(user_sysref_dac));
 
 /////////////////////////////////////////////////////////////////////////////
 // Monitor range of signals at ADC inputs
@@ -932,7 +946,7 @@ system
     // DAC tile 230 distributes clock to all others
     .dac45_clk_n(RF4_CLKO_B_C_N),
     .dac45_clk_p(RF4_CLKO_B_C_P),
-    .user_sysref_dac(1'b0),
+    .user_sysref_dac(user_sysref_dac),
 
     .vin0_v_n(RFMC_ADC_00_N),
     .vin0_v_p(RFMC_ADC_00_P),
