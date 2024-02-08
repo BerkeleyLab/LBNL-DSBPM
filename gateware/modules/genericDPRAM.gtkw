@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Wed Feb  7 18:53:45 2024
+[*] Thu Feb  8 17:57:02 2024
 [*]
 [dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericDPRAM.vcd"
-[dumpfile_mtime] "Wed Feb  7 18:53:29 2024"
-[dumpfile_size] 31098
+[dumpfile_mtime] "Thu Feb  8 17:56:28 2024"
+[dumpfile_size] 30828
 [savefile] "/home/lrusso/repos/dsbpm/gateware/modules/genericDPRAM.gtkw"
-[timestart] 1236
+[timestart] 1228
 [size] 1726 922
 [pos] 269 0
-*-5.000000 1325 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 1353 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] genericDPRAM_tb.
 [sst_width] 214
 [signals_width] 669
@@ -21,6 +21,7 @@ genericDPRAM_tb.wStart
 genericDPRAM_tb.wState[2:0]
 @24
 genericDPRAM_tb.wAddr[13:0]
+@25
 genericDPRAM_tb.wCount[7:0]
 @22
 genericDPRAM_tb.wData[15:0]
@@ -28,14 +29,13 @@ genericDPRAM_tb.wData[15:0]
 genericDPRAM_tb.wEnable
 genericDPRAM_tb.wDone
 genericDPRAM_tb.rClk
-@29
 genericDPRAM_tb.rState[2:0]
 @22
 genericDPRAM_tb.rData[255:0]
-@24
-genericDPRAM_tb.rAddr[11:0]
 @28
 genericDPRAM_tb.rDone
+genericDPRAM_tb.module_done
+genericDPRAM_tb.module_ready
 @200
 -
 @28
@@ -48,12 +48,7 @@ genericDPRAM_tb.DUT.dpramWaddr[9:0]
 @28
 genericDPRAM_tb.DUT.wEnable
 genericDPRAM_tb.DUT.rClk
-@24
-genericDPRAM_tb.DUT.rAddr[11:0]
 @22
 genericDPRAM_tb.DUT.rData[255:0]
-@28
-genericDPRAM_tb.module_done
-genericDPRAM_tb.module_ready
 [pattern_trace] 1
 [pattern_trace] 0
