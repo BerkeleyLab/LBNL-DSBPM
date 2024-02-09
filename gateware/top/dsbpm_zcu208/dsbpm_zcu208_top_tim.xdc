@@ -51,7 +51,10 @@ set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins system_i/dd
 # Don't check timing across clock domains.
 #########################################
 set_false_path -from [get_clocks SYSREF_FPGA_C_P] -to [get_clocks FPGA_REFCLK_OUT_C_P]
+# FPGA_REFCLK_OUT to ADC clk
 set_false_path -from [get_clocks FPGA_REFCLK_OUT_C_P] -to [get_clocks -of_objects [get_pins system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0]]
+# FPGA_REFCLK_OUT to DAC clk
+set_false_path -from [get_clocks FPGA_REFCLK_OUT_C_P] -to [get_clocks -of_objects [get_pins system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT1]]
 # Set false path between ADC clock and RX MGT clock. Safely crossing domains already
 # and with ASYNC_REG properties in RTL.
 set_false_path -from [get_clocks clk_out1_system_rfadc_mmcm_0] -to [get_clocks cpllpd_int_reg_0]
