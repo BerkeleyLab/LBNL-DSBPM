@@ -212,7 +212,7 @@ rfADCrestart(void)
 }
 
 void
-rfADCsync(void)
+rfDCsync(void)
 {
     int tile, latency, status;
     XRFdc_IPStatus IPStatus;

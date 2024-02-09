@@ -19,7 +19,7 @@
 #include "iic.h"
 #include "mgt.h"
 #include "mmcm.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "rfclk.h"
 #include "st7789v.h"
 #include "sysmon.h"
@@ -178,7 +178,7 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_SHOW_DAC_SYSREF) sysrefShow(1);
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
-    if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfADCsync();
+    if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfDCsync();
     if (sFlag) {
         systemParameters.startupDebugFlags = debugFlags;
         systemParametersFetchEEPROM();

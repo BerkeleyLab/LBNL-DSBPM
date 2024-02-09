@@ -15,7 +15,7 @@
 #include "mgt.h"
 #include "mmcm.h"
 #include "platform.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "rfclk.h"
 #include "softwareBuildDate.h"
 #include "st7789v.h"
@@ -121,7 +121,7 @@ main(void)
     rfADCinit();
     afeInit();
     rfADCrestart();
-    rfADCsync();
+    rfDCsync();
 
     /* Start network */
     lwip_init();
