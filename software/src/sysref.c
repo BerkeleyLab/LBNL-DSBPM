@@ -43,7 +43,7 @@ sysrefShow(unsigned int type)
                            ((v >> SYSREF_CSR_REF_CLK_DIVISOR_SHIFT) & 0x3FF) + 1,
                            REFCLK_OUT_PER_SYSREF);
     if (v & SYSREF_CSR_SAMPLED_CLK_FAULT) {
-        print("%s AXI SYSREF fault.\n", typeStr);
+        printf("%s AXI SYSREF fault.\n", typeStr);
         GPIO_WRITE(index, SYSREF_CSR_SAMPLED_CLK_FAULT);
     }
     if (v & SYSREF_CSR_REF_CLK_FAULT) {
