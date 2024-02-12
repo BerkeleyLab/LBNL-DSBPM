@@ -206,7 +206,11 @@ cmdFMON(int argc, char **argv)
                                    "RFDC ADC0",
                                    "FPGA_REFCLK_OUT",
                                    "PRBS",
-                                   "MGTref/2" };
+                                   "MGTref/2",
+                                   "RFDC DAC0",
+                                   "DAC AXI",
+                                   "User SYSREF ADC",
+                                   "User SYSREF DAC" };
 
     if (!usingPPS) {
         printf("Warning -- Pulse-per-second event not seen at power-up.\n");

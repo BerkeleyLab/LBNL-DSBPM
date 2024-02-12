@@ -370,25 +370,29 @@ assign ddrTriggerBus = ddrForward[71:64];
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-reg   [2:0] frequencyMonitorSelect;
+localparam FREQ_COUNTERS_NUM = 12;
+localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
+reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
 always @(posedge sysClk) begin
     if (GPIO_STROBES[GPIO_IDX_FREQ_MONITOR_CSR]) begin
-        frequencyMonitorSelect <= GPIO_OUT[2:0];
+        frequencyMonitorSelect <= GPIO_OUT[FREQ_SEL_WIDTH-1:0];
     end
 end
 assign GPIO_IN[GPIO_IDX_FREQ_MONITOR_CSR] = { 2'b0, measuredFrequency };
 wire rfdc_adc0_clk;
 wire rfdc_dac0_clk;
 freq_multi_count #(
-        .NF(8),  // number of frequency counters in a block
+        .NF(FREQ_COUNTERS_NUM),  // number of frequency counters in a block
         .NG(1),  // number of frequency counter blocks
         .gw(4),  // Gray counter width
         .cw(1),  // macro-cycle counter width
         .rw($clog2(SYSCLK_RATE*4/3)), // reference counter width
         .uw(30)) // unknown counter width
   frequencyCounters (
-    .unk_clk({mgtRefClkMonitor, prbsClk,
+    .unk_clk({user_sysref_dac, user_sysref_adc,
+              dacClk, rfdc_dac0_clk,
+              mgtRefClkMonitor, prbsClk,
               FPGA_REFCLK_OUT_C, rfdc_adc0_clk,
               adcClk, evrTxClk,
               evrClk, sysClk}),
