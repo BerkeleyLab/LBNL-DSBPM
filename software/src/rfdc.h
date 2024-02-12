@@ -4,7 +4,7 @@
 #ifndef _RFDC_H_
 #define _RFDC_H_
 
-void rfADCinit(void);
+void rfDCinit(void);
 void rfDCsync(void);
 void rfADCrestart(void);
 void rfADCfreezeCalibration(int channel, int freeze);
@@ -15,5 +15,8 @@ float rfADCGetDSA(int channel);
 void rfADCSetDSA(int channel, float att);
 void rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt);
 int rfADCGetDSADSBPM(unsigned int bpm, int channel);
+
+void rfDACrestart(void);
+void rfDACshow(void);
 
 #endif  /* _RFADC_H_ */

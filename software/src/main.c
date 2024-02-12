@@ -118,9 +118,10 @@ main(void)
     mmcmInit();
     sysrefInit(0);
     sysrefInit(1);
-    rfADCinit();
+    rfDCinit();
     afeInit();
     rfADCrestart();
+    rfDACrestart();
     rfDCsync();
 
     /* Start network */

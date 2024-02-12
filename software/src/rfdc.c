@@ -13,7 +13,7 @@ typedef int64_t __s64;
 #include <xrfdc_mts.h>
 #include "gpio.h"
 #include "config.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "util.h"
 
 #define XRFDC_ADC_OVR_VOLTAGE_MASK  0x04000000U
@@ -54,16 +54,16 @@ rfADCshow(void)
     }
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (!IPStatus.ADCTileStatus[tile].IsEnabled) continue;
-        printf("Tile %d (%d) enabled\n", tile, 224 + tile);
-        printf("   Tile state: %#X\n", IPStatus.ADCTileStatus[tile].TileState);
-        printf("         Mask: %#X\n", IPStatus.ADCTileStatus[tile].BlockStatusMask);
+        printf("ADC Tile %d (%d) enabled\n", tile, 224 + tile);
+        printf("   ADC Tile state: %#X\n", IPStatus.ADCTileStatus[tile].TileState);
+        printf("        ADC  Mask: %#X\n", IPStatus.ADCTileStatus[tile].BlockStatusMask);
         XRFdc_GetClockSource(&rfDC, XRFDC_ADC_TILE, tile, &v);
-        printf(" Clock source: %s\n",
+        printf(" ADC Clock source: %s\n",
                         v == XRFDC_INTERNAL_PLL_CLK ? "Internal PLL" :
                         v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
         if (v == XRFDC_INTERNAL_PLL_CLK) {
             XRFdc_GetPLLLockStatus(&rfDC, XRFDC_ADC_TILE, tile, &v);
-            printf("       PLL locked state %d\n", (int)v);
+            printf("       ADC PLL locked state %d\n", (int)v);
         }
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             int adcIdx = (tile * CFG_ADC_PER_TILE) + adc;
@@ -90,17 +90,44 @@ rfADCshow(void)
             printf("\n");
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile,adc,&mixer);
             if (i == XST_SUCCESS) {
-                printf("Mixer.Freq %g\n", mixer.Freq);
-                printf("Mixer.PhaseOffset %g\n", mixer.PhaseOffset);
-                printf("Mixer.EventSource %d\n", mixer.EventSource);
-                printf("Mixer.CoarseMixFreq %d\n", mixer.CoarseMixFreq);
-                printf("Mixer.MixerMode %d\n", mixer.MixerMode);
-                printf("Mixer.FineMixerScale %d\n", mixer.FineMixerScale);
-                printf("Mixer.MixerType %d\n", mixer.MixerType);
+                printf("ADC Mixer.Freq %g\n", mixer.Freq);
+                printf("ADC Mixer.PhaseOffset %g\n", mixer.PhaseOffset);
+                printf("ADC Mixer.EventSource %d\n", mixer.EventSource);
+                printf("ADC Mixer.CoarseMixFreq %d\n", mixer.CoarseMixFreq);
+                printf("ADC Mixer.MixerMode %d\n", mixer.MixerMode);
+                printf("ADC Mixer.FineMixerScale %d\n", mixer.FineMixerScale);
+                printf("ADC Mixer.MixerType %d\n", mixer.MixerType);
             }
             else {
-                printf("XRFdc_GetMixerSettings()=%d\n", i);
+                printf("ADC XRFdc_GetMixerSettings()=%d\n", i);
             }
+        }
+    }
+}
+
+void
+rfDACshow(void)
+{
+    int tile;
+    uint32_t v;
+    XRFdc_IPStatus IPStatus;
+
+    if (XRFdc_GetIPStatus(&rfDC, &IPStatus) != 0) {
+        printf("Can't get IP status.\n");
+        return;
+    }
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        if (!IPStatus.DACTileStatus[tile].IsEnabled) continue;
+        printf("DAC Tile %d (%d) enabled\n", tile, 224 + tile);
+        printf("   DAC Tile state: %#X\n", IPStatus.DACTileStatus[tile].TileState);
+        printf("         DAC Mask: %#X\n", IPStatus.DACTileStatus[tile].BlockStatusMask);
+        XRFdc_GetClockSource(&rfDC, XRFDC_DAC_TILE, tile, &v);
+        printf(" DAC Clock source: %s\n",
+                        v == XRFDC_INTERNAL_PLL_CLK ? "Internal PLL" :
+                        v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
+        if (v == XRFDC_INTERNAL_PLL_CLK) {
+            XRFdc_GetPLLLockStatus(&rfDC, XRFDC_DAC_TILE, tile, &v);
+            printf("       DAC PLL locked state %d\n", (int)v);
         }
     }
 }
@@ -146,34 +173,69 @@ static void rfADCCfgDefaults(void)
                                           XRFDC_EXTERNAL_CLK,
                                           CFG_ADC_REF_CLK_FREQ,
                                           CFG_ADC_SAMPLING_CLK_FREQ);
-        if (i != XST_SUCCESS) fatal("XRFdc_DynamicPLLConfig=%d", i);
+        if (i != XST_SUCCESS) fatal("XRFdc_DynamicPLLConfig(XRFDC_ADC_TILE)=%d", i);
 
         // Override GUI mixer settings
 #ifdef CFG_ADC_NCO_FREQ
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             XRFdc_Mixer_Settings mixer;
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile, adc, &mixer);
-            if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings()=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings(XRFDC_ADC_TILE)=%d", i);
 
             mixer.Freq = CFG_ADC_NCO_FREQ;
             mixer.EventSource = XRFDC_EVNT_SRC_TILE;
             i = XRFdc_SetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile, adc, &mixer);
-            if (i != XST_SUCCESS) fatal("XRFdc_SetMixerSettings()=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_SetMixerSettings(XRFDC_ADC_TILE)=%d", i);
 
             // Reset NCO phase
             i = XRFdc_ResetNCOPhase(&rfDC, XRFDC_ADC_TILE, tile, adc);
-            if (i != XST_SUCCESS) fatal("XRFdc_ResetNCOPhase()=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_ResetNCOPhase(XRFDC_ADC_TILE)=%d", i);
         }
 
         // Update Mixer settings. Applies to all blocks in a tile
         i = XRFdc_UpdateEvent(&rfDC, XRFDC_ADC_TILE, tile, 0, XRFDC_EVENT_MIXER);
-        if (i != XST_SUCCESS) fatal("XRFdc_UpdateEvent()=%d", i);
+        if (i != XST_SUCCESS) fatal("XRFdc_UpdateEvent(XRFDC_ADC_TILE)=%d", i);
+#endif
+    }
+}
+
+static void rfDACCfgDefaults(void)
+{
+    int i, tile, dac;
+
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_DAC_TILE, tile,
+                                          XRFDC_EXTERNAL_CLK,
+                                          CFG_DAC_REF_CLK_FREQ,
+                                          CFG_DAC_SAMPLING_CLK_FREQ);
+        if (i != XST_SUCCESS) fatal("XRFdc_DynamicPLLConfig(xrfdc_dac_tile)=%d", i);
+
+        // Override GUI mixer settings
+#ifdef CFG_DAC_NCO_FREQ
+        for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
+            XRFdc_Mixer_Settings mixer;
+            i = XRFdc_GetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac, &mixer);
+            if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings(XRFDC_ADC_TILE)=%d", i);
+
+            mixer.Freq = CFG_DAC_NCO_FREQ;
+            mixer.EventSource = XRFDC_EVNT_SRC_TILE;
+            i = XRFdc_SetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac, &mixer);
+            if (i != XST_SUCCESS) fatal("XRFdc_SetMixerSettings(XRFDC_ADC_TILE)=%d", i);
+
+            // Reset NCO phase
+            i = XRFdc_ResetNCOPhase(&rfDC, XRFDC_DAC_TILE, tile, dac);
+            if (i != XST_SUCCESS) fatal("XRFdc_ResetNCOPhase(XRFDC_ADC_TILE)=%d", i);
+        }
+
+        // Update Mixer settings. Applies to all blocks in a tile
+        i = XRFdc_UpdateEvent(&rfDC, XRFDC_DAC_TILE, tile, 0, XRFDC_EVENT_MIXER);
+        if (i != XST_SUCCESS) fatal("XRFdc_UpdateEvent(XRFDC_ADC_TILE)=%d", i);
 #endif
     }
 }
 
 void
-rfADCinit(void)
+rfDCinit(void)
 {
     int i;
     XRFdc_Config *configp;
@@ -191,9 +253,11 @@ rfADCinit(void)
     if (i != XST_SUCCESS) fatal("XRFdc_CfgInitialize=%d", i);
 
     rfADCCfgDefaults();
+    rfDACCfgDefaults();
     initDone = 1;
 
     if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) rfDACshow();
 }
 
 
@@ -206,9 +270,20 @@ rfADCrestart(void)
     int i;
     logMessageBuffer[0] = '\0';
     i = XRFdc_Reset(&rfDC, XRFDC_ADC_TILE, XRFDC_SELECT_ALL_TILES);
-    if (i != XST_SUCCESS) warn("Critical -- %s\nXRFdc_Reset=%d",
+    if (i != XST_SUCCESS) warn("Critical -- ADC - %s\nXRFdc_Reset=%d",
                                                            logMessageBuffer, i);
     rfADCCfgDefaults();
+}
+
+void
+rfDACrestart(void)
+{
+    int i;
+    logMessageBuffer[0] = '\0';
+    i = XRFdc_Reset(&rfDC, XRFDC_DAC_TILE, XRFDC_SELECT_ALL_TILES);
+    if (i != XST_SUCCESS) warn("Critical -- DAC - %s\nXRFdc_Reset=%d",
+                                                           logMessageBuffer, i);
+    rfDACCfgDefaults();
 }
 
 void

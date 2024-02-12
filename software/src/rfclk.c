@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <xil_assert.h>
 #include "iic.h"
-#include "rfadc.h"
 #include "rfclk.h"
 #include "util.h"
 

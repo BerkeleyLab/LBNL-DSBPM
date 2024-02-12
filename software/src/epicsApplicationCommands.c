@@ -14,7 +14,7 @@
 #include "gpio.h"
 #include "util.h"
 #include "autotrim.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "waveformRecorder.h"
 
 int

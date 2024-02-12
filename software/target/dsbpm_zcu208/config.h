@@ -63,10 +63,36 @@
 #define CFG_TILES_COUNT         (((CFG_ADC_PHYSICAL_COUNT)+(CFG_ADC_PER_TILE)-1)/(CFG_ADC_PER_TILE))
 
 /*
+ * For backwards compatibility
+ */
+#define CFG_ADC_TILES_COUNT     CFG_TILES_COUNT
+
+/*
  * Number of ADCs per BPM
  */
 
 #define CFG_ADC_PER_BPM_COUNT   ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
+
+/*
+ * Number of physical DAC channels required by application
+ */
+#define CFG_DAC_PHYSICAL_COUNT    8
+
+/*
+ * Number of DACs per tile
+ */
+#define CFG_DAC_PER_TILE        2
+
+/*
+ * Number of tiles
+ */
+#define CFG_DAC_TILES_COUNT      (((CFG_DAC_PHYSICAL_COUNT)+(CFG_DAC_PER_TILE)-1)/(CFG_DAC_PER_TILE))
+
+/*
+ * Number of DACs per BPM
+ */
+
+#define CFG_DAC_PER_BPM_COUNT   ((CFG_DAC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
 
 /*
  * ADC sampling clock frequency
@@ -94,6 +120,33 @@
  *  Since the RF is at bin 328 or -328, bin 20 would be at -308
  */
 #define CFG_ADC_NCO_FREQ -308.000
+
+/*
+ * DAC sampling clock frequency
+ */
+/*
+ *  Fake frequency to fool API into calculating the correct
+ *  NCO frequency. 81*40 = 3240
+ */
+//#define CFG_DAC_SAMPLING_CLK_FREQ   4935.468
+#define CFG_DAC_SAMPLING_CLK_FREQ   3240.000
+
+/*
+ * DAC reference clock
+ */
+/*
+ *  Fake frequency to fool API into calculating the correct
+ *  NCO frequency. 81*40 = 3240
+ */
+//#define CFG_DAC_REF_CLK_FREQ   4935.468
+#define CFG_DAC_REF_CLK_FREQ   3240.000
+
+/*
+ *  Fake frequency to fool API into calculating the correct
+ *  NCO frequency. We want to shift the carrier to the 20th bin.
+ *  Since the RF is at bin 328 or -328, bin 20 would be at 308
+ */
+#define CFG_DAC_NCO_FREQ 308.000
 
 /*
  *  Recorder capacities, in samples. Waveform recorder pads

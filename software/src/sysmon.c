@@ -14,7 +14,7 @@
 #include "frequencyMonitor.h"
 #include "gpio.h"
 #include "iic.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "st7789v.h"
 #include "sysmon.h"
 #include "util.h"
