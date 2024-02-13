@@ -112,7 +112,7 @@ assign GPIO_IN[GPIO_IDX_GITHASH] = GIT_REV_32BIT;
 
 //////////////////////////////////////////////////////////////////////////////
 // Clocks
-wire sysClk, evrClk, adcClk, dacClk, prbsClk;
+wire sysClk, evrClk, adcClk, dacClk;
 wire adcClkLocked, dacClkLocked;
 wire sysReset_n;
 
@@ -370,7 +370,7 @@ assign ddrTriggerBus = ddrForward[71:64];
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-localparam FREQ_COUNTERS_NUM = 12;
+localparam FREQ_COUNTERS_NUM = 11;
 localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
 reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
@@ -392,7 +392,7 @@ freq_multi_count #(
   frequencyCounters (
     .unk_clk({user_sysref_dac, user_sysref_adc,
               dacClk, rfdc_dac0_clk,
-              mgtRefClkMonitor, prbsClk,
+              mgtRefClkMonitor,
               FPGA_REFCLK_OUT_C, rfdc_adc0_clk,
               adcClk, evrTxClk,
               evrClk, sysClk}),
