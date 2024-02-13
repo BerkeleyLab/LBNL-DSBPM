@@ -83,7 +83,10 @@
 
 #define GPIO_IDX_PER_DSBPM               (GPIO_IDX_ADC_PROCESSING-GPIO_IDX_LOTABLE_ADDRESS+1)
 
-#define CFG_AXI_SAMPLES_PER_CLOCK         1 // 1 sample per clock
+#define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
+// For compatibility
+#define CFG_ADC_AXI_SAMPLES_PER_CLOCK    CFG_AXI_SAMPLES_PER_CLOCK
+#define CFG_DAC_AXI_SAMPLES_PER_CLOCK    2 // 2 sample per clock (I and Q)
 #define CFG_LO_RF_ROW_CAPACITY           1024
 #define CFG_LO_PT_ROW_CAPACITY           8192
 
