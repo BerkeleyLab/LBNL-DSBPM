@@ -20,7 +20,9 @@ set clk_ddr_ui_period                 [get_property PERIOD [get_clocks -of_objec
 # to/from sys with 1 destination clock
 # period
 #########################################
+# Frequency counters
 set_max_delay -datapath_only -from [get_clocks RFADC0_CLK] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks RFDAC0_CLK] -to [get_clocks clk_pl_0] $clk_pl_0_period
 set_max_delay -datapath_only -from [get_clocks FPGA_REFCLK_OUT_C_P] -to [get_clocks clk_pl_0] $clk_pl_0_period
 
 set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0]] $clk_drp_period
