@@ -205,7 +205,6 @@ cmdFMON(int argc, char **argv)
                                    "ADC AXI",
                                    "RFDC ADC0",
                                    "FPGA_REFCLK_OUT",
-                                   "PRBS",
                                    "MGTref/2",
                                    "RFDC DAC0",
                                    "DAC AXI",
