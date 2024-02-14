@@ -5,9 +5,12 @@ module dsbpm_zcu208_top #(
     parameter AXI_ADDR_WIDTH            = 35,
     parameter AXI_ADC_DATA_WIDTH        = 256, // 2 * 8 * I/Q ADC samples
     parameter AXI_MAG_DATA_WIDTH        = 128,
+    parameter DAC_WIDTH                 = 14,
+    parameter DAC_SAMPLE_WIDTH          = ((DAC_WIDTH + 7) / 8) * 8,
     parameter IQ_DATA                   = "TRUE",
     parameter SYSCLK_RATE               = 99999001,  // From block design
     parameter BD_ADC_CHANNEL_COUNT      = 16,
+    parameter BD_DAC_CHANNEL_COUNT      = 8,
     parameter ADC_CHANNEL_DEBUG         = "false",
     parameter LO_WIDTH                  = 18,
     parameter MAG_WIDTH                 = 26,
@@ -452,6 +455,9 @@ assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
 localparam ADC_SAMPLE_WIDTH    = CFG_ADC_AXI_SAMPLES_PER_CLOCK * AXI_ADC_SAMPLE_WIDTH;
 localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
 
+// I and Q interleaved
+localparam AXIS_DAC_SAMPLE_WIDTH = CFG_DAC_AXI_SAMPLES_PER_CLOCK * DAC_SAMPLE_WIDTH;
+
 //////////////////////////////////////////////////////////////////////////////
 // Waveform recorders
 //
@@ -862,6 +868,10 @@ endgenerate
 wire [(BD_ADC_CHANNEL_COUNT*ADC_SAMPLE_WIDTH)-1:0] adcsTDATA;
 wire                    [BD_ADC_CHANNEL_COUNT-1:0] adcsTVALID;
 
+wire [(BD_DAC_CHANNEL_COUNT*AXIS_DAC_SAMPLE_WIDTH)-1:0] dacsTDATA;
+wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTVALID;
+wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTREADY;
+
 // Make this a black box for simulation
 `ifndef SIMULATE
 wire ddr4_ui_clk;
@@ -1017,6 +1027,31 @@ system
     .adc5Qstream_tready(1'b1),
     .adc6Qstream_tready(1'b1),
     .adc7Qstream_tready(1'b1),
+
+    .dac0stream_tdata(dacsTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac1stream_tdata(dacsTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac2stream_tdata(dacsTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac3stream_tdata(dacsTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac4stream_tdata(dacsTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac5stream_tdata(dacsTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac6stream_tdata(dacsTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac7stream_tdata(dacsTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac0stream_tvalid(dacsTVALID[0]),
+    .dac1stream_tvalid(dacsTVALID[1]),
+    .dac2stream_tvalid(dacsTVALID[2]),
+    .dac3stream_tvalid(dacsTVALID[3]),
+    .dac4stream_tvalid(dacsTVALID[4]),
+    .dac5stream_tvalid(dacsTVALID[5]),
+    .dac6stream_tvalid(dacsTVALID[6]),
+    .dac7stream_tvalid(dacsTVALID[7]),
+    .dac0stream_tready(dacsTREADY[0]),
+    .dac1stream_tready(dacsTREADY[1]),
+    .dac2stream_tready(dacsTREADY[2]),
+    .dac3stream_tready(dacsTREADY[3]),
+    .dac4stream_tready(dacsTREADY[4]),
+    .dac5stream_tready(dacsTREADY[5]),
+    .dac6stream_tready(dacsTREADY[6]),
+    .dac7stream_tready(dacsTREADY[7]),
 
     .vout0_v_n(RFMC_DAC_00_N),
     .vout0_v_p(RFMC_DAC_00_P),
@@ -1459,6 +1494,7 @@ end
 endgenerate
 
 localparam ADC_SIGNALS_PER_DSP = CFG_ADC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
+localparam DAC_SIGNAL_OFFSET_PER_DSP = CFG_DAC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
 
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_chain
@@ -1769,6 +1805,29 @@ rmsCalc rmsCalc(.clk(sysClk),
                 .wideYrms(wideYrms[dsbpm]),
                 .narrowXrms(narrowXrms[dsbpm]),
                 .narrowYrms(narrowYrms[dsbpm]));
+
+//
+// DAC streamer
+//
+
+genericDACStreamer #(
+  .AXIS_DATA_WIDTH(AXIS_DAC_SAMPLE_WIDTH),
+  .DAC_DATA_WIDTH(DAC_SAMPLE_WIDTH),
+  .DAC_ADDRESS_WIDTH(16)
+) genericDACStreamer (
+    .sysClk(sysClk),
+    .sysGpioData(GPIO_OUT),
+    .sysGpioCsr(GPIO_IN[GPIO_IDX_DACTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .sysAddressStrobe(GPIO_STROBES[GPIO_IDX_DACTABLE_ADDRESS + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .sysGpioStrobe(GPIO_STROBES[GPIO_IDX_DACTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+
+    .evrHbMarker(evrHeartbeat),
+
+    .axis_CLK(dacClk),
+    .axis_TDATA(dacsTDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .axis_TVALID(dacsTVALID[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP]),
+    .axis_TREADY(dacsTREADY[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP])
+);
 
 end // for
 endgenerate // generate
