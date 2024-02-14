@@ -215,21 +215,21 @@ static void rfDACCfgDefaults(void)
         for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
             XRFdc_Mixer_Settings mixer;
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac, &mixer);
-            if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings(XRFDC_ADC_TILE)=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_GetMixerSettings(XRFDC_DAC_TILE)=%d", i);
 
             mixer.Freq = CFG_DAC_NCO_FREQ;
             mixer.EventSource = XRFDC_EVNT_SRC_TILE;
             i = XRFdc_SetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac, &mixer);
-            if (i != XST_SUCCESS) fatal("XRFdc_SetMixerSettings(XRFDC_ADC_TILE)=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_SetMixerSettings(XRFDC_DAC_TILE)=%d", i);
 
             // Reset NCO phase
             i = XRFdc_ResetNCOPhase(&rfDC, XRFDC_DAC_TILE, tile, dac);
-            if (i != XST_SUCCESS) fatal("XRFdc_ResetNCOPhase(XRFDC_ADC_TILE)=%d", i);
+            if (i != XST_SUCCESS) fatal("XRFdc_ResetNCOPhase(XRFDC_DAC_TILE)=%d", i);
         }
 
         // Update Mixer settings. Applies to all blocks in a tile
         i = XRFdc_UpdateEvent(&rfDC, XRFDC_DAC_TILE, tile, 0, XRFDC_EVENT_MIXER);
-        if (i != XST_SUCCESS) fatal("XRFdc_UpdateEvent(XRFDC_ADC_TILE)=%d", i);
+        if (i != XST_SUCCESS) fatal("XRFdc_UpdateEvent(XRFDC_DAC_TILE)=%d", i);
 #endif
     }
 }
