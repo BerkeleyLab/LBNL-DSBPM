@@ -5,7 +5,7 @@ stages:
 
 default:
   tags:
-    - xilinx
+    - xilinx-bookworm
 
 variables:
   XILINX_VIVADO: /non-free/Xilinx/Vivado_and_Vitis/2022.1/Vivado/2022.1
