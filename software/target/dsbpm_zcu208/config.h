@@ -74,6 +74,11 @@
 #define CFG_ADC_PER_BPM_COUNT   ((CFG_ADC_PHYSICAL_COUNT)/(CFG_DSBPM_COUNT))
 
 /*
+ * Number of DAC streams required by application
+ */
+#define CFG_DAC_CHANNEL_COUNT    8
+
+/*
  * Number of physical DAC channels required by application
  */
 #define CFG_DAC_PHYSICAL_COUNT    8
