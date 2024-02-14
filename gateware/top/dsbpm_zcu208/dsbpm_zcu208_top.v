@@ -1,7 +1,7 @@
 module dsbpm_zcu208_top #(
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
-    parameter AXI_SAMPLE_WIDTH          = ((ADC_WIDTH + 7) / 8) * 8,
+    parameter AXI_ADC_SAMPLE_WIDTH      = ((ADC_WIDTH + 7) / 8) * 8,
     parameter AXI_ADDR_WIDTH            = 35,
     parameter AXI_ADC_DATA_WIDTH        = 256, // 2 * 8 * I/Q ADC samples
     parameter AXI_MAG_DATA_WIDTH        = 128,
@@ -11,7 +11,7 @@ module dsbpm_zcu208_top #(
     parameter ADC_CHANNEL_DEBUG         = "false",
     parameter LO_WIDTH                  = 18,
     parameter MAG_WIDTH                 = 26,
-    parameter PRODUCT_WIDTH             = AXI_SAMPLE_WIDTH + LO_WIDTH - 1,
+    parameter PRODUCT_WIDTH             = AXI_ADC_SAMPLE_WIDTH + LO_WIDTH - 1,
     parameter ACQ_WIDTH                 = 32,
     parameter SITE_SAMPLES_PER_TURN     = 81,
     parameter SITE_TURNS_PER_PT         = 19, // 11/19 PT
@@ -294,14 +294,14 @@ sysrefSync #(
 
 /////////////////////////////////////////////////////////////////////////////
 // Monitor range of signals at ADC inputs
-wire [(CFG_ADC_PHYSICAL_COUNT*AXI_SAMPLE_WIDTH)-1:0] adcsMagTDATA;
+wire [(CFG_ADC_PHYSICAL_COUNT*AXI_ADC_SAMPLE_WIDTH)-1:0] adcsMagTDATA;
 wire                    [CFG_DSBPM_COUNT-1:0] adcsMagTVALID;
 wire                    [CFG_DSBPM_COUNT-1:0] adcsMagTCLK;
 adcRangeCheck #(
     .AXI_CHANNEL_COUNT(CFG_ADC_PHYSICAL_COUNT),
-    .AXI_SAMPLE_WIDTH(AXI_SAMPLE_WIDTH),
+    .AXI_SAMPLE_WIDTH(AXI_ADC_SAMPLE_WIDTH),
     .AXI_SAMPLES_PER_CLOCK(CFG_ADC_AXI_SAMPLES_PER_CLOCK),
-    .ADC_WIDTH(AXI_SAMPLE_WIDTH))
+    .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH))
   adcRangeCheck (
     .sysClk(sysClk),
     .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_RANGE_CSR]),
@@ -314,7 +314,7 @@ adcRangeCheck #(
 genvar dsbpm;
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : adc_data
-    assign adcsMagTDATA[dsbpm*4*AXI_SAMPLE_WIDTH+:4*AXI_SAMPLE_WIDTH] = {
+    assign adcsMagTDATA[dsbpm*4*AXI_ADC_SAMPLE_WIDTH+:4*AXI_ADC_SAMPLE_WIDTH] = {
         prelimProcADC3Mag[dsbpm],
         prelimProcADC2Mag[dsbpm],
         prelimProcADC1Mag[dsbpm],
@@ -449,7 +449,7 @@ assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
 
 /////////////////////////////////////////////////////////////////////////////
 // Acquisition common
-localparam ADC_SAMPLE_WIDTH    = CFG_ADC_AXI_SAMPLES_PER_CLOCK * AXI_SAMPLE_WIDTH;
+localparam ADC_SAMPLE_WIDTH    = CFG_ADC_AXI_SAMPLES_PER_CLOCK * AXI_ADC_SAMPLE_WIDTH;
 localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -595,9 +595,9 @@ assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6]
 genericWaveformRecorder #(
     .HIGH_BANDWIDTH_MODE("TRUE"),
     .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
-    .DATA_WIDTH(8*AXI_SAMPLE_WIDTH),
+    .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(16*AXI_SAMPLE_WIDTH)) // twice as large as input (DATA_WIDTH)
+    .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH)) // twice as large as input (DATA_WIDTH)
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -1391,18 +1391,18 @@ wire                 adcLoSynced[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLoadAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLatchAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcMtLoadAndLatch[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC0[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC1[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC2[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC3[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADCQ0[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADCQ1[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADCQ2[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADCQ3[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC0Mag[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC1Mag[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC2Mag[0:CFG_DSBPM_COUNT-1];
-wire [AXI_SAMPLE_WIDTH-1:0] prelimProcADC3Mag[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC0[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC1[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC2[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC3[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADCQ0[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADCQ1[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADCQ2[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADCQ3[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC0Mag[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC1Mag[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC2Mag[0:CFG_DSBPM_COUNT-1];
+wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC3Mag[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcADCValid[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcTbtToggle[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcRfTbtMagValid[0:CFG_DSBPM_COUNT-1];
@@ -1471,8 +1471,8 @@ wire adcExceedsThreshold;
 adcProcessing #(
     // because we are using DDC, the ADC samples are 16-bits, even though
     // the ADC is 14-bits
-    .ADC_WIDTH(AXI_SAMPLE_WIDTH),
-    .DATA_WIDTH(AXI_SAMPLE_WIDTH))
+    .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
+    .DATA_WIDTH(AXI_ADC_SAMPLE_WIDTH))
   adcProcessing (
     .sysClk(sysClk),
     .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
@@ -1531,7 +1531,7 @@ assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
     magPAD, prelimProcPhMag3[dsbpm] };
 preliminaryProcessing #(.SYSCLK_RATE(SYSCLK_RATE),
-                        .ADC_WIDTH(AXI_SAMPLE_WIDTH),
+                        .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
                         .MAG_WIDTH(MAG_WIDTH),
                         .IQ_DATA(IQ_DATA),
                         .SAMPLES_PER_TURN(SITE_SAMPLES_PER_TURN),
