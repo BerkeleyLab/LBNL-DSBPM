@@ -10,7 +10,6 @@ typedef uint64_t __u64;
 typedef int32_t __s32;
 typedef int64_t __s64;
 #include <xrfdc.h>
-#include <xrfdc_mts.h>
 #include "gpio.h"
 #include "config.h"
 #include "rfdc.h"
@@ -298,8 +297,8 @@ rfDCsync(void)
         printf("Can't get IP status.\n");
         return;
     }
-    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL);
-    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL);
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (IPStatus.ADCTileStatus[tile].IsEnabled) {
             adcConfig.Tiles |= 1 << tile;
