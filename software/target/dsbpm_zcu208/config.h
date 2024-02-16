@@ -89,6 +89,16 @@
 #define CFG_DAC_PER_TILE        2
 
 /*
+ * Number of dapaths per DAC
+ */
+#define CFG_DAC_DUC_PER_DAC     1
+
+/*
+ * Datapaths offset per DAC
+ */
+#define CFG_DAC_DUC_OFFSET      2
+
+/*
  * Number of tiles
  */
 #define CFG_DAC_TILES_COUNT      (((CFG_DAC_PHYSICAL_COUNT)+(CFG_DAC_PER_TILE)-1)/(CFG_DAC_PER_TILE))
