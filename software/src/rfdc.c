@@ -303,6 +303,9 @@ rfDCsync(void)
         if (IPStatus.ADCTileStatus[tile].IsEnabled) {
             adcConfig.Tiles |= 1 << tile;
         }
+        if (IPStatus.DACTileStatus[tile].IsEnabled) {
+            dacConfig.Tiles |= 1 << tile;
+        }
     }
 
     /*
