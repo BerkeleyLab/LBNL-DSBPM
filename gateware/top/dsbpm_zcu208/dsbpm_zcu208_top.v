@@ -1,5 +1,6 @@
 module dsbpm_zcu208_top #(
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
+    parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
     parameter AXI_ADC_SAMPLE_WIDTH      = ((ADC_WIDTH + 7) / 8) * 8,
     parameter AXI_ADDR_WIDTH            = 35,
@@ -1320,27 +1321,27 @@ endgenerate
 generate
 if (DDR_ILA_CHIPSCOPE_DBG == "TRUE") begin
 
-wire [255:0] probe;
-ila_td256_s4096_cap ila_td256_s4096_cap_inst (
+wire [255:0] ddr_probe;
+ila_td256_s4096_cap ddr_ila_td256_s4096_cap_inst (
     .clk(ddr4_ui_clk),
-    .probe0(probe)
+    .probe0(ddr_probe)
 );
 
-assign probe[0]       = ddr_aximm_dbg_WVALID;
-assign probe[1]       = ddr_aximm_dbg_WLAST;
-assign probe[2]       = ddr_aximm_dbg_WREADY;
-assign probe[3]       = ddr_aximm_dbg_AWVALID;
-assign probe[4]       = ddr_aximm_dbg_AWREADY;
-assign probe[5]       = ddrSoftTrigger[0];
-assign probe[9:6]     = ddrTriggerBus[7:4];
+assign ddr_probe[0]       = ddr_aximm_dbg_WVALID;
+assign ddr_probe[1]       = ddr_aximm_dbg_WLAST;
+assign ddr_probe[2]       = ddr_aximm_dbg_WREADY;
+assign ddr_probe[3]       = ddr_aximm_dbg_AWVALID;
+assign ddr_probe[4]       = ddr_aximm_dbg_AWREADY;
+assign ddr_probe[5]       = ddrSoftTrigger[0];
+assign ddr_probe[9:6]     = ddrTriggerBus[7:4];
 
-assign probe[32+:8]   = ddr_aximm_dbg_AWLEN;
-assign probe[64+:32]  = ddr_aximm_dbg_AWADDR;
+assign ddr_probe[32+:8]   = ddr_aximm_dbg_AWLEN;
+assign ddr_probe[64+:32]  = ddr_aximm_dbg_AWADDR;
 
-assign probe[128+:32] = ddr_aximm_dbg_WDATA[0+:32];
-assign probe[160+:32] = ddr_aximm_dbg_WDATA[32+:32];
-assign probe[192+:32] = ddr_aximm_dbg_WDATA[64+:32];
-assign probe[224+:32] = ddr_aximm_dbg_WDATA[96+:32];
+assign ddr_probe[128+:32] = ddr_aximm_dbg_WDATA[0+:32];
+assign ddr_probe[160+:32] = ddr_aximm_dbg_WDATA[32+:32];
+assign ddr_probe[192+:32] = ddr_aximm_dbg_WDATA[64+:32];
+assign ddr_probe[224+:32] = ddr_aximm_dbg_WDATA[96+:32];
 
 end // end if
 endgenerate
@@ -1831,6 +1832,37 @@ genericDACStreamer #(
 
 end // for
 endgenerate // generate
+
+generate
+if (DAC_ILA_CHIPSCOPE_DBG != "TRUE" && DAC_ILA_CHIPSCOPE_DBG != "FALSE") begin
+    DAC_ILA_CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
+
+generate
+if (DAC_ILA_CHIPSCOPE_DBG == "TRUE") begin
+
+`ifndef SIMULATE
+wire [255:0] dac_probe;
+ila_td256_s4096_cap dac_ila_td256_s4096_cap_inst (
+    .clk(dacClk),
+    .probe0(dac_probe)
+);
+
+assign dac_probe[0]       = dacsTREADY[0];
+assign dac_probe[1]       = dacsTREADY[4];
+assign dac_probe[2]       = dacsTVALID[0];
+assign dac_probe[3]       = dacsTVALID[4];
+
+assign dac_probe[32+:DAC_SAMPLE_WIDTH] = dacsTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:DAC_SAMPLE_WIDTH];
+assign dac_probe[64+:DAC_SAMPLE_WIDTH] = dacsTDATA[(0*AXIS_DAC_SAMPLE_WIDTH+DAC_SAMPLE_WIDTH)+:DAC_SAMPLE_WIDTH];
+
+assign dac_probe[96+:DAC_SAMPLE_WIDTH]  = dacsTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:DAC_SAMPLE_WIDTH];
+assign dac_probe[128+:DAC_SAMPLE_WIDTH] = dacsTDATA[(4*AXIS_DAC_SAMPLE_WIDTH+DAC_SAMPLE_WIDTH)+:DAC_SAMPLE_WIDTH];
+`endif
+
+end // end if
+endgenerate
 
 evrLogger evrLogger (
     .sysClk(sysClk),
