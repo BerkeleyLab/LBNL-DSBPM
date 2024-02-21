@@ -6,7 +6,7 @@ module genericDACStreamer_tb #(
 
     parameter DAC_ADDRESS_WIDTH = 14,
     parameter DAC_DATA_WIDTH = 16,
-    parameter AXIS_DATA_WIDTH = 256,
+    parameter AXIS_DATA_WIDTH = 32,
 
     parameter NUM_DAC_TABLE_SAMPLES = 128
 );
@@ -222,6 +222,6 @@ always @(posedge axis_clk) begin
     stall <= (stallCnt == 0);
 end
 
-assign axis_TREADY = !stall;
+assign axis_TREADY = 1'b1;
 
 endmodule
