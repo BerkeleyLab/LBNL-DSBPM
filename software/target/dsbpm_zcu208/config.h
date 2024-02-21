@@ -158,10 +158,10 @@
 
 /*
  *  Fake frequency to fool API into calculating the correct
- *  NCO frequency. We want to shift the carrier to the 20th bin.
- *  Since the RF is at bin 328 or -328, bin 20 would be at 308
+ *  NCO frequency. We want to shift the bin to RF, which is at
+ *  bin 328 or -328
  */
-#define CFG_DAC_NCO_FREQ 308.000
+#define CFG_DAC_NCO_FREQ 328.000
 
 /*
  *  Recorder capacities, in samples. Waveform recorder pads
