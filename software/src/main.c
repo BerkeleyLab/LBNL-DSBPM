@@ -25,6 +25,7 @@
 #include "tftp.h"
 #include "util.h"
 #include "localOscillator.h"
+#include "ptGen.h"
 #include "autotrim.h"
 #include "acqSync.h"
 #include "publisher.h"
@@ -151,6 +152,7 @@ main(void)
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         localOscillatorInit(bpm);
+        ptGenInit(bpm);
         positionCalcInit(bpm);
         wfrInit(bpm);
     }
