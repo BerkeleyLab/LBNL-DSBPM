@@ -47,7 +47,8 @@ __SRC_FILES = \
 	platform_zynqmp.c \
 	positionCalc.c \
 	publisher.c \
-	rfadc.c \
+	ptGen.c \
+	rfdc.c \
 	rfclk.c \
 	sysmon.c \
 	sysref.c \
@@ -84,7 +85,8 @@ __HDR_FILES = \
 	platform_config.h \
 	positionCalc.h \
 	publisher.h \
-	rfadc.h \
+	ptGen.h \
+	rfdc.h \
 	rfclk.h \
 	sysmon.h \
 	sysref.h \

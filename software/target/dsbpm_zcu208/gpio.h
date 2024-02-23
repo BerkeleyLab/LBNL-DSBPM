@@ -17,7 +17,7 @@
 #define GPIO_IDX_USER_GPIO_CSR            3 // Diagnostic LEDS/switches
 #define GPIO_IDX_GTY_CSR                  4 // GTY control/status
 #define GPIO_IDX_EVR_SYNC_CSR             5 // Event receiver synchronization
-#define GPIO_IDX_SYSREF_CSR               6 // SYSREF generation control/status
+#define GPIO_IDX_SYSREF_ADC_CSR           6 // SYSREF ADC generation control/status
 #define GPIO_IDX_FREQ_MONITOR_CSR         7 // Frequency measurement CSR
 #define GPIO_IDX_EVR_GTY_DRP              8 // EVR GTY dynamic reconfig (R/W)
 #define GPIO_IDX_SOFT_TRIGGER             9 // Acquisition software trigger (W)
@@ -35,6 +35,7 @@
 #define GPIO_IDX_ADC_SA_RELOAD           22 // Slow acquisition divider reload
 #define GPIO_IDX_ADC_HEARTBEAT_RELOAD    23 // ADC heartbeat counter
 #define GPIO_IDX_GITHASH                 24 // Git 32-bit hash
+#define GPIO_IDX_SYSREF_DAC_CSR          25 // SYSREF DAC generation control/status
 
 /*
  * Per DSBPM registers
@@ -79,12 +80,19 @@
 #define GPIO_IDX_RMS_Y_NARROW            69 // RMS Y narrow bandwidth
 #define GPIO_IDX_WFR_SOFT_TRIGGER        70 // WFR soft trigger
 #define GPIO_IDX_ADC_PROCESSING          71 // ADC processing
+#define GPIO_IDX_DACTABLE_ADDRESS        72 // DAC table address
+#define GPIO_IDX_DACTABLE_CSR            73 // DAC table CSR
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_ADC_PROCESSING-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_DACTABLE_CSR-GPIO_IDX_LOTABLE_ADDRESS+1)
 
-#define CFG_AXI_SAMPLES_PER_CLOCK         1 // 1 sample per clock
+#define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
+// For compatibility
+#define CFG_ADC_AXI_SAMPLES_PER_CLOCK    CFG_AXI_SAMPLES_PER_CLOCK
+#define CFG_DAC_AXI_SAMPLES_PER_CLOCK    2 // 2 sample per clock (I and Q)
 #define CFG_LO_RF_ROW_CAPACITY           1024
 #define CFG_LO_PT_ROW_CAPACITY           8192
+
+#define CFG_PT_GEN_ROW_CAPACITY          32768 // 2^15 per DAC sample (I and Q)
 
 // Waveform recorders
 // Capacities must be powers of two

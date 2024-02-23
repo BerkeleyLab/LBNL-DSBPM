@@ -10,7 +10,6 @@
 #include "waveformRecorder.h"
 #include "gpio.h"
 #include "util.h"
-#include "rfadc.h"
 #include "memcpy2.h"
 
 /*

@@ -65,22 +65,22 @@ mmcmShow(void)
 }
 
 static void
-showAdcClk(const char *msg)
+showRFDCClk(const char *msg)
 {
     uint32_t v;
 
-    printf("%sADC clock MMCM:\n", msg);
+    printf("%sRFDC clock MMCM:\n", msg);
     v = RD(XPAR_RFADC_MMCM_BASEADDR, 0x200);
     printf("     Input divider: %d\n", v & 0xFF);
     printf("        Multiplier: %d.%03d\n", (v >> 8) & 0xFF, (v >> 16) & 0x3FF);
     v = RD(XPAR_RFADC_MMCM_BASEADDR, 0x208);
-    printf("           Divider CLK0: %d.%03d\n", v & 0xFF, (v >> 8) & 0x3FF);
+    printf("           Divider CLK0 (ADC): %d.%03d\n", v & 0xFF, (v >> 8) & 0x3FF);
     v = RD(XPAR_RFADC_MMCM_BASEADDR, 0x214);
-    printf("           Divider CLK1: %d\n", v & 0xFF);
+    printf("           Divider CLK1 (DAC): %d\n", v & 0xFF);
 }
 
 void
-mmcmSetAdcClkMultiplier(int multiplier)
+mmcmSetRFDCClkMultiplier(int multiplier)
 {
     int mulInt = multiplier / 1000;
     int mulFrac = multiplier % 1000;
@@ -92,7 +92,7 @@ mmcmSetAdcClkMultiplier(int multiplier)
 }
 
 void
-mmcmSetAdcClk0Divider(int divider)
+mmcmSetRFDCClk0Divider(int divider)
 {
     int divInt = divider / 1000;
     int divFrac = divider % 1000;
@@ -101,7 +101,7 @@ mmcmSetAdcClk0Divider(int divider)
 }
 
 void
-mmcmSetAdcClk1Divider(int divider)
+mmcmSetRFDCClk1Divider(int divider)
 {
     int divInt = divider / 1000;
 
@@ -134,10 +134,10 @@ mmcmStartReconfig(void)
 void
 mmcmInit(void)
 {
-    showAdcClk("Old ");
-    mmcmSetAdcClkMultiplier(ADC_CLK_MMCM_MULTIPLIER);
-    mmcmSetAdcClk0Divider(ADC_CLK_MMCM_DIVIDER);
-    mmcmSetAdcClk1Divider(ADC_CLK_MMCM_CLK1_DIVIDER);
+    showRFDCClk("Old ");
+    mmcmSetRFDCClkMultiplier(ADC_CLK_MMCM_MULTIPLIER);
+    mmcmSetRFDCClk0Divider(ADC_CLK_MMCM_DIVIDER);
+    mmcmSetRFDCClk1Divider(ADC_CLK_MMCM_CLK1_DIVIDER);
     mmcmStartReconfig();
-    showAdcClk("");
+    showRFDCClk("");
 }

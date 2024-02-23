@@ -15,7 +15,7 @@
 #include "mgt.h"
 #include "mmcm.h"
 #include "platform.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "rfclk.h"
 #include "softwareBuildDate.h"
 #include "st7789v.h"
@@ -25,6 +25,7 @@
 #include "tftp.h"
 #include "util.h"
 #include "localOscillator.h"
+#include "ptGen.h"
 #include "autotrim.h"
 #include "acqSync.h"
 #include "publisher.h"
@@ -116,11 +117,13 @@ main(void)
     evrInit();
     rfClkInit();
     mmcmInit();
-    sysrefInit();
-    rfADCinit();
+    sysrefInit(0);
+    sysrefInit(1);
+    rfDCinit();
     afeInit();
     rfADCrestart();
-    rfADCsync();
+    rfDACrestart();
+    rfDCsync();
 
     /* Start network */
     lwip_init();
@@ -149,6 +152,7 @@ main(void)
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         localOscillatorInit(bpm);
+        ptGenInit(bpm);
         positionCalcInit(bpm);
         wfrInit(bpm);
     }
