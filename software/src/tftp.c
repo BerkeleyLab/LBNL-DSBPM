@@ -9,6 +9,7 @@
 #include <string.h>
 #include <lwip/udp.h>
 #include "localOscillator.h"
+#include "ptGen.h"
 #include "ffs.h"
 #include "st7789v.h"
 #include "tftp.h"
@@ -65,6 +66,10 @@ static struct fileInfo fileTable[] = {
                                                     localOscillatorFetchPtEEPROM,
                                                     localOscillatorStashPtEEPROM,
                                                     localOscPtCommitAll},
+   {PT_GEN_TABLE_EEPROM_NAME, "Pilot Tone generation table",
+                                                    ptGenFetchEEPROM,
+                                                    ptGenStashEEPROM,
+                                                    ptGenCommitAll},
    {"BOOT.bin", "Bitsream + Software image",
                                                     dummyPreTransmit,
                                                     dummyPostReceive,

@@ -14,7 +14,7 @@
 #include "localOscillator.h"
 #include "systemParameters.h"
 #include "util.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "waveformRecorder.h"
 
 #define MAX_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)

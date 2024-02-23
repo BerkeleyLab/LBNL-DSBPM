@@ -32,7 +32,7 @@
 #include "gpio.h"
 #include "mgt.h"
 #include "util.h"
-#include "rfadc.h"
+#include "rfdc.h"
 
 #define CSR_W_RX_BIT_SLIDE          0x80
 #define CSR_W_BB_TX_STRT_REQUEST    0x08
@@ -139,7 +139,7 @@ mgtCrankRxAligner(void)
         GPIO_WRITE(GPIO_IDX_GTY_CSR, CSR_RW_TX_RESET);
         microsecondSpin(2);
         GPIO_WRITE(GPIO_IDX_GTY_CSR, 0);
-        rfADCsync();
+        rfDCsync();
         state = S_ALIGNED;
         break;
 

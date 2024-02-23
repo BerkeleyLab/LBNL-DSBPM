@@ -257,8 +257,10 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             x = strtod((char *)cp, &endp);
             if ((*endp != expectedEnd)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
-                sprintf((char *)buf, "Unexpected characters on line %d", r + 1);
-                printf("Unexpected characters on line %d\n", r + 1);
+                sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
+                        r + 1, *endp, expectedEnd);
+                printf("Unexpected characters on line %d: %c (expected %c)\n",
+                        r + 1, *endp, expectedEnd);
                 return -1;
             }
             /* The odd-looking comparison is to deal with NANs */

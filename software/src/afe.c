@@ -8,7 +8,7 @@
 #include <limits.h>
 #include "afe.h"
 #include "gpio.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "util.h"
 
 #define AFE_CHANNEL_COUNT   8
@@ -47,7 +47,7 @@ afeADCrestart(void)
     // Perform ADC restart (foreground calibration)
     rfADCrestart();
     // Perform ADC synchronization
-    rfADCsync();
+    rfDCsync();
 }
 
 /*

@@ -19,7 +19,7 @@
 #include "iic.h"
 #include "mgt.h"
 #include "mmcm.h"
-#include "rfadc.h"
+#include "rfdc.h"
 #include "rfclk.h"
 #include "st7789v.h"
 #include "sysmon.h"
@@ -170,14 +170,16 @@ cmdDEBUG(int argc, char **argv)
     }
     printf("Debug flags: 0x%x\n", debugFlags);
     if (debugFlags & DEBUGFLAG_SHOW_TEST) st7789vTestPattern();
-    if (debugFlags & DEBUGFLAG_ADC_MMCM_SHOW) mmcmShow();
+    if (debugFlags & DEBUGFLAG_RFDC_MMCM_SHOW) mmcmShow();
     if (debugFlags & DEBUGFLAG_SHOW_DRP) eyescanCommand(0, NULL);
     if (debugFlags & DEBUGFLAG_RF_CLK_SHOW) rfClkShow();
     if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
-    if (debugFlags & DEBUGFLAG_SHOW_SYSREF) sysrefShow();
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) rfDACshow();
+    if (debugFlags & DEBUGFLAG_SHOW_ADC_SYSREF) sysrefShow(0);
+    if (debugFlags & DEBUGFLAG_SHOW_DAC_SYSREF) sysrefShow(1);
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
-    if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfADCsync();
+    if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfDCsync();
     if (sFlag) {
         systemParameters.startupDebugFlags = debugFlags;
         systemParametersFetchEEPROM();
@@ -204,8 +206,11 @@ cmdFMON(int argc, char **argv)
                                    "ADC AXI",
                                    "RFDC ADC0",
                                    "FPGA_REFCLK_OUT",
-                                   "PRBS",
-                                   "MGTref/2" };
+                                   "MGTref/2",
+                                   "RFDC DAC0",
+                                   "DAC AXI",
+                                   "User SYSREF ADC",
+                                   "User SYSREF DAC" };
 
     if (!usingPPS) {
         printf("Warning -- Pulse-per-second event not seen at power-up.\n");
