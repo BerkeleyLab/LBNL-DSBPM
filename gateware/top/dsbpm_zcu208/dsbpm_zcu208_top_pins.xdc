@@ -49,6 +49,13 @@ set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CLK[1]}]
 set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_SDI[1]}]
 set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_LE[1]}]
 
+set_property DRIVE 4 [get_ports {AFE_SPI_CLK[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_SDI[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_LE[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_CLK[1]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_SDI[1]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_LE[1]}]
+
 # User push buttons
 set_property PACKAGE_PIN L22 [get_ports GPIO_SW_W]
 set_property PACKAGE_PIN G24 [get_ports GPIO_SW_E]
