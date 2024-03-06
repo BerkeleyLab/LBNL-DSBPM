@@ -127,6 +127,7 @@ forwardData #(
     .outData({ axisRun, axisLastIdx })
 );
 
+reg [READ_DATA_WIDTH-1:0] axisDataNotRunning = 0;
 reg axisSynced = 0;
 always @(posedge axis_CLK)
 begin
@@ -150,10 +151,12 @@ begin
     end else begin
         axisNextIndex <= 0;
         axisValid <= 0;
+        axisDataNotRunning <= 0;
     end
 end
 
-assign axis_TDATA = axisData;
+// DAC ignores TVALID bit and reads TDATA regardless
+assign axis_TDATA = axisRun? axisData: axisDataNotRunning;
 assign axis_TVALID = axisValid;
 
 //
