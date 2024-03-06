@@ -119,6 +119,8 @@ main(void)
     mmcmInit();
     sysrefInit(0);
     sysrefInit(1);
+    sysrefShow(0);
+    sysrefShow(1);
     rfDCinit();
     afeInit();
     rfADCrestart();
