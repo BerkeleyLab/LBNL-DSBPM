@@ -14,11 +14,13 @@
 #include "gpio.h"
 #include "localOscillator.h"
 #include "systemParameters.h"
+#include "ptGen.h"
 #include "util.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
 
-#define MAX_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
+#define MAX_ADC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
+#define MAX_DAC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_DAC_COUNT/CFG_DSBPM_COUNT)
 
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
@@ -33,7 +35,7 @@ static void
 publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
 {
     int i;
-    int adcChannel, chainNumber;
+    int adcChannel, dacChannel, chainNumber;
     struct pbuf *p;
     struct dsbpmSlowAcquisition *pk;
     static epicsUInt32 packetNumber = 1;
@@ -64,11 +66,12 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
         pk->autotrimStatus[i] = autotrimStatus(i);
         pk->sdSyncStatus[i] = localOscGetSdSyncStatus(i);
         pk->cellCommStatus[i] = 0;
+        pk->dacCtl[i] = isPtGenRun(i);
     }
     pk->clipStatus = rfADCstatus();
     for (i = 0 ; i < DSBPM_PROTOCOL_ADC_COUNT ; i++) {
-        adcChannel = i % MAX_CHANNELS_PER_CHAIN;
-        chainNumber = i / MAX_CHANNELS_PER_CHAIN;
+        adcChannel = i % MAX_ADC_CHANNELS_PER_CHAIN;
+        chainNumber = i / MAX_ADC_CHANNELS_PER_CHAIN;
         pk->rfMag[i] = GPIO_READ(REG(GPIO_IDX_PRELIM_RF_MAG_0 +
                 adcChannel, chainNumber));
         pk->ptLoMag[i] = GPIO_READ(REG(GPIO_IDX_PRELIM_PT_LO_MAG_0 +
@@ -81,6 +84,14 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
         pk->afeAtt[i] = afeAttenGet(chainNumber, adcChannel);
 
     }
+
+    for (i = 0 ; i < DSBPM_PROTOCOL_DAC_COUNT ; i++) {
+        dacChannel = i % MAX_DAC_CHANNELS_PER_CHAIN;
+        chainNumber = i / MAX_DAC_CHANNELS_PER_CHAIN;
+        pk->dacCurrent[i] = rfDACGetVOPDSBPM(chainNumber, dacChannel);
+    }
+
+
     r = 0;
     pk->adcPeak[0] = r;
     pk->adcPeak[1] = r >> 16;

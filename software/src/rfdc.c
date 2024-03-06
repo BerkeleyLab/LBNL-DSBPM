@@ -517,3 +517,61 @@ rfADCGetDSADSBPM(unsigned int bpm, int channel)
 
     return att * 1000;
 }
+
+int
+rfDACGetVOP(int channel)
+{
+    int i;
+
+    int tile = channel / CFG_ADC_PER_TILE;
+    int dac = channel % CFG_ADC_PER_TILE;
+    int duc = 0;
+
+    unsigned int ucurrent;
+    i = XRFdc_GetOutputCurr(&rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
+            &ucurrent);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_GetOutputCurr tile %d, dac %d, duc %d: %d", tile, dac,
+                duc, i);
+        return -1;
+    }
+
+    return ucurrent;
+}
+
+void
+rfDACSetVOP(int channel, unsigned int ucurrent)
+{
+    int i, duc;
+    int tile = channel / CFG_ADC_PER_TILE;
+    int dac = channel % CFG_ADC_PER_TILE;
+
+    for (duc = 0; duc < CFG_DAC_DUC_PER_DAC; duc++) {
+        i = XRFdc_SetDACVOP(&rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
+                ucurrent);
+        if (i != XST_SUCCESS) {
+            printf("XRFdc_SetDACVOP tile %d, dac %d, duc %d: %d", tile, dac,
+                    duc, i);
+        }
+    }
+}
+
+int
+rfDACGetVOPDSBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    return rfDACGetVOP(ch);
+}
+
+void
+rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    rfDACSetVOP(ch, ucurrent);
+}

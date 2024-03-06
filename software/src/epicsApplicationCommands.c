@@ -14,6 +14,7 @@
 #include "evr.h"
 #include "gpio.h"
 #include "util.h"
+#include "ptGen.h"
 #include "autotrim.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
@@ -75,6 +76,15 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AFE_ATT:
             afeAttenSet(idx / CFG_ADC_PER_BPM_COUNT,
                     idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CURRENT:
+            rfDACSetVOPDSBPM(idx / CFG_DAC_PER_BPM_COUNT,
+                    idx % CFG_DAC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CTL:
+            ptGenRun(idx, cmdp->args[0]);
             break;
 
         default: return -1;
