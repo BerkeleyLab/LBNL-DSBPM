@@ -84,7 +84,14 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CTL:
-            ptGenRun(idx, cmdp->args[0]);
+            unsigned int bpm = idx / CFG_DAC_PER_BPM_COUNT;
+            unsigned int dac = idx % CFG_DAC_PER_BPM_COUNT;
+
+            // Invalid DAC channel
+            if (dac != 0)
+                return -1;
+
+            ptGenRun(bpm, cmdp->args[0]);
             break;
 
         default: return -1;
