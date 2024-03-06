@@ -12,6 +12,8 @@ int ptGenGetTable(unsigned char *buf);
 void ptGenCommit(unsigned int bpm);
 void ptGenCommitAll(void);
 void ptGenInit(unsigned int bpm);
+void ptGenRun(unsigned int bpm, int run);
+int isPtGenRun(unsigned int bpm);
 int ptGenFetchEEPROM(void);
 int ptGenStashEEPROM(void);
 

@@ -11,10 +11,16 @@ void rfADCfreezeCalibration(int channel, int freeze);
 void rfADCshow(void);
 unsigned int rfADCstatus(void);
 int rfADClinkCouplingIsAC(void);
+
 float rfADCGetDSA(int channel);
 void rfADCSetDSA(int channel, float att);
 void rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt);
 int rfADCGetDSADSBPM(unsigned int bpm, int channel);
+
+int rfDACGetVOP(int channel);
+void rfDACSetVOP(int channel, unsigned int ucurrent);
+int rfDACGetVOPDSBPM(unsigned int bpm, int channel);
+void rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent);
 
 void rfDACrestart(void);
 void rfDACshow(void);

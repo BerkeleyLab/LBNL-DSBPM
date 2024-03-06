@@ -159,17 +159,20 @@ ptGenGetTable(unsigned char *buf)
 /*
  * Start oscillators
  */
-static void
-ptGenRun(unsigned int bpm)
+void ptGenRun(unsigned int bpm, int run)
 {
-    uint32_t v = NOBANK_RUN_BIT;
+    uint32_t v = run ? NOBANK_RUN_BIT : 0;
     writeCSR(bpm, v, NOBANK_RUN_BIT);
 
-    if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW)
-        printf("PT generation %u running!\n", bpm);
+    if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
+        if (run)
+            printf("PT generation %u enbaled!\n", bpm);
+        else
+            printf("PT generation %u disabled!\n", bpm);
+    }
 }
 
-static int
+int
 isPtGenRun(unsigned int bpm)
 {
     uint32_t v = GPIO_READ(REG(GPIO_IDX_DACTABLE_CSR, bpm));
@@ -209,7 +212,7 @@ ptGenWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity)
         printf("CORRUPT PT GENERATION TABLE\n");
     }
 
-    ptGenRun(bpm);
+    ptGenRun(bpm, 1);
 }
 
 /*

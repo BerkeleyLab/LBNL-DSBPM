@@ -29,52 +29,32 @@ set_property IOSTANDARD LVCMOS18    [get_ports {DIP_SWITCH[6]}]
 set_property IOSTANDARD LVCMOS18    [get_ports {DIP_SWITCH[7]}]
 
 # Analog signal conditioning card
-# ADCIO_03
-set_property PACKAGE_PIN AR7        [get_ports AFE_SPI_CLK]
+# ADCIO_00
+set_property PACKAGE_PIN AP5        [get_ports {AFE_SPI_CLK[0]}]
 # ADCIO_01
-set_property PACKAGE_PIN AP6        [get_ports AFE_SPI_SDI]
+set_property PACKAGE_PIN AP6        [get_ports {AFE_SPI_SDI[0]}]
 # ADCIO_02
-set_property PACKAGE_PIN AR6        [get_ports AFE_SPI_SDO]
+set_property PACKAGE_PIN AR6        [get_ports {AFE_SPI_LE[0]}]
+# ADCIO_03
+set_property PACKAGE_PIN AR7        [get_ports {AFE_SPI_CLK[1]}]
+# ADCIO_04
+set_property PACKAGE_PIN AV7        [get_ports {AFE_SPI_SDI[1]}]
 # ADCIO_05
-set_property PACKAGE_PIN AU7        [get_ports {AFE_SPI_CSB[0]}]
-# ADCIO_06
-set_property PACKAGE_PIN AV8        [get_ports {AFE_SPI_CSB[1]}]
-#ADCIO_07
-set_property PACKAGE_PIN AU8        [get_ports {AFE_SPI_CSB[2]}]
-# ADCIO_08
-set_property PACKAGE_PIN AT6        [get_ports {AFE_SPI_CSB[3]}]
-# ADCIO_09
-set_property PACKAGE_PIN AT7        [get_ports {AFE_SPI_CSB[4]}]
-# ADCIO_10
-set_property PACKAGE_PIN AU5        [get_ports {AFE_SPI_CSB[5]}]
-# ADCIO_11
-set_property PACKAGE_PIN AT5        [get_ports {AFE_SPI_CSB[6]}]
-# ADCIO_12
-set_property PACKAGE_PIN AW3        [get_ports {AFE_SPI_CSB[7]}]
-set_property IOSTANDARD LVCMOS18    [get_ports AFE_SPI_CLK]
-set_property IOSTANDARD LVCMOS18    [get_ports AFE_SPI_SDI]
-set_property IOSTANDARD LVCMOS18    [get_ports AFE_SPI_SDO]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[0]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[1]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[2]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[3]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[4]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[5]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[6]}]
-set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CSB[7]}]
+set_property PACKAGE_PIN AU7        [get_ports {AFE_SPI_LE[1]}]
 
-# ADCIO_13
-set_property PACKAGE_PIN AW4        [get_ports TRAINING_SIGNAL]
-set_property IOSTANDARD LVCMOS18    [get_ports TRAINING_SIGNAL]
-set_property DRIVE 16               [get_ports TRAINING_SIGNAL]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CLK[0]}]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_SDI[0]}]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_LE[0]}]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_CLK[1]}]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_SDI[1]}]
+set_property IOSTANDARD LVCMOS18    [get_ports {AFE_SPI_LE[1]}]
 
-set_property PACKAGE_PIN A9         [get_ports AFE_DACIO_00]
-set_property IOSTANDARD LVCMOS18    [get_ports AFE_DACIO_00]
-set_property DRIVE 16               [get_ports AFE_DACIO_00]
-
-# GPIO_SW_S -- GND for XM500 front end SROC jumper
-set_property PACKAGE_PIN A25        [get_ports BCM_SROC_GND]
-set_property IOSTANDARD LVCMOS18    [get_ports BCM_SROC_GND]
+set_property DRIVE 4 [get_ports {AFE_SPI_CLK[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_SDI[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_LE[0]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_CLK[1]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_SDI[1]}]
+set_property DRIVE 4 [get_ports {AFE_SPI_LE[1]}]
 
 # User push buttons
 set_property PACKAGE_PIN L22 [get_ports GPIO_SW_W]
