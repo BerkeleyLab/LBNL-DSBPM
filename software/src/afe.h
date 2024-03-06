@@ -8,6 +8,8 @@
 
 void afeInit(void);
 int afeGetSerialNumber(void);
+void afeAttenSet(unsigned int bpm, unsigned int channel, unsigned int mdB);
+unsigned int afeAttenGet(unsigned int bpm, unsigned int channel);
 void afeADCrestart(void);
 int afeFetchADCextents(uint32_t *buf);
 

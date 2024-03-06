@@ -8,7 +8,8 @@ TEST_BENCH = \
 	genericWaveformRecorder_tb \
 	adcProcessing_tb \
 	genericDPRAM_tb \
-	genericDACStreamer_tb
+	genericDACStreamer_tb \
+	afeSPI_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =

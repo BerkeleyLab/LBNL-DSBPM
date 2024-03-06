@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "adcProcessing.h"
+#include "afe.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "lossOfBeam.h"
@@ -13,6 +14,7 @@
 #include "evr.h"
 #include "gpio.h"
 #include "util.h"
+#include "ptGen.h"
 #include "autotrim.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
@@ -69,6 +71,27 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DSA:
             rfADCSetDSADSBPM(idx / CFG_ADC_PER_BPM_COUNT,
                     idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AFE_ATT:
+            afeAttenSet(idx / CFG_ADC_PER_BPM_COUNT,
+                    idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CURRENT:
+            rfDACSetVOPDSBPM(idx / CFG_DAC_PER_BPM_COUNT,
+                    idx % CFG_DAC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CTL:
+            unsigned int bpm = idx / CFG_DAC_PER_BPM_COUNT;
+            unsigned int dac = idx % CFG_DAC_PER_BPM_COUNT;
+
+            // Invalid DAC channel
+            if (dac != 0)
+                return -1;
+
+            ptGenRun(bpm, cmdp->args[0]);
             break;
 
         default: return -1;

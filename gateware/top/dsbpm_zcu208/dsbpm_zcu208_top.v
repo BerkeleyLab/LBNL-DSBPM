@@ -78,13 +78,9 @@ module dsbpm_zcu208_top #(
     input       [7:0] DIP_SWITCH,
     output wire [7:0] GPIO_LEDS,
 
-    output wire [7:0] AFE_SPI_CSB,
-    output wire       AFE_SPI_SDI,
-    input             AFE_SPI_SDO,
-    output wire       AFE_SPI_CLK,
-    output wire       TRAINING_SIGNAL,
-    output wire       BCM_SROC_GND,
-    output wire       AFE_DACIO_00,
+    output wire [1:0] AFE_SPI_CLK,
+    output wire [1:0] AFE_SPI_SDI,
+    output wire [1:0] AFE_SPI_LE,
 
     output wire       CLK_SPI_MUX_SEL0,
     output wire       CLK_SPI_MUX_SEL1
@@ -241,7 +237,7 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrHeartbeatMarker(evrHeartbeat),
           .evrPulsePerSecondMarker(evrPulsePerSecond),
           .evrSROCsynced(evrSROCsynced),
-          .evrSROC(AFE_DACIO_00),
+          .evrSROC(),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
 wire isPPSvalid = evrSyncStatus[2];
@@ -412,22 +408,6 @@ assign GPIO_IN[GPIO_IDX_USER_GPIO_CSR] = {
                evrTriggerBus,
                8'b0,
                DIP_SWITCH }; // DFE Serial Number
-
-//////////////////////////////////////////////////////////////////////////////
-// Analog front end SPI components
-afeSPI #(.CLK_RATE(SYSCLK_RATE),
-         .CSB_WIDTH(8),
-         .BIT_RATE(12500000),
-         .DEBUG("false"))
-  afeSPI (
-    .clk(sysClk),
-    .csrStrobe(GPIO_STROBES[GPIO_IDX_AFE_SPI_CSR]),
-    .gpioOut(GPIO_OUT),
-    .status(GPIO_IN[GPIO_IDX_AFE_SPI_CSR]),
-    .SPI_CLK(AFE_SPI_CLK),
-    .SPI_CSB(AFE_SPI_CSB),
-    .SPI_SDI(AFE_SPI_SDI),
-    .SPI_SDO(AFE_SPI_SDO));
 
 //////////////////////////////////////////////////////////////////////////////
 // Interlocks
@@ -1828,6 +1808,25 @@ genericDACStreamer #(
     .axis_TDATA(dacsTDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
     .axis_TVALID(dacsTVALID[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP]),
     .axis_TREADY(dacsTREADY[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP])
+);
+
+//////////////////////////////////////////////////////////////////////////////
+// Analog front end SPI components
+afeSPI #(
+  .CLK_RATE(SYSCLK_RATE),
+  .CSB_WIDTH(1),
+  .BIT_RATE(12500000),
+  .DEBUG("false")
+) afeSPI (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_AFE_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .gpioOut(GPIO_OUT),
+    .status(GPIO_IN[GPIO_IDX_AFE_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .SPI_CLK(AFE_SPI_CLK[dsbpm]),
+    .SPI_CSB(),
+    .SPI_LE(AFE_SPI_LE[dsbpm]),
+    .SPI_SDI(AFE_SPI_SDI[dsbpm]),
+    .SPI_SDO(0)
 );
 
 end // for
