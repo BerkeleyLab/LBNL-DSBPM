@@ -56,9 +56,11 @@ afeAttenSet(unsigned int bpm, unsigned int channel,
     /*
      * Write trimmed value
      */
-    int v = (mdB * 4)/1000;
-    if (v > 127) v = 127;
-    else if (v < 0) v = 0;
+    int attSteps = (mdB * 4)/1000;
+    if (attSteps > 127) attSteps = 127;
+    else if (attSteps < 0) attSteps = 0;
+
+    int v = attSteps;
     // SPI data: 8-bit address | 8-bit data
     v |= address << 8;
     // SPI module options
@@ -96,9 +98,10 @@ afeAttenSet(unsigned int bpm, unsigned int channel,
 #endif
 
     /*
-     * Update attenuator compenstation coefficients in FPGA
+     * Update attenuator compenstation coefficients in FPGA.
+     * Step is 0.25
      */
-    afeAttenuation[bpm][channel] = mdB;
+    afeAttenuation[bpm][channel] = attSteps*1000/4;
 }
 
 /*
