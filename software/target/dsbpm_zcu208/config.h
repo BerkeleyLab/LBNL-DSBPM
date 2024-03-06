@@ -16,11 +16,8 @@
 
 /*
  * Number of DAC AXI clocks per SYSREF clock.
- * FIXME: this number is wrong (it's 202.50)
- * and we have to change the DAC clock generation,
- * as DAC clk needs to be an integer of SYSREF
  */
-#define DAC_CLK_PER_SYSREF  202
+#define DAC_CLK_PER_SYSREF  81
 
 /*
  * Number of FPGA_REFCLK_OUT_C clocks per SYSREF clock
