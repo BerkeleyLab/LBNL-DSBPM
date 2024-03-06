@@ -148,6 +148,7 @@ begin
             end
         end
     end else begin
+        axisNextIndex <= 0;
         axisValid <= 0;
     end
 end
