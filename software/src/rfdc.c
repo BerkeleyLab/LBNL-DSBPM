@@ -354,7 +354,7 @@ rfDCsync(void)
      */
     status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
     if (status != XRFDC_MTS_OK) {
-        warn("XRFdc_MultiConverter_Sync (tiles) failed: %d", status);
+        warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d", status);
         return;
     }
 
@@ -382,6 +382,14 @@ rfDCsync(void)
     }
 #endif
     printf("ADC synchronization complete.\n");
+
+    status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d", status);
+        return;
+    }
+
+    printf("DAC synchronization complete.\n");
 
     /*
      * Disable SYSREF
