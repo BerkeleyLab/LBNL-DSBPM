@@ -4,8 +4,14 @@
 #ifndef _RFDC_H_
 #define _RFDC_H_
 
+typedef enum rfDCType {
+    RFDC_ADC = 0x1,
+    RFDC_DAC = 0x2,
+} rfDCType;
+
 void rfDCinit(void);
 void rfDCsync(void);
+void rfDCsyncType(int type, int MTSSync);
 void rfADCrestart(void);
 void rfADCfreezeCalibration(int channel, int freeze);
 void rfADCshow(void);
