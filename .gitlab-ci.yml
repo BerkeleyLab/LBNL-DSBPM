@@ -23,6 +23,10 @@ gw_dsbpm_zcu208:
     - cd gateware/syn/dsbpm_zcu208 && ls /non-free
   stage: gateware
   script:
+    - |
+      echo "LC_ALL:" ${LC_ALL}
+      echo "LANGUAGE:" ${LANGUAGE}
+      echo "LANG:" ${LANG}
     - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_zcu208_top.bit
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
