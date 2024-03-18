@@ -184,9 +184,9 @@ rfADClinkCouplingIsAC(void)
     return isAC;
 }
 
-static void rfADCCfgDefaults(void)
+static void rfADCCfgStaticDefaults(void)
 {
-    int i, tile, adc;
+    int i, tile;
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_ADC_TILE, tile,
@@ -194,7 +194,14 @@ static void rfADCCfgDefaults(void)
                                           CFG_ADC_REF_CLK_FREQ,
                                           CFG_ADC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS) fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+    }
+}
 
+static void rfADCCfgDefaults(void)
+{
+    int i, tile, adc;
+
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
 #ifdef CFG_ADC_NCO_FREQ
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
@@ -223,9 +230,9 @@ static void rfADCCfgDefaults(void)
 #endif
 }
 
-static void rfDACCfgDefaults(void)
+static void rfDACCfgStaticDefaults(void)
 {
-    int i, tile, dac, duc;
+    int i, tile;
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_DAC_TILE, tile,
@@ -233,7 +240,14 @@ static void rfDACCfgDefaults(void)
                                           CFG_DAC_REF_CLK_FREQ,
                                           CFG_DAC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS) fatal("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+    }
+}
 
+static void rfDACCfgDefaults(void)
+{
+    int i, tile, dac, duc;
+
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
 #ifdef CFG_DAC_NCO_FREQ
         // Because we are using I/Q -> real mixer we only have
@@ -285,11 +299,12 @@ rfDCinit(void)
     i = XRFdc_CfgInitialize(&rfDC, configp);
     if (i != XST_SUCCESS) fatal("XRFdc_CfgInitialize=%d", i);
 
-    rfDCsyncType(RFDC_ADC, 1);
-    rfADCCfgDefaults();
-    rfDCsyncType(RFDC_DAC, 1);
-    rfDACCfgDefaults();
     initDone = 1;
+
+    rfADCCfgStaticDefaults();
+    rfADCCfgDefaults();
+    rfDACCfgStaticDefaults();
+    rfDACCfgDefaults();
 
     if (debugFlags & DEBUGFLAG_RF_ADC_SHOW) rfADCshow();
     if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) rfDACshow();
@@ -307,7 +322,7 @@ rfADCrestart(void)
     i = XRFdc_Reset(&rfDC, XRFDC_ADC_TILE, XRFDC_SELECT_ALL_TILES);
     if (i != XST_SUCCESS) warn("Critical -- ADC - %s\nXRFdc_Reset=%d",
                                                            logMessageBuffer, i);
-    rfDCsyncType(RFDC_ADC, 1);
+    rfADCCfgStaticDefaults();
     rfADCCfgDefaults();
 }
 
@@ -319,7 +334,7 @@ rfDACrestart(void)
     i = XRFdc_Reset(&rfDC, XRFDC_DAC_TILE, XRFDC_SELECT_ALL_TILES);
     if (i != XST_SUCCESS) warn("Critical -- DAC - %s\nXRFdc_Reset=%d",
                                                            logMessageBuffer, i);
-    rfDCsyncType(RFDC_DAC, 1);
+    rfDACCfgStaticDefaults();
     rfDACCfgDefaults();
 }
 
@@ -421,6 +436,8 @@ rfDCsyncType(int type, int MTSSync)
 void
 rfDCsync(){
     rfDCsyncType(RFDC_ADC | RFDC_DAC, 1);
+    rfADCCfgDefaults();
+    rfDACCfgDefaults();
 }
 
 void
