@@ -217,7 +217,7 @@ static void rfADCCfgDefaults(void)
 #endif
     }
 
-#ifdef CFG_DAC_NCO_FREQ
+#ifdef CFG_ADC_NCO_FREQ
     // Update Mixer settings on SYSREF
     rfDCsyncType(RFDC_ADC, 0);
 #endif
@@ -285,7 +285,9 @@ rfDCinit(void)
     i = XRFdc_CfgInitialize(&rfDC, configp);
     if (i != XST_SUCCESS) fatal("XRFdc_CfgInitialize=%d", i);
 
+    rfDCsyncType(RFDC_ADC, 1);
     rfADCCfgDefaults();
+    rfDCsyncType(RFDC_DAC, 1);
     rfDACCfgDefaults();
     initDone = 1;
 
@@ -305,6 +307,7 @@ rfADCrestart(void)
     i = XRFdc_Reset(&rfDC, XRFDC_ADC_TILE, XRFDC_SELECT_ALL_TILES);
     if (i != XST_SUCCESS) warn("Critical -- ADC - %s\nXRFdc_Reset=%d",
                                                            logMessageBuffer, i);
+    rfDCsyncType(RFDC_ADC, 1);
     rfADCCfgDefaults();
 }
 
@@ -316,6 +319,7 @@ rfDACrestart(void)
     i = XRFdc_Reset(&rfDC, XRFDC_DAC_TILE, XRFDC_SELECT_ALL_TILES);
     if (i != XST_SUCCESS) warn("Critical -- DAC - %s\nXRFdc_Reset=%d",
                                                            logMessageBuffer, i);
+    rfDCsyncType(RFDC_DAC, 1);
     rfDACCfgDefaults();
 }
 

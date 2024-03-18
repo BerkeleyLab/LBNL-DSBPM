@@ -125,7 +125,6 @@ main(void)
     afeInit();
     rfADCrestart();
     rfDACrestart();
-    rfDCsync();
 
     /* Start network */
     lwip_init();
