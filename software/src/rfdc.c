@@ -199,7 +199,36 @@ static void rfADCCfgStaticDefaults(void)
 
 static void rfADCCfgDefaults(void)
 {
-    int i, tile, adc;
+    int i, tile, adc, status;
+
+    XRFdc_IPStatus IPStatus;
+    XRFdc_MultiConverter_Sync_Config adcConfig, dacConfig;
+
+    if (!initDone) return;
+    if (XRFdc_GetIPStatus(&rfDC, &IPStatus) != 0) {
+        printf("Can't get IP status.\n");
+        return;
+    }
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        if (IPStatus.ADCTileStatus[tile].IsEnabled) {
+            adcConfig.Tiles |= 1 << tile;
+        }
+        if (IPStatus.DACTileStatus[tile].IsEnabled) {
+            dacConfig.Tiles |= 1 << tile;
+        }
+    }
+
+    /*
+     * Disable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(0) failed: %d", status);
+        return;
+    }
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
@@ -224,10 +253,28 @@ static void rfADCCfgDefaults(void)
 #endif
     }
 
-#ifdef CFG_ADC_NCO_FREQ
-    // Update Mixer settings on SYSREF
-    rfDCsyncType(RFDC_ADC, 0);
-#endif
+    /*
+     * Enable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 1);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
+        return;
+    }
+
+    /*
+     * Make sure we have enough SYSREF cycles
+     */
+    microsecondSpin(100);
+
+    /*
+     * Disable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(0) failed: %d", status);
+        return;
+    }
 }
 
 static void rfDACCfgStaticDefaults(void)
@@ -245,7 +292,36 @@ static void rfDACCfgStaticDefaults(void)
 
 static void rfDACCfgDefaults(void)
 {
-    int i, tile, dac, duc;
+    int i, tile, dac, duc, status;
+
+    XRFdc_IPStatus IPStatus;
+    XRFdc_MultiConverter_Sync_Config adcConfig, dacConfig;
+
+    if (!initDone) return;
+    if (XRFdc_GetIPStatus(&rfDC, &IPStatus) != 0) {
+        printf("Can't get IP status.\n");
+        return;
+    }
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+
+    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        if (IPStatus.ADCTileStatus[tile].IsEnabled) {
+            adcConfig.Tiles |= 1 << tile;
+        }
+        if (IPStatus.DACTileStatus[tile].IsEnabled) {
+            dacConfig.Tiles |= 1 << tile;
+        }
+    }
+
+    /*
+     * Disable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(0) failed: %d", status);
+        return;
+    }
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
@@ -275,10 +351,28 @@ static void rfDACCfgDefaults(void)
 #endif
     }
 
-#ifdef CFG_DAC_NCO_FREQ
-    // Update Mixer settings on SYSREF
-    rfDCsyncType(RFDC_DAC, 0);
-#endif
+    /*
+     * Enable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 1);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
+        return;
+    }
+
+    /*
+     * Make sure we have enough SYSREF cycles
+     */
+    microsecondSpin(100);
+
+    /*
+     * Disable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(0) failed: %d", status);
+        return;
+    }
 }
 
 void
@@ -339,7 +433,7 @@ rfDACrestart(void)
 }
 
 void
-rfDCsyncType(int type, int MTSSync)
+rfDCsyncType(int type)
 {
     int tile, latency, status;
     XRFdc_IPStatus IPStatus;
@@ -352,6 +446,10 @@ rfDCsyncType(int type, int MTSSync)
     }
     XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
     XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+    /* Unknown latency */
+    adcConfig.Target_Latency = -1;
+    dacConfig.Target_Latency = -1;
+
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (type & RFDC_ADC) {
             if (IPStatus.ADCTileStatus[tile].IsEnabled) {
@@ -366,37 +464,26 @@ rfDCsyncType(int type, int MTSSync)
     }
 
     /*
-     * Enable SYSREF
-     */
-    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 1);
-    if (status != XRFDC_MTS_OK) {
-        warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
-        return;
-    }
-
-    /*
      * Synchronize between tiles in each group
      */
-    if (MTSSync) {
-        if (type & RFDC_ADC) {
-            status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
-            if (status != XRFDC_MTS_OK) {
-                warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d", status);
-                return;
-            }
-
-            printf("ADC synchronization complete.\n");
+    if (type & RFDC_ADC) {
+        status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
+        if (status != XRFDC_MTS_OK) {
+            warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d", status);
+            return;
         }
 
-        if (type & RFDC_DAC) {
-            status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
-            if (status != XRFDC_MTS_OK) {
-                warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d", status);
-                return;
-            }
+        printf("ADC synchronization complete.\n");
+    }
 
-            printf("DAC synchronization complete.\n");
+    if (type & RFDC_DAC) {
+        status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
+        if (status != XRFDC_MTS_OK) {
+            warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d", status);
+            return;
         }
+
+        printf("DAC synchronization complete.\n");
     }
 
 #if 0
@@ -422,20 +509,12 @@ rfDCsyncType(int type, int MTSSync)
         return;
     }
 #endif
-
-    /*
-     * Disable SYSREF
-     */
-    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
-    if (status != XRFDC_MTS_OK) {
-        warn("XRFdc_MTS_Sysref_Config(0) failed: %d", status);
-        return;
-    }
 }
 
 void
 rfDCsync(){
-    rfDCsyncType(RFDC_ADC | RFDC_DAC, 1);
+    rfDCsyncType(RFDC_ADC);
+    rfDCsyncType(RFDC_DAC);
     rfADCCfgDefaults();
     rfDACCfgDefaults();
 }

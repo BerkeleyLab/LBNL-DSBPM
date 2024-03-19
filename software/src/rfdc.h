@@ -11,7 +11,7 @@ typedef enum rfDCType {
 
 void rfDCinit(void);
 void rfDCsync(void);
-void rfDCsyncType(int type, int MTSSync);
+void rfDCsyncType(int type);
 void rfADCrestart(void);
 void rfADCfreezeCalibration(int channel, int freeze);
 void rfADCshow(void);
