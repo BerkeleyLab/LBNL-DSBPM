@@ -71,6 +71,7 @@ module dsbpm_zcu208_top #(
     output wire SFP_REC_CLK_N,
 
     output wire EVR_FB_CLK,
+    output wire EVR_SROC,
 
     input             GPIO_SW_W,
     input             GPIO_SW_E,
@@ -227,6 +228,7 @@ OBUF #(
 
 // Check EVR markers
 wire [31:0] evrSyncStatus;
+wire evrSROC;
 evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .DEBUG("false"))
   evrSROC(.sysClk(sysClk),
@@ -237,10 +239,17 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrHeartbeatMarker(evrHeartbeat),
           .evrPulsePerSecondMarker(evrPulsePerSecond),
           .evrSROCsynced(evrSROCsynced),
-          .evrSROC(),
+          .evrSROC(evrSROC),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
 wire isPPSvalid = evrSyncStatus[2];
+
+OBUF #(
+   .SLEW("FAST")
+) OBUF_EVR_SROC (
+   .O(EVR_SROC),
+   .I(evrSROC)
+);
 
 /////////////////////////////////////////////////////////////////////////////
 // Generate tile synchronization user_sysref_adc
