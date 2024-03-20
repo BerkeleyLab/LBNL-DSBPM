@@ -1,0 +1,28 @@
+#include <stdint.h>
+#include <stdio.h>
+#include "evrSROC.h"
+#include "gpio.h"
+#include "systemParameters.h"
+#include "util.h"
+
+/*
+ * Set reference clock divisor
+ */
+static void
+initSROC(void)
+{
+    int refDivisor = systemParameters.rfDivisor / 4;
+
+    if ((systemParameters.rfDivisor <= 0)
+     || ((systemParameters.rfDivisor % 4) != 0))
+        warn("RF DIVISOR SYSTEM PARAMETER NOT A MULTIPLE OF 4");
+    GPIO_WRITE(GPIO_IDX_EVR_SYNC_CSR, refDivisor << 16);
+
+    microsecondSpin(1200*1000); /* Allow for heartbeat to occur */
+}
+
+void
+evrSROCInit(void)
+{
+    initSROC();
+}
