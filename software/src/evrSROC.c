@@ -19,6 +19,10 @@ initSROC(void)
     GPIO_WRITE(GPIO_IDX_EVR_SYNC_CSR, refDivisor << 16);
 
     microsecondSpin(1200*1000); /* Allow for heartbeat to occur */
+
+    if (debugFlags & DEBUGFLAG_EVR_SROC) {
+        printf("evrSROC: csr: 0x%08X\n", GPIO_READ(GPIO_IDX_EVR_SYNC_CSR));
+    }
 }
 
 void
