@@ -36,6 +36,7 @@ __SRC_FILES = \
 	epics.c \
 	epicsApplicationCommands.c \
 	evr.c \
+	evrSROC.c \
 	eyescan.c \
 	ffs.c \
 	frequencyMonitor.c \
@@ -72,6 +73,7 @@ __HDR_FILES = \
 	epics.h \
 	epicsApplicationCommands.h \
 	evr.h \
+	evrSROC.h \
 	eyescan.h \
 	ffs.h \
 	frequencyMonitor.h \
