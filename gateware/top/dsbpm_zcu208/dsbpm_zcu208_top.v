@@ -228,7 +228,7 @@ OBUF #(
 
 // Check EVR markers
 wire [31:0] evrSyncStatus;
-wire evrSROC;
+wire evrSROCClk;
 evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .DEBUG("false"))
   evrSROC(.sysClk(sysClk),
@@ -239,7 +239,7 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrHeartbeatMarker(evrHeartbeat),
           .evrPulsePerSecondMarker(evrPulsePerSecond),
           .evrSROCsynced(evrSROCsynced),
-          .evrSROC(evrSROC),
+          .evrSROC(evrSROCClk),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
 wire isPPSvalid = evrSyncStatus[2];
@@ -248,7 +248,7 @@ OBUF #(
    .SLEW("FAST")
 ) OBUF_EVR_SROC (
    .O(EVR_SROC),
-   .I(evrSROC)
+   .I(evrSROCClk)
 );
 
 /////////////////////////////////////////////////////////////////////////////
