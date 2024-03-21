@@ -71,6 +71,7 @@ module dsbpm_zcu208_top #(
     output wire SFP_REC_CLK_N,
 
     output wire EVR_FB_CLK,
+    output wire EVR_SROC,
 
     input             GPIO_SW_W,
     input             GPIO_SW_E,
@@ -227,6 +228,7 @@ OBUF #(
 
 // Check EVR markers
 wire [31:0] evrSyncStatus;
+wire evrSROCClk;
 evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .DEBUG("false"))
   evrSROC(.sysClk(sysClk),
@@ -237,10 +239,17 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrHeartbeatMarker(evrHeartbeat),
           .evrPulsePerSecondMarker(evrPulsePerSecond),
           .evrSROCsynced(evrSROCsynced),
-          .evrSROC(),
+          .evrSROC(evrSROCClk),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
 wire isPPSvalid = evrSyncStatus[2];
+
+OBUF #(
+   .SLEW("FAST")
+) OBUF_EVR_SROC (
+   .O(EVR_SROC),
+   .I(evrSROCClk)
+);
 
 /////////////////////////////////////////////////////////////////////////////
 // Generate tile synchronization user_sysref_adc
@@ -1350,52 +1359,6 @@ assign GPIO_IN[GPIO_IDX_EVR_FA_RELOAD] = sysFAstatus;
 assign GPIO_IN[GPIO_IDX_EVR_SA_RELOAD] = sysSAstatus;
 assign evrFaSynced = sysFAstatus[31];
 assign evrSaSynced = sysSAstatus[31];
-
-//
-// Create slow (SA) and fast (FA) acquistion triggers
-// based on ADC trigger 0 (fake heartbeat).
-//
-
-localparam MAX_ADC_CLKS_PER_HEARTBEAT = 200000000;
-localparam ADC_HEARTBEAT_WIDTH = $clog2(MAX_ADC_CLKS_PER_HEARTBEAT);
-
-reg [ADC_HEARTBEAT_WIDTH-1:0] sysAdcHeartbeatReload = ~0;
-always @(posedge sysClk) begin
-    if (GPIO_STROBES[GPIO_IDX_ADC_HEARTBEAT_RELOAD]) begin
-        sysAdcHeartbeatReload <= GPIO_OUT[ADC_HEARTBEAT_WIDTH-1:0];
-    end
-end
-
-reg [ADC_HEARTBEAT_WIDTH:0] adcHeartbeatCounter = ~0;
-wire adcHeartbeatCounterDone = adcHeartbeatCounter[ADC_HEARTBEAT_WIDTH];
-wire adcHeartbeat = adcHeartbeatCounter[ADC_HEARTBEAT_WIDTH];
-always @(posedge adcClk) begin
-    if (adcHeartbeatCounterDone) begin
-        adcHeartbeatCounter <= { 1'b0, sysAdcHeartbeatReload };
-    end
-    else begin
-        adcHeartbeatCounter <= adcHeartbeatCounter - 1;
-    end
-end
-
-wire adcFaMarker, adcSaMarker;
-wire [31:0] sysADCFAstatus, sysADCSAstatus;
-wire adcFaSynced, adcSaSynced;
-acqSync acqADCSync(
-    .sysClk(sysClk),
-    .sysGPIO_OUT(GPIO_OUT),
-    .sysFAstrobe(GPIO_STROBES[GPIO_IDX_ADC_FA_RELOAD]),
-    .sysSAstrobe(GPIO_STROBES[GPIO_IDX_ADC_SA_RELOAD]),
-    .sysFAstatus(sysADCFAstatus),
-    .sysSAstatus(sysADCSAstatus),
-    .evrClk(adcClk),
-    .evrHeartbeat(adcHeartbeat),
-    .evrFaMarker(adcFaMarker),
-    .evrSaMarker(adcSaMarker));
-assign GPIO_IN[GPIO_IDX_ADC_FA_RELOAD] = sysADCFAstatus;
-assign GPIO_IN[GPIO_IDX_ADC_SA_RELOAD] = sysADCSAstatus;
-assign adcFaSynced = sysADCFAstatus[31];
-assign adcSaSynced = sysADCSAstatus[31];
 
 //
 // Preliminary processing (compute magnitude of ADC signals)

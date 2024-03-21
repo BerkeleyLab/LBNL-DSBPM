@@ -56,6 +56,11 @@ set_property DRIVE 4 [get_ports {AFE_SPI_CLK[1]}]
 set_property DRIVE 4 [get_ports {AFE_SPI_SDI[1]}]
 set_property DRIVE 4 [get_ports {AFE_SPI_LE[1]}]
 
+# Analog signal conditioning card
+# ADCIO_08
+set_property PACKAGE_PIN AT6        [get_ports EVR_SROC]
+set_property IOSTANDARD LVCMOS18    [get_ports EVR_SROC]
+
 # User push buttons
 set_property PACKAGE_PIN L22 [get_ports GPIO_SW_W]
 set_property PACKAGE_PIN G24 [get_ports GPIO_SW_E]

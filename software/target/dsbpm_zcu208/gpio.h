@@ -30,11 +30,8 @@
 #define GPIO_IDX_CLK104_SPI_MUX_CSR      18 // Select CLK104 SPI MUX
 #define GPIO_IDX_EVR_FA_RELOAD           19 // Fast acquisition divider reload
 #define GPIO_IDX_EVR_SA_RELOAD           20 // Slow acquisition divider reload
-#define GPIO_IDX_ADC_FA_RELOAD           21 // Fast acquisition divider reload
-#define GPIO_IDX_ADC_SA_RELOAD           22 // Slow acquisition divider reload
-#define GPIO_IDX_ADC_HEARTBEAT_RELOAD    23 // ADC heartbeat counter
-#define GPIO_IDX_GITHASH                 24 // Git 32-bit hash
-#define GPIO_IDX_SYSREF_DAC_CSR          25 // SYSREF DAC generation control/status
+#define GPIO_IDX_GITHASH                 21 // Git 32-bit hash
+#define GPIO_IDX_SYSREF_DAC_CSR          22 // SYSREF DAC generation control/status
 
 /*
  * Per DSBPM registers

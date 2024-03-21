@@ -171,10 +171,6 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
                 crankRebootStateMachine(cmdp->args[0]);
                 break;
 
-            case DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_EVR_CLK_PER_TURN:
-                GPIO_WRITE(GPIO_IDX_EVR_SYNC_CSR, cmdp->args[0]<<16);
-                break;
-
             default: return -1;
             }
             break;

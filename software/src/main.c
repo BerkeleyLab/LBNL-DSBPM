@@ -151,6 +151,7 @@ main(void)
     tftpInit();
     publisherInit();
     acqSyncInit();
+    evrSROCInit();
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         localOscillatorInit(bpm);
