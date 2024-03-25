@@ -277,7 +277,7 @@ IBUFDS SYSREF_FPGA_IBUFDS(
 
 sysrefSync #(
     .DEBUG("false"),
-    .COUNTER_WIDTH(10)) // up to 1023 SYSREF poeriods
+    .COUNTER_WIDTH(10)) // up to 1023 SYSREF periods
   sysrefSyncADC (
     .sysClk(sysClk),
     .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_SYSREF_ADC_CSR]),
@@ -290,7 +290,7 @@ sysrefSync #(
 
 sysrefSync #(
     .DEBUG("false"),
-    .COUNTER_WIDTH(10)) // up to 1023 SYSREF poeriods
+    .COUNTER_WIDTH(10)) // up to 1023 SYSREF periods
   sysrefSyncDAC (
     .sysClk(sysClk),
     .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_SYSREF_DAC_CSR]),
