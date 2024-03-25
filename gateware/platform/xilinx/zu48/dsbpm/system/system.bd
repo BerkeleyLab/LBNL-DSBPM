@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x76F3C4BD28A25C21",
+      "boundary_crc": "0xAFFE125F6BAE7F0D",
       "device": "xczu48dr-fsvg1517-2-e",
       "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
@@ -2935,7 +2935,7 @@
             "value_src": "default"
           },
           "FREQ_HZ": {
-            "value": "414335610"
+            "value": "499640000"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -4029,16 +4029,16 @@
         "inst_hier_path": "rfadc_mmcm",
         "parameters": {
           "CLKIN1_JITTER_PS": {
-            "value": "24.13"
+            "value": "20.01"
           },
           "CLKOUT1_DRIVES": {
             "value": "BUFG"
           },
           "CLKOUT1_JITTER": {
-            "value": "166.415"
+            "value": "190.914"
           },
           "CLKOUT1_PHASE_ERROR": {
-            "value": "224.657"
+            "value": "338.733"
           },
           "CLKOUT1_REQUESTED_OUT_FREQ": {
             "value": "123.38671"
@@ -4047,10 +4047,10 @@
             "value": "BUFG"
           },
           "CLKOUT2_JITTER": {
-            "value": "166.415"
+            "value": "190.914"
           },
           "CLKOUT2_PHASE_ERROR": {
-            "value": "224.657"
+            "value": "338.733"
           },
           "CLKOUT2_REQUESTED_OUT_FREQ": {
             "value": "123.38671"
@@ -4077,10 +4077,10 @@
             "value": "FDBK_AUTO"
           },
           "MMCM_CLKFBOUT_MULT_F": {
-            "value": "50.625"
+            "value": "101.250"
           },
           "MMCM_CLKIN1_PERIOD": {
-            "value": "2.413"
+            "value": "2.001"
           },
           "MMCM_CLKIN2_PERIOD": {
             "value": "10.0"
@@ -4092,13 +4092,13 @@
             "value": "10"
           },
           "MMCM_DIVCLK_DIVIDE": {
-            "value": "17"
+            "value": "41"
           },
           "NUM_OUT_CLKS": {
             "value": "2"
           },
           "PRIM_IN_FREQ": {
-            "value": "414.335610"
+            "value": "499.640"
           },
           "PRIM_SOURCE": {
             "value": "No_buffer"
@@ -7244,6 +7244,24 @@
           },
           "PSU__SATA__PERIPHERAL__ENABLE": {
             "value": "0"
+          },
+          "PSU__SD0__CLK_100_SDR_OTAP_DLY": {
+            "value": "0x3"
+          },
+          "PSU__SD0__CLK_200_SDR_OTAP_DLY": {
+            "value": "0x3"
+          },
+          "PSU__SD0__CLK_50_DDR_ITAP_DLY": {
+            "value": "0x3D"
+          },
+          "PSU__SD0__CLK_50_DDR_OTAP_DLY": {
+            "value": "0x4"
+          },
+          "PSU__SD0__CLK_50_SDR_ITAP_DLY": {
+            "value": "0x15"
+          },
+          "PSU__SD0__CLK_50_SDR_OTAP_DLY": {
+            "value": "0x5"
           },
           "PSU__SD0__PERIPHERAL__ENABLE": {
             "value": "0"
