@@ -464,6 +464,20 @@ rfDCsyncType(int type)
     }
 
     /*
+     * Enable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 1);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
+        return;
+    }
+
+    /*
+     * Make sure we have enough SYSREF cycles
+     */
+    microsecondSpin(100);
+
+    /*
      * Synchronize between tiles in each group
      */
     if (type & RFDC_ADC) {
@@ -509,6 +523,15 @@ rfDCsyncType(int type)
         return;
     }
 #endif
+
+    /*
+     * Disable SYSREF
+     */
+    status = XRFdc_MTS_Sysref_Config(&rfDC, &dacConfig, &adcConfig, 0);
+    if (status != XRFDC_MTS_OK) {
+        warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
+        return;
+    }
 }
 
 void
