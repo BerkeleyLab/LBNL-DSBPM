@@ -1775,22 +1775,28 @@ genericDACStreamer #(
 
 //////////////////////////////////////////////////////////////////////////////
 // Analog front end SPI components
+
+wire spiCLK, spiLE, spiSDI;
 afeSPI #(
   .CLK_RATE(SYSCLK_RATE),
   .CSB_WIDTH(1),
-  .BIT_RATE(12500000),
+  .BIT_RATE(1000000),
   .DEBUG("false")
 ) afeSPI (
     .clk(sysClk),
     .csrStrobe(GPIO_STROBES[GPIO_IDX_AFE_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
     .gpioOut(GPIO_OUT),
     .status(GPIO_IN[GPIO_IDX_AFE_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .SPI_CLK(AFE_SPI_CLK[dsbpm]),
+    .SPI_CLK(spiCLK),
     .SPI_CSB(),
-    .SPI_LE(AFE_SPI_LE[dsbpm]),
-    .SPI_SDI(AFE_SPI_SDI[dsbpm]),
+    .SPI_LE(spiLE),
+    .SPI_SDI(spiSDI),
     .SPI_SDO(0)
 );
+
+assign AFE_SPI_CLK[dsbpm] = ~spiCLK;
+assign AFE_SPI_LE[dsbpm] = ~spiLE;
+assign AFE_SPI_SDI[dsbpm] = ~spiSDI;
 
 end // for
 endgenerate // generate
