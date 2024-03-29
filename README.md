@@ -37,7 +37,7 @@ A suggestion in running the `make` command is to measure the time
 and redirect stdout/stderr to a file so you can inspect it later:
 
 ```bash
-ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2020.1/Vitis/2020.1/gnu/aarch64/lin/aarch64-none
+ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
 (time make PLATFORM=<PLATFORM_NAME> APP=<APP_NAME> CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf-; date) 2>&1 | tee make_output
 ```
 
@@ -50,7 +50,7 @@ For now the following combinations of PLATFORM and APP are supported:
 So, for example, to generate the DSBPM application for the ZCU208 board:
 
 ```bash
-ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2020.1/Vitis/2020.1/gnu/aarch64/lin/aarch64-none
+ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
 (time make PLATFORM=zcu208 APP=dsbpm CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf-; date) 2>&1 | tee make_output
 ```
 
