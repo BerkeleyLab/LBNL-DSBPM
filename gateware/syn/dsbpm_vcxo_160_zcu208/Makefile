@@ -12,7 +12,7 @@ CMD_SEP = ;
 include ../../../dir_list.mk
 
 # Top level design name
-TARGET ?= dsbpm_zcu208
+TARGET ?= dsbpm_vcxo_160_zcu208
 
 # Top level bitstream name
 all: $(TARGET)_top.bit

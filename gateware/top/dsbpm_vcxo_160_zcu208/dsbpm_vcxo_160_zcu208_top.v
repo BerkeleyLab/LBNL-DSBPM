@@ -1,4 +1,4 @@
-module dsbpm_zcu208_top #(
+module dsbpm_vcxo_160_zcu208_top #(
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
