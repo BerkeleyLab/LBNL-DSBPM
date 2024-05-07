@@ -139,7 +139,7 @@ LIB_DIRS = $(TARGET)/platform/export/platform/sw/platform/standalone_domain/bspl
 LIB_FLAGS = $(addprefix -L, $(LIB_DIRS))
 LIBS = -Wl,--start-group,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lmetal,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-llwip4,-lgcc,-lc,--end-group -Wl,--start-group,-lxilffs,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxilpm,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lgcc,-lc,-lmetal,--end-group
 
-ifeq ($(TARGET),dsbpm_zcu208)
+ifeq ($(TARGET),dsbpm_vcxo_160_zcu208)
 	USER_FLAGS += -D__TARGET_DSBPM_ZCU208__
 else
 	USER_FLAGS += -D__TARGET_NOT_RECOGNIZED__
