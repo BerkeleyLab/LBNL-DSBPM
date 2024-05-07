@@ -188,13 +188,13 @@ system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(IP_CORES_XDCS) $(SYSTEM_TOP_TIM_XDC)
 %gpioIDX.v: $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/config.h $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/gpio.h
 	sh $(GW_SCRIPTS_DIR)/createVerilogIDX.sh $^ > $@
 
-ipcores_repos.tcl:
+ipcores_repos.tcl: ipcores_repos.tcl.in
 	sed -e 's|$$DIRS|$(IP_CORES_CUSTOM_TARGET_DIRS)|g' \
-		ipcores_repos.tcl.in > $@
+		$< > $@
 
-prio_xci_files.tcl: ila_td256_s4096_cap.xci
-	sed -e 's|$$XCI_FILES|$<|g' \
-		prio_xci_files.tcl.in > $@
+prio_xci_files.tcl: prio_xci_files.tcl.in
+	sed -e 's|$$XCI_FILES|ila_td256_s4096_cap.xci|g' \
+		$< > $@
 
 # ip_cores commands. Keep track only of the top-level. If this changed or doesn't
 # exist regenerate eveything. Otherwise, consider this up to date
