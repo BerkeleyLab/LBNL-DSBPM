@@ -161,7 +161,7 @@ vpath *.bif $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)
 vpath *.bif.in $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)
 
 %softwareBuildDate.h: $(SRC_FILES) $(HDR_FILES)
-	sh $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
+	sh $(SW_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
 
 # FIXME: We are considering BSP done if the directory exists. This
 # could lead to mismatches!
