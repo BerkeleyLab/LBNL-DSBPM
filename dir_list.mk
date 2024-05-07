@@ -12,8 +12,6 @@ GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 
 BEDROCK_DIR        = $(SUBMODULES_DIR)/bedrock
 EVR_DIR            = $(MODULES_DIR)/evr
-PLATFORM_ZU48_DIR  = $(PLATFORM_DIR)/xilinx/zu48
-PLATFORM_ZU48_DSBPM_DIR  = $(PLATFORM_ZU48_DIR)/dsbpm
 
 GW_SYN_DIR         = $(GATEWARE_DIR)/syn
 

@@ -1,1 +1,0 @@
-../dsbpm_vcxo_160_zcu208/prop.tcl
