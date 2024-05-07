@@ -8,7 +8,7 @@ XSCT ?= xsct -norlwrap
 
 include ../../../dir_list.mk
 
-TARGET   ?= dsbpm_zcu208
+TARGET   ?= dsbpm_vcxo_160_zcu208
 GW_DSBPM_TGT_DIR = $(GW_SYN_DIR)/$(TARGET)
 GIT_COMMIT = $(shell git rev-parse --short=8 --verify HEAD || echo "NOCOMMIT")
 BIT      ?= $(GW_DSBPM_TGT_DIR)/$(TARGET)_top.bit
