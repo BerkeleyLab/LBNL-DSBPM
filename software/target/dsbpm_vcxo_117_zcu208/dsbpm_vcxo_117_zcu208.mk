@@ -22,13 +22,13 @@ HDR_FILES += $(HDR_GEN_DSBPM_ZCU208_FILES)
 SRC_FILES += $(SRC_DSBPM_ZCU208_FILES)
 
 %lmk04828B.h: %lmk04828B.tcs
-	sh $(SW_DSBPM_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
+	sh $(SW_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
 
 %lmx2594ADC.h: %lmx2594ADC.tcs
-	sh $(SW_DSBPM_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
+	sh $(SW_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
 
 %lmx2594DAC.h: %lmx2594DAC.tcs
-	sh $(SW_DSBPM_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
+	sh $(SW_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
 
 clean::
 	$(RM) -rf $(HDR_GEN_DSBPM_ZCU208_FILES)

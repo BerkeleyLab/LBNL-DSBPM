@@ -2,7 +2,7 @@ include dir_list.mk
 
 CROSS_COMPILE    ?=
 PLATFORM         ?= zcu208
-APP              ?= dsbpm
+APP              ?= dsbpm_vcxo_160
 
 TARGET       = $(APP)_$(PLATFORM)
 GW_TGT_DIR   = $(GW_SYN_DIR)/$(TARGET)

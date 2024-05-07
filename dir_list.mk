@@ -12,8 +12,6 @@ GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 
 BEDROCK_DIR        = $(SUBMODULES_DIR)/bedrock
 EVR_DIR            = $(MODULES_DIR)/evr
-PLATFORM_ZU48_DIR  = $(PLATFORM_DIR)/xilinx/zu48
-PLATFORM_ZU48_DSBPM_DIR  = $(PLATFORM_ZU48_DIR)/dsbpm
 
 GW_SYN_DIR         = $(GATEWARE_DIR)/syn
 
@@ -27,7 +25,10 @@ SW_APP_DIR         = $(SOFTWARE_DIR)/app
 
 # DSBPM Sofware
 
-SW_DSBPM_DIR         = $(SW_APP_DIR)/dsbpm
-SW_DSBPM_SCRIPTS_DIR = $(SW_DSBPM_DIR)/scripts
+SW_DSBPM_VCXO_160_DIR = $(SW_APP_DIR)/dsbpm_vcxo_160
+SW_DSBPM_VCXO_160_SCRIPTS_DIR = $(SW_DSBPM_VCXO_160_DIR)/scripts
+
+SW_DSBPM_VCXO_117_DIR = $(SW_APP_DIR)/dsbpm_vcxo_117
+SW_DSBPM_VCXO_117_SCRIPTS_DIR = $(SW_DSBPM_VCXO_117_DIR)/scripts
 
 include $(BEDROCK_DIR)/dir_list.mk

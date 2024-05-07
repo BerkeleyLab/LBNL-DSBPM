@@ -8,12 +8,12 @@ XSCT ?= xsct -norlwrap
 
 include ../../../dir_list.mk
 
-TARGET   ?= dsbpm_zcu208
+TARGET   ?= dsbpm_vcxo_117_zcu208
 GW_DSBPM_TGT_DIR = $(GW_SYN_DIR)/$(TARGET)
 GIT_COMMIT = $(shell git rev-parse --short=8 --verify HEAD || echo "NOCOMMIT")
 BIT      ?= $(GW_DSBPM_TGT_DIR)/$(TARGET)_top.bit
 
-BIF   = $(SW_DSBPM_SCRIPTS_DIR)/BOOTGEN.bif
+BIF   = $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)/BOOTGEN.bif
 ELF   = $(THIS_DIR)/$(TARGET).elf
 PMUFW = $(THIS_DIR)/$(TARGET)/platform/export/platform/sw/platform/boot/pmufw.elf
 BIN   = $(THIS_DIR)/$(TARGET).$(GIT_COMMIT).bin
@@ -115,7 +115,7 @@ __ST7789V_HDR_FILES =\
 	lv_font.h \
 	st7789v.h
 
-ifeq ($(TARGET),dsbpm_zcu208)
+ifeq ($(TARGET),dsbpm_vcxo_117_zcu208)
 	__ST7789V_SRC_FILES += \
 		st7789v_stub.c
 #else ifeq ($(TARGET),dsbpm_???)
@@ -139,7 +139,7 @@ LIB_DIRS = $(TARGET)/platform/export/platform/sw/platform/standalone_domain/bspl
 LIB_FLAGS = $(addprefix -L, $(LIB_DIRS))
 LIBS = -Wl,--start-group,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lmetal,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-llwip4,-lgcc,-lc,--end-group -Wl,--start-group,-lxilffs,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxilpm,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lgcc,-lc,-lmetal,--end-group
 
-ifeq ($(TARGET),dsbpm_zcu208)
+ifeq ($(TARGET),dsbpm_vcxo_117_zcu208)
 	USER_FLAGS += -D__TARGET_DSBPM_ZCU208__
 else
 	USER_FLAGS += -D__TARGET_NOT_RECOGNIZED__
@@ -157,11 +157,11 @@ INCLUDE_FLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 vpath *.c $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
 vpath *.h $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
 vpath *.o $(SW_SRC_DIR) $(ST7789V_DIR)
-vpath *.bif $(SW_DSBPM_SCRIPTS_DIR)
-vpath *.bif.in $(SW_DSBPM_SCRIPTS_DIR)
+vpath *.bif $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)
+vpath *.bif.in $(SW_DSBPM_VCXO_117_SCRIPTS_DIR)
 
 %softwareBuildDate.h: $(SRC_FILES) $(HDR_FILES)
-	sh $(SW_DSBPM_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
+	sh $(SW_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
 
 # FIXME: We are considering BSP done if the directory exists. This
 # could lead to mismatches!

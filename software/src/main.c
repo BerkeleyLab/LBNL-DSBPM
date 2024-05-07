@@ -8,6 +8,7 @@
 #include "display.h"
 #include "epics.h"
 #include "evr.h"
+#include "evrSROC.h"
 #include "eyescan.h"
 #include "ffs.h"
 #include "gpio.h"

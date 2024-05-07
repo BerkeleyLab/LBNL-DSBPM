@@ -5,14 +5,18 @@ COMMUNICATION = gty
 XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
 FPGA_PLATFORM := zu48
-FPGA_APPLICATION := dsbpm
+FPGA_APPLICATION ?= dsbpm_vcxo_160
 
 CMD_SEP = ;
+__THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+THIS_DIR := $(__THIS_DIR:/=)
 
 include ../../../dir_list.mk
 
 # Top level design name
-TARGET ?= dsbpm_zcu208
+TARGET ?= dsbpm_vcxo_160_zcu208
+
+PLATFORM_TARGET = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(FPGA_APPLICATION)
 
 # Top level bitstream name
 all: $(TARGET)_top.bit
@@ -27,6 +31,11 @@ TOP_LVL_DIR = ../../top/$(TARGET)
 # top-level files go here
 vpath %.v $(TOP_LVL_DIR)
 vpath %.xdc $(TOP_LVL_DIR)
+
+#.tcl.in and .tcl files can be here too
+vpath %.tcl.in $(THIS_DIR)
+vpath %.txt.in $(THIS_DIR)
+vpath %.tcl $(THIS_DIR)
 
 VIVADO_SYNTH_EXTRA_TCL = prop.tcl ipcores_repos.tcl prio_xci_files.tcl
 
@@ -47,21 +56,21 @@ include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
 
 IP_CORES += evrGTY rmsBandSelect trimMultiplier positionCalcDivider positionCalcMultiplier adcCordic adcToSysFIFO ila_td256_s4096_cap
-evrGTY_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/evrGTY
+evrGTY_DIR = $(PLATFORM_TARGET)/evrGTY
 evrGTY_TOP = $(evrGTY_DIR)/synth/evrGTY.v
-rmsBandSelect_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/rmsBandSelect
+rmsBandSelect_DIR = $(PLATFORM_TARGET)/rmsBandSelect
 rmsBandSelect_TOP = $(rmsBandSelect_DIR)/synth/rmsBandSelect.vhd
-trimMultiplier_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/trimMultiplier
+trimMultiplier_DIR = $(PLATFORM_TARGET)/trimMultiplier
 trimMultiplier_TOP = $(trimMultiplier_DIR)/synth/trimMultiplier.vhd
-positionCalcDivider_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/positionCalcDivider
+positionCalcDivider_DIR = $(PLATFORM_TARGET)/positionCalcDivider
 positionCalcDivider_TOP = $(positionCalcDivider_DIR)/synth/positionCalcDivider.vhd
-positionCalcMultiplier_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/positionCalcMultiplier
+positionCalcMultiplier_DIR = $(PLATFORM_TARGET)/positionCalcMultiplier
 positionCalcMultiplier_TOP = $(positionCalcMultiplier_DIR)/synth/positionCalcMultiplier.vhd
-adcCordic_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/adcCordic
+adcCordic_DIR = $(PLATFORM_TARGET)/adcCordic
 adcCordic_TOP = $(adcCordic_DIR)/synth/adcCordic.vhd
-adcToSysFIFO_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/adcToSysFIFO
+adcToSysFIFO_DIR = $(PLATFORM_TARGET)/adcToSysFIFO
 adcToSysFIFO_TOP = $(adcToSysFIFO_DIR)/synth/adcToSysFIFO.vhd
-ila_td256_s4096_cap_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/ila_td256_s4096_cap
+ila_td256_s4096_cap_DIR = $(PLATFORM_TARGET)/ila_td256_s4096_cap
 ila_td256_s4096_cap_TOP = $(ila_td256_s4096_cap_DIR)/synth/ila_td256_s4096_cap.v
 
 IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(trimMultiplier_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $($(ila_td256_s4096_cap_TOP)
@@ -73,7 +82,7 @@ IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
 IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
 
 BD += system
-system_DIR = $(PLATFORM_ZU48_DSBPM_DIR)/system
+system_DIR = $(PLATFORM_TARGET)/system
 system_TOP = $(system_DIR)/synth/system.v
 
 BD_TOP_LVL_SRCS += $(system_TOP)
@@ -179,13 +188,13 @@ system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(IP_CORES_XDCS) $(SYSTEM_TOP_TIM_XDC)
 %gpioIDX.v: $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/config.h $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/gpio.h
 	sh $(GW_SCRIPTS_DIR)/createVerilogIDX.sh $^ > $@
 
-ipcores_repos.tcl:
+ipcores_repos.tcl: ipcores_repos.tcl.in
 	sed -e 's|$$DIRS|$(IP_CORES_CUSTOM_TARGET_DIRS)|g' \
-		ipcores_repos.tcl.in > $@
+		$< > $@
 
-prio_xci_files.tcl: ila_td256_s4096_cap.xci
-	sed -e 's|$$XCI_FILES|$<|g' \
-		prio_xci_files.tcl.in > $@
+prio_xci_files.tcl: prio_xci_files.tcl.in
+	sed -e 's|$$XCI_FILES|ila_td256_s4096_cap.xci|g' \
+		$< > $@
 
 # ip_cores commands. Keep track only of the top-level. If this changed or doesn't
 # exist regenerate eveything. Otherwise, consider this up to date
