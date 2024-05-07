@@ -25,7 +25,10 @@ SW_APP_DIR         = $(SOFTWARE_DIR)/app
 
 # DSBPM Sofware
 
-SW_DSBPM_DIR         = $(SW_APP_DIR)/dsbpm
-SW_DSBPM_SCRIPTS_DIR = $(SW_DSBPM_DIR)/scripts
+SW_DSBPM_VCXO_160_DIR = $(SW_APP_DIR)/dsbpm_vcxo_160
+SW_DSBPM_VCXO_160_SCRIPTS_DIR = $(SW_DSBPM_VCXO_160_DIR)/scripts
+
+SW_DSBPM_VCXO_117_DIR = $(SW_APP_DIR)/dsbpm_vcxo_117
+SW_DSBPM_VCXO_117_SCRIPTS_DIR = $(SW_DSBPM_VCXO_117_DIR)/scripts
 
 include $(BEDROCK_DIR)/dir_list.mk
