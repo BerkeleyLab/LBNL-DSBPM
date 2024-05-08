@@ -974,7 +974,7 @@ genericWaveformRecorder #(
         positionCalcFaQ[dsbpm],
         positionCalcFaY[dsbpm],
         positionCalcFaX[dsbpm]}),
-    .valid(positionCalcfaValid[dsbpm]),
+    .valid(positionCalcFaValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
     .axi_AWADDR(wr_fa_pos_axi_AWADDR[dsbpm]),
