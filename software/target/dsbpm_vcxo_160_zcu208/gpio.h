@@ -93,7 +93,7 @@
 
 // Waveform recorders
 // Capacities must be powers of two
-#define CFG_NUM_RECORDERS                5 // ADC, TbT, FA, PL, PH
+#define CFG_NUM_RECORDERS                7 // ADC, TbT, FA, PL, PH, TbT Pos, FA Pos
 #define GPIO_IDX_PER_RECORDER            8
 
 #define GPIO_IDX_ADC_RECORDER_BASE       512  // ADC recorder
@@ -106,7 +106,11 @@
 #define GPIO_IDX_PL_RECORDER_END         543
 #define GPIO_IDX_PH_RECORDER_BASE        544  // High pilot tone recorder
 #define GPIO_IDX_PH_RECORDER_END         551
-#define GPIO_IDX_RECORDER_PER_DSBPM      (GPIO_IDX_PH_RECORDER_END-GPIO_IDX_ADC_RECORDER_BASE+1)
+#define GPIO_IDX_TBT_POS_RECORDER_BASE   552  // Turn-by-turn position recorder
+#define GPIO_IDX_TBT_POS_RECORDER_END    559
+#define GPIO_IDX_FA_POS_RECORDER_BASE    560  // Fast acquisition position recorder
+#define GPIO_IDX_FA_POS_RECORDER_END     567
+#define GPIO_IDX_RECORDER_PER_DSBPM      (GPIO_IDX_FA_POS_RECORDER_END-GPIO_IDX_ADC_RECORDER_BASE+1)
 
 #include <xil_io.h>
 #include <xparameters.h>
