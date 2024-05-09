@@ -164,7 +164,7 @@ wfrInit(unsigned int bpm)
 
         case 1:
             r = GPIO_IDX_TBT_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
-            bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
@@ -174,7 +174,7 @@ wfrInit(unsigned int bpm)
 
         case 2:
             r = GPIO_IDX_FA_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
-            bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_FA_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_FA_SAMPLE_CAPACITY;
@@ -189,6 +189,26 @@ wfrInit(unsigned int bpm)
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_PT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_PT_SAMPLE_CAPACITY;
+            pretrigCount = 40;
+            acqCount = 1000;
+            break;
+
+        case 5:
+            r = GPIO_IDX_TBT_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
+            bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            bytesPerAtom = 4; // 32-bit atoms
+            acqSampleCapacity = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
+            maxPretrig = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
+            pretrigCount = 40;
+            acqCount = 10000;
+            break;
+
+        case 6:
+            r = GPIO_IDX_FA_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
+            bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            bytesPerAtom = 4; // 32-bit atoms
+            acqSampleCapacity = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
+            maxPretrig = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
             pretrigCount = 40;
             acqCount = 1000;
             break;
