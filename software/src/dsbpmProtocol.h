@@ -17,7 +17,7 @@
 #define DSBPM_PROTOCOL_PUBLISHER_UDP_PORT       50006
 
 #define DSBPM_PROTOCOL_WAVEFORM_PAYLOAD_CAPACITY  1440
-#define DSBPM_PROTOCOL_RECORDER_COUNT             5
+#define DSBPM_PROTOCOL_RECORDER_COUNT             7
 
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
 #define DSBPM_PROTOCOL_MAGIC                    0xD06F9891
@@ -25,15 +25,15 @@
 #define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9892
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
                                                 0x92986FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9793
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9893
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
-                                                0x93976FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9694
+                                                0x93986FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9794
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_DATA \
-                                                0x94966FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_ACK       0xD06F9695
+                                                0x94976FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_ACK       0xD06F9795
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_ACK \
-                                                0x95966FD0
+                                                0x95976FD0
 
 #define DSBPM_PROTOCOL_ARG_CAPACITY    350
 #define DSBPM_PROTOCOL_ADC_COUNT       8
