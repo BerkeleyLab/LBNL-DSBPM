@@ -435,6 +435,7 @@ rfDACrestart(void)
 void
 rfDCsyncType(int type)
 {
+    int i;
     int tile, latency, status;
     XRFdc_IPStatus IPStatus;
     XRFdc_MultiConverter_Sync_Config adcConfig, dacConfig;
@@ -475,29 +476,38 @@ rfDCsyncType(int type)
     /*
      * Make sure we have enough SYSREF cycles
      */
-    microsecondSpin(100);
+    microsecondSpin(1000);
 
     /*
-     * Synchronize between tiles in each group
+     * Synchronize between tiles in each group. Try a few times before
+     * giving up
      */
     if (type & RFDC_ADC) {
-        status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
-        if (status != XRFDC_MTS_OK) {
-            warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d", status);
-            return;
-        }
+        for (i = 0; i < 100; ++i) {
+            status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
+            if (status == XRFDC_MTS_OK) {
+                printf("ADC synchronization complete.\n");
+                break;
+            }
 
-        printf("ADC synchronization complete.\n");
+            warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d, try %d",
+                    status, i);
+            microsecondSpin(1000);
+        }
     }
 
     if (type & RFDC_DAC) {
-        status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
-        if (status != XRFDC_MTS_OK) {
-            warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d", status);
-            return;
-        }
+        for (i = 0; i < 100; ++i) {
+            status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
+            if (status == XRFDC_MTS_OK) {
+                printf("DAC synchronization complete.\n");
+                break;
+            }
 
-        printf("DAC synchronization complete.\n");
+            warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d, try %d",
+                    status, i);
+            microsecondSpin(1000);
+        }
     }
 
 #if 0
