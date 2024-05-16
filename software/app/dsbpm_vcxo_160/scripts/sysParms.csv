@@ -11,7 +11,7 @@ Single pass event,0
 ADC clocks per heartbeat,24928000
 EVR clocks per fast acquisition,12464
 EVR clocks per slow acquisition,12464000
-ADC for button ABCD,123
+ADC for button ABCD,3210
 X calibration (mm p.u.),16.0
 Y calibration (mm p.u.),16.0
 Q calibration (p.u.),16.0
