@@ -70,7 +70,8 @@ module dsbpm_vcxo_160_zcu208_top #(
     output wire SFP_REC_CLK_P,
     output wire SFP_REC_CLK_N,
 
-    output wire EVR_FB_CLK,
+    output wire EVR_FB_CLK_P,
+    output wire EVR_FB_CLK_N,
     output wire EVR_SROC,
 
     input             GPIO_SW_W,
@@ -218,11 +219,12 @@ OBUFDS #(
 // can access just 2 OBUFs, not 3. This leads to impossible
 // routing. So, just use the "wrong" way of forwarding a clock
 // as we are only using this for monitoring anyway.
-OBUF #(
-   .SLEW("FAST")
-) OBUF_EVR_FB_CLK (
-   .O(EVR_FB_CLK),
-   .I(evrClk)
+OBUFDS #(
+    .SLEW("FAST")
+) OBUFDS_EVR_FB_CLK (
+    .O(EVR_FB_CLK_P),
+    .OB(EVR_FB_CLK_N),
+    .I(evrClk)
 );
 `endif
 
