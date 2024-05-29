@@ -101,11 +101,11 @@ set_property IOSTANDARD  LVDS [get_ports SFP_REC_CLK_N]
 set_property IOSTANDARD  LVDS [get_ports SFP_REC_CLK_P]
 
 # DACIO_00
-set_property PACKAGE_PIN A9        [get_ports EVR_FB_CLK_N]
-set_property IOSTANDARD  LVDS_25   [get_ports EVR_FB_CLK_N]
+set_property PACKAGE_PIN A9   [get_ports EVR_FB_CLK_N]
+set_property IOSTANDARD  LVDS [get_ports EVR_FB_CLK_N]
 # DACIO_01
-set_property PACKAGE_PIN A10       [get_ports EVR_FB_CLK_P]
-set_property IOSTANDARD  LVDS_25   [get_ports EVR_FB_CLK_P]
+set_property PACKAGE_PIN A10  [get_ports EVR_FB_CLK_P]
+set_property IOSTANDARD  LVDS [get_ports EVR_FB_CLK_P]
 
 # Note on LVDS_25 used on a 1.8V bank:
 #
