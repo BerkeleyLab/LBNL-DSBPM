@@ -70,8 +70,7 @@ module dsbpm_vcxo_160_zcu208_top #(
     output wire SFP_REC_CLK_P,
     output wire SFP_REC_CLK_N,
 
-    output wire EVR_FB_CLK_P,
-    output wire EVR_FB_CLK_N,
+    output wire EVR_FB_CLK,
     output wire EVR_SROC,
 
     input             GPIO_SW_W,
@@ -215,16 +214,21 @@ OBUFDS #(
     .I(evrClkF)
 );
 
-// We can't use both OBUF and OBUFS, as the ODDR Q pin
-// can access just 2 OBUFs, not 3. This leads to impossible
-// routing. So, just use the "wrong" way of forwarding a clock
-// as we are only using this for monitoring anyway.
-OBUFDS #(
+// Monitor reference clock
+wire evrClkMon;
+ODDRE1 ODDRE1_EVR_CLK_MON (
+   .Q(evrClkMon),
+   .C(evrClk),
+   .D1(1'b1),
+   .D2(1'b0),
+   .SR(1'b0)
+);
+
+OBUF #(
     .SLEW("FAST")
-) OBUFDS_EVR_FB_CLK (
-    .O(EVR_FB_CLK_P),
-    .OB(EVR_FB_CLK_N),
-    .I(evrClk)
+) OBUF_EVR_FB_CLK (
+    .O(EVR_FB_CLK),
+    .I(evrClkMon)
 );
 `endif
 
