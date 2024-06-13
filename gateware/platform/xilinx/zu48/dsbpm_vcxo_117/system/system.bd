@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x8A5938E0A4EF151B",
+      "boundary_crc": "0x8A5938E0C874FA77",
       "device": "xczu48dr-fsvg1517-2-e",
       "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
@@ -3387,7 +3387,7 @@
             "value_src": "default"
           },
           "FREQ_HZ": {
-            "value": "416366667"
+            "value": "499640000"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -4481,13 +4481,13 @@
         "inst_hier_path": "rfadc_mmcm",
         "parameters": {
           "CLKIN1_JITTER_PS": {
-            "value": "24.01"
+            "value": "20.01"
           },
           "CLKOUT1_DRIVES": {
             "value": "BUFG"
           },
           "CLKOUT1_JITTER": {
-            "value": "191.588"
+            "value": "190.914"
           },
           "CLKOUT1_PHASE_ERROR": {
             "value": "338.733"
@@ -4499,7 +4499,7 @@
             "value": "BUFG"
           },
           "CLKOUT2_JITTER": {
-            "value": "191.588"
+            "value": "190.914"
           },
           "CLKOUT2_PHASE_ERROR": {
             "value": "338.733"
@@ -4529,10 +4529,10 @@
             "value": "FDBK_AUTO"
           },
           "MMCM_CLKFBOUT_MULT_F": {
-            "value": "121.500"
+            "value": "101.250"
           },
           "MMCM_CLKIN1_PERIOD": {
-            "value": "2.402"
+            "value": "2.001"
           },
           "MMCM_CLKIN2_PERIOD": {
             "value": "10.0"
@@ -4550,7 +4550,7 @@
             "value": "2"
           },
           "PRIM_IN_FREQ": {
-            "value": "416.366667"
+            "value": "499.640"
           },
           "PRIM_SOURCE": {
             "value": "No_buffer"
