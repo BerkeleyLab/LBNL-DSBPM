@@ -4,7 +4,7 @@
 create_clock -period 6.4 [get_ports USER_MGT_SI570_CLK_P]
 
 # RFDC clocks
-# 416.67 MHz
+# 416.366 MHz
 create_clock -period 2.40 [get_ports FPGA_REFCLK_OUT_C_P]
 # 1.53 MHz
 create_clock -period 652.80 [get_ports SYSREF_FPGA_C_P]
