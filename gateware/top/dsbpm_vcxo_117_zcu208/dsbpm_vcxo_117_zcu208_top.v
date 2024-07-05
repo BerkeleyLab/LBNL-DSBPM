@@ -87,7 +87,7 @@ module dsbpm_vcxo_117_zcu208_top #(
     output wire       CLK_SPI_MUX_SEL1
 );
 
-common_zcu208_top #(
+common_dsbpm_zcu208_top #(
     .DDR_ILA_CHIPSCOPE_DBG(DDR_ILA_CHIPSCOPE_DBG),
     .DAC_ILA_CHIPSCOPE_DBG(DAC_ILA_CHIPSCOPE_DBG),
     .ADC_WIDTH(ADC_WIDTH),
@@ -112,7 +112,7 @@ common_zcu208_top #(
     .SITE_CIC_SA_DECIMATE(SITE_CIC_SA_DECIMATE),
     .SITE_CIC_STAGES(SITE_CIC_STAGES)
     )
-    common_zcu208_top_inst (
+    common_dsbpm_zcu208_top_inst (
     .USER_MGT_SI570_CLK_P(USER_MGT_SI570_CLK_P),
     .USER_MGT_SI570_CLK_N(USER_MGT_SI570_CLK_N),
     .SFP2_RX_P(SFP2_RX_P),
