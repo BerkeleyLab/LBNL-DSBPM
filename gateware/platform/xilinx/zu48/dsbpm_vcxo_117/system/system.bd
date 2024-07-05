@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x8A5938E0C874FA77",
+      "boundary_crc": "0x8A5938E0C28D23A0",
       "device": "xczu48dr-fsvg1517-2-e",
       "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
@@ -56,7 +56,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -114,7 +114,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -172,7 +172,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -230,7 +230,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -288,7 +288,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -346,7 +346,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -448,7 +448,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -506,7 +506,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -588,7 +588,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -646,7 +646,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -704,7 +704,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -762,7 +762,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -820,7 +820,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -878,7 +878,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -936,7 +936,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -994,7 +994,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -1184,7 +1184,7 @@
             "value": "256"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_BRESP": {
             "value": "1"
@@ -1748,7 +1748,7 @@
             "value": "256"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_BRESP": {
             "value": "1"
@@ -2423,7 +2423,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2472,7 +2472,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2521,7 +2521,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2570,7 +2570,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2619,7 +2619,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2668,7 +2668,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2717,7 +2717,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -2766,7 +2766,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -3359,7 +3359,7 @@
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
-            "value": "38558000"
+            "value": "36681000"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -3387,7 +3387,7 @@
             "value_src": "default"
           },
           "FREQ_HZ": {
-            "value": "499640000"
+            "value": "117378049"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -3415,7 +3415,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -3446,7 +3446,7 @@
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
-            "value": "308467000"
+            "value": "36681000"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -3474,7 +3474,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "117378049"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -4481,31 +4481,31 @@
         "inst_hier_path": "rfadc_mmcm",
         "parameters": {
           "CLKIN1_JITTER_PS": {
-            "value": "20.01"
+            "value": "85.19"
           },
           "CLKOUT1_DRIVES": {
             "value": "BUFG"
           },
           "CLKOUT1_JITTER": {
-            "value": "190.914"
+            "value": "112.092"
           },
           "CLKOUT1_PHASE_ERROR": {
-            "value": "338.733"
+            "value": "87.468"
           },
           "CLKOUT1_REQUESTED_OUT_FREQ": {
-            "value": "123.38671"
+            "value": "117.37805"
           },
           "CLKOUT2_DRIVES": {
             "value": "BUFG"
           },
           "CLKOUT2_JITTER": {
-            "value": "190.914"
+            "value": "112.092"
           },
           "CLKOUT2_PHASE_ERROR": {
-            "value": "338.733"
+            "value": "87.468"
           },
           "CLKOUT2_REQUESTED_OUT_FREQ": {
-            "value": "123.38671"
+            "value": "117.37805"
           },
           "CLKOUT2_USED": {
             "value": "true"
@@ -4529,13 +4529,13 @@
             "value": "FDBK_AUTO"
           },
           "MMCM_CLKFBOUT_MULT_F": {
-            "value": "101.250"
+            "value": "10.000"
           },
           "MMCM_CLKIN1_PERIOD": {
-            "value": "2.001"
+            "value": "8.519"
           },
           "MMCM_CLKIN2_PERIOD": {
-            "value": "10.0"
+            "value": "10.000"
           },
           "MMCM_CLKOUT0_DIVIDE_F": {
             "value": "10.000"
@@ -4544,13 +4544,13 @@
             "value": "10"
           },
           "MMCM_DIVCLK_DIVIDE": {
-            "value": "41"
+            "value": "1"
           },
           "NUM_OUT_CLKS": {
             "value": "2"
           },
           "PRIM_IN_FREQ": {
-            "value": "499.640"
+            "value": "117.378049"
           },
           "PRIM_SOURCE": {
             "value": "No_buffer"
@@ -4609,16 +4609,16 @@
             "value": "true"
           },
           "ADC0_Outclk_Freq": {
-            "value": "38.558"
+            "value": "36.681"
           },
           "ADC0_PLL_Enable": {
             "value": "false"
           },
           "ADC0_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "ADC0_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "ADC1_Clock_Dist": {
             "value": "1"
@@ -4630,16 +4630,16 @@
             "value": "true"
           },
           "ADC1_Outclk_Freq": {
-            "value": "38.558"
+            "value": "36.681"
           },
           "ADC1_PLL_Enable": {
             "value": "false"
           },
           "ADC1_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "ADC1_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "ADC224_En": {
             "value": "true"
@@ -4663,16 +4663,16 @@
             "value": "true"
           },
           "ADC2_Outclk_Freq": {
-            "value": "38.558"
+            "value": "36.681"
           },
           "ADC2_PLL_Enable": {
             "value": "false"
           },
           "ADC2_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "ADC2_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "ADC3_Clock_Source": {
             "value": "1"
@@ -4684,16 +4684,16 @@
             "value": "true"
           },
           "ADC3_Outclk_Freq": {
-            "value": "38.558"
+            "value": "36.681"
           },
           "ADC3_PLL_Enable": {
             "value": "false"
           },
           "ADC3_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "ADC3_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "ADC_Data_Type00": {
             "value": "1"
@@ -4900,13 +4900,13 @@
             "value": "true"
           },
           "DAC0_Outclk_Freq": {
-            "value": "308.467"
+            "value": "36.681"
           },
           "DAC0_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "DAC0_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "DAC1_Clock_Source": {
             "value": "6"
@@ -4915,13 +4915,13 @@
             "value": "true"
           },
           "DAC1_Outclk_Freq": {
-            "value": "308.467"
+            "value": "36.681"
           },
           "DAC1_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "DAC1_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "DAC2_Clock_Dist": {
             "value": "1"
@@ -4930,13 +4930,13 @@
             "value": "true"
           },
           "DAC2_Outclk_Freq": {
-            "value": "308.467"
+            "value": "36.681"
           },
           "DAC2_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "DAC2_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "DAC3_Clock_Source": {
             "value": "6"
@@ -4945,13 +4945,13 @@
             "value": "true"
           },
           "DAC3_Outclk_Freq": {
-            "value": "308.467"
+            "value": "36.681"
           },
           "DAC3_Refclk_Freq": {
-            "value": "4935.468"
+            "value": "4695.122"
           },
           "DAC3_Sampling_Rate": {
-            "value": "4.935468"
+            "value": "4.695122"
           },
           "DAC_Data_Width00": {
             "value": "2"
