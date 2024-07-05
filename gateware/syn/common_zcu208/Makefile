@@ -25,6 +25,7 @@ all: $(TARGET)_top.bit
 vpath %.v $(DSP_DIR)
 vpath %.v $(CORDIC_DIR)
 vpath %.v $(MODULES_DIR)
+vpath %.v $(GW_TOP_COMMON_DIR)
 
 TOP_LVL_DIR = ../../top/$(TARGET)
 
