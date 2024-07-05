@@ -13,6 +13,8 @@ GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 BEDROCK_DIR        = $(SUBMODULES_DIR)/bedrock
 EVR_DIR            = $(MODULES_DIR)/evr
 
+GW_TOP_DIR         = $(GATEWARE_DIR)/top
+GW_TOP_COMMON_DIR  = $(GW_TOP_DIR)/common_dsbpm_zcu208
 GW_SYN_DIR         = $(GATEWARE_DIR)/syn
 
 # Sofware
