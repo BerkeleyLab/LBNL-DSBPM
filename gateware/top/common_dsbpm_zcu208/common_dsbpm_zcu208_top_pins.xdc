@@ -135,7 +135,7 @@ set_property IOSTANDARD LVDS_25 [get_ports FPGA_REFCLK_OUT_C_N]
 # can only connect to MMCMs/PLLs through the BUFGCEs. To avoid
 # a design rule check (DRC) error, set the property
 # CLOCK_DEDICATED_ROUTE = FALSE."
-set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets                    FPGA_REFCLK_OUT_C]
+set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets -hier -filter {NAME =~ *FPGA_REFCLK_OUT_C}]
 
 # RFDC SYSREF
 # AMS_SYSREF_P - CLK104_AMS_SYSREF_C_P     Bank 228 - SYSREF_P_228
