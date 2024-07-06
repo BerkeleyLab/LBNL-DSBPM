@@ -1,6 +1,5 @@
 set syn_prop_dict {
     steps.synth_design.args.assert       {1}
-    "steps.synth_design.args.more options" {-verbose}
 }
 
 set impl_prop_dict {
