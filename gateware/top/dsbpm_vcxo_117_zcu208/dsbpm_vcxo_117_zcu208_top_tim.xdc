@@ -6,8 +6,8 @@ create_clock -period 6.4 [get_ports USER_MGT_SI570_CLK_P]
 # RFDC clocks
 # 117.378 MHz
 create_clock -period 8.50 [get_ports FPGA_REFCLK_OUT_C_P]
-# 499.64 MHz
-create_clock -period 2.001 [get_ports FPGA_REFCLK_OUT_C_P]
+# 1.53 MHz
+create_clock -period 652.80 [get_ports SYSREF_FPGA_C_P]
 
 set clk_pl_0_period                   [get_property PERIOD [get_clocks clk_pl_0]]
 set clk_mgt_rx_period                 [get_property PERIOD [get_clocks -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]]
