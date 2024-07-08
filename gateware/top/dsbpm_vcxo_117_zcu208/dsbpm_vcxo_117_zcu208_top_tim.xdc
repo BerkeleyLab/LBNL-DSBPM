@@ -66,4 +66,4 @@ set_false_path -from [get_clocks FPGA_REFCLK_OUT_C_P] -to [get_clocks -of_object
 # Set false path between ADC clock and RX MGT clock. Safely crossing domains already
 # and with ASYNC_REG properties in RTL.
 set_false_path -from [get_clocks clk_out1_system_rfadc_mmcm_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]]
-set_false_path -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1]] -to [get_clocks clk_out1_system_rfadc_mmcm_0}]
+set_false_path -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks clk_out1_system_rfadc_mmcm_0]
