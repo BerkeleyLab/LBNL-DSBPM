@@ -104,6 +104,10 @@ set_property IOSTANDARD  LVDS [get_ports SFP_REC_CLK_P]
 set_property PACKAGE_PIN A9       [get_ports EVR_FB_CLK]
 set_property IOSTANDARD  LVCMOS18 [get_ports EVR_FB_CLK]
 
+# CLk104_SYNC_IN
+set_property PACKAGE_PIN AU2      [get_ports CLK104_SYNC_IN]
+set_property IOSTANDARD  LVCMOS18 [get_ports CLK104_SYNC_IN]
+
 # Note on LVDS_25 used on a 1.8V bank:
 #
 # There is not a specific requirement on the

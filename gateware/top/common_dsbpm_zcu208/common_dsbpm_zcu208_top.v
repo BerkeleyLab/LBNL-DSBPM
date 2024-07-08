@@ -71,6 +71,7 @@ module common_dsbpm_zcu208_top #(
     output wire SFP_REC_CLK_N,
 
     output wire EVR_FB_CLK,
+    output wire CLK104_SYNC_IN,
     output wire EVR_SROC,
 
     input             GPIO_SW_W,
@@ -229,6 +230,23 @@ OBUF #(
 ) OBUF_EVR_FB_CLK (
     .O(EVR_FB_CLK),
     .I(evrClkMon)
+);
+
+// CLk104 SYNC in reference clock
+wire evrClkSyncInMon;
+ODDRE1 ODDRE1_CLK104_SYNC_IN_MON (
+   .Q(evrClkSyncInMon),
+   .C(evrClk),
+   .D1(1'b1),
+   .D2(1'b0),
+   .SR(1'b0)
+);
+
+OBUF #(
+    .SLEW("FAST")
+) OBUF_CLK104_SYNC_IN (
+    .O(CLK104_SYNC_IN),
+    .I(evrClkSyncInMon)
 );
 `endif
 
