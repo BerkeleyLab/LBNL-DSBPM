@@ -71,6 +71,7 @@ module dsbpm_vcxo_117_zcu208_top #(
     output wire SFP_REC_CLK_N,
 
     output wire EVR_FB_CLK,
+    output wire CLK104_SYNC_IN,
     output wire EVR_SROC,
 
     input             GPIO_SW_W,
@@ -187,6 +188,7 @@ common_dsbpm_zcu208_top #(
     .SFP_REC_CLK_N(SFP_REC_CLK_N),
 
     .EVR_FB_CLK(EVR_FB_CLK),
+    .CLK104_SYNC_IN(CLK104_SYNC_IN),
     .EVR_SROC(EVR_SROC),
 
     .GPIO_SW_W(GPIO_SW_W),
