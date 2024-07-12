@@ -13,7 +13,7 @@ GW_DSBPM_TGT_DIR = $(GW_SYN_DIR)/$(TARGET)
 GIT_COMMIT = $(shell git rev-parse --short=8 --verify HEAD || echo "NOCOMMIT")
 BIT      ?= $(GW_DSBPM_TGT_DIR)/$(TARGET)_top.bit
 
-BIF   = $(SW_DSBPM_VCXO_160_SCRIPTS_DIR)/BOOTGEN.bif
+BIF   = BOOTGEN.bif
 ELF   = $(THIS_DIR)/$(TARGET).elf
 PMUFW = $(THIS_DIR)/$(TARGET)/platform/export/platform/sw/platform/boot/pmufw.elf
 BIN   = $(THIS_DIR)/$(TARGET).$(GIT_COMMIT).bin
@@ -157,8 +157,6 @@ INCLUDE_FLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 vpath *.c $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
 vpath *.h $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
 vpath *.o $(SW_SRC_DIR) $(ST7789V_DIR)
-vpath *.bif $(SW_DSBPM_VCXO_160_SCRIPTS_DIR)
-vpath *.bif.in $(SW_DSBPM_VCXO_160_SCRIPTS_DIR)
 
 %softwareBuildDate.h: $(SRC_FILES) $(HDR_FILES)
 	sh $(SW_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
@@ -184,7 +182,7 @@ $(TARGET).elf.size: $(TARGET).elf
 $(BIN): $(BIF) $(FSBL) $(PMUFW) $(BIT) $(ELF)
 	bootgen -image "$<" -w on -arch zynqmp -o "$@"
 
-%.bif: %.bif.in
+$(BIF): $(SW_SCRIPTS_DIR)/BOOTGEN.bif.in
 	sed -e 's|$$BOOTLOADER|$(FSBL)|g' \
 		-e 's|$$PMUFW_IMAGE|$(PMUFW)|g' \
 		-e 's|$$BIT|$(BIT)|g' \

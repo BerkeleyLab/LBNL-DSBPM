@@ -25,6 +25,7 @@ all: $(TARGET)_top.bit
 vpath %.v $(DSP_DIR)
 vpath %.v $(CORDIC_DIR)
 vpath %.v $(MODULES_DIR)
+vpath %.v $(GW_TOP_COMMON_DIR)
 
 TOP_LVL_DIR = ../../top/$(TARGET)
 
@@ -111,6 +112,7 @@ VFLAGS_DEP += -y$(HOMELESS_DIR)
 # Local directories for searching
 VFLAGS_DEP += -y.
 VFLAGS_DEP += -y$(MODULES_DIR)
+VFLAGS_DEP += -y$(GW_TOP_COMMON_DIR)
 VFLAGS_DEP += -y$(TOP_LVL_DIR)
 VFLAGS_DEP += $(addprefix -y, $(IP_CORES_SRCS_DIRS))
 VFLAGS_DEP += $(addprefix -y, $(BD_SRCS_DIRS))
@@ -118,6 +120,7 @@ VFLAGS_DEP += $(addprefix -y, $(BD_SRCS_DIRS))
 # Local directories for include searching
 VFLAGS_DEP += -I.
 VFLAGS_DEP += -I$(MODULES_DIR)
+VFLAGS_DEP += -I$(GW_TOP_COMMON_DIR)
 VFLAGS_DEP += -I$(TOP_LVL_DIR)
 VFLAGS_DEP += $(addprefix -I, $(IP_CORES_SRCS_DIRS))
 VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
