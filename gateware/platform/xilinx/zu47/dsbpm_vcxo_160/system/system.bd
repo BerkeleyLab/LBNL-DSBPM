@@ -1,8 +1,8 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x8A5938E0C874FA77",
-      "device": "xczu48dr-fsvg1517-2-e",
+      "boundary_crc": "0xBA911FA42C651792",
+      "device": "xczu47dr-ffvg1517-1-e",
       "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
       "synth_flow_mode": "None",
@@ -36,9 +36,9 @@
       "rst_ps8_0_96M": "",
       "usp_rf_data_converter_0": "",
       "zynq_ultra_ps_e_0": "",
-      "ddr4_0": "",
       "rst_ddr_mig_0": "",
-      "ddr4_smc_0": ""
+      "ddr4_smc_0": "",
+      "ddr4_0": ""
     },
     "interface_ports": {
       "sysref_in": {
@@ -1089,11 +1089,11 @@
         "parameters": {
           "AXI_ARBITRATION_SCHEME": {
             "value": "RD_PRI_REG",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "BURST_LENGTH": {
             "value": "8",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "CAN_DEBUG": {
             "value": "false",
@@ -1101,47 +1101,47 @@
           },
           "CAS_LATENCY": {
             "value": "18",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "CAS_WRITE_LATENCY": {
-            "value": "14",
-            "value_src": "default_prop"
+            "value": "16",
+            "value_src": "user_prop"
           },
           "CS_ENABLED": {
             "value": "true",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "CUSTOM_PARTS": {
             "value": "no_file_loaded",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "DATA_MASK_ENABLED": {
             "value": "DM_NO_DBI",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "DATA_WIDTH": {
             "value": "32",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "MEMORY_PART": {
             "value": "MT40A1G8WE-075E",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "MEMORY_TYPE": {
             "value": "Components",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "MEM_ADDR_MAP": {
             "value": "ROW_COLUMN_BANK",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "SLOT": {
             "value": "Single",
-            "value_src": "default_prop"
+            "value_src": "user_prop"
           },
           "TIMEPERIOD_PS": {
-            "value": "750",
-            "value_src": "default_prop"
+            "value": "833",
+            "value_src": "user_prop"
           }
         }
       },
@@ -1350,7 +1350,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -1463,7 +1463,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -1576,7 +1576,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -1689,7 +1689,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -1914,7 +1914,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -2027,7 +2027,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -2140,7 +2140,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -2253,7 +2253,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -2306,14 +2306,14 @@
             "value_src": "default"
           },
           "CLK_DOMAIN": {
-            "value": "system_ddr4_0_0_c0_ddr4_ui_clk",
+            "value": "system_ddr4_1_3_c0_ddr4_ui_clk",
             "value_src": "default_prop"
           },
           "DATA_WIDTH": {
             "value": "256"
           },
           "FREQ_HZ": {
-            "value": "333250000",
+            "value": "300000000",
             "value_src": "user_prop"
           },
           "HAS_BRESP": {
@@ -2884,7 +2884,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -2997,7 +2997,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -3110,7 +3110,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -3223,7 +3223,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "PROTOCOL": {
             "value": "AXI4"
@@ -3284,7 +3284,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           }
         }
       },
@@ -3371,7 +3371,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           }
         }
       },
@@ -3398,7 +3398,7 @@
             "value_src": "default"
           },
           "PHASE": {
-            "value": "0.000",
+            "value": "0.0",
             "value_src": "default"
           }
         }
@@ -3458,7 +3458,7 @@
           },
           "PHASE": {
             "value": "0.0",
-            "value_src": "default_prop"
+            "value_src": "default"
           }
         }
       },
@@ -3524,11 +3524,11 @@
             "value": "ddr_aximm_dbg"
           },
           "CLK_DOMAIN": {
-            "value": "system_ddr4_0_0_c0_ddr4_ui_clk",
+            "value": "system_ddr4_1_3_c0_ddr4_ui_clk",
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
-            "value": "333250000",
+            "value": "300000000",
             "value_src": "user_prop"
           },
           "FREQ_TOLERANCE_HZ": {
@@ -8192,56 +8192,6 @@
           }
         }
       },
-      "ddr4_0": {
-        "vlnv": "xilinx.com:ip:ddr4:2.2",
-        "xci_name": "system_ddr4_0_0",
-        "xci_path": "ip/system_ddr4_0_0/system_ddr4_0_0.xci",
-        "inst_hier_path": "ddr4_0",
-        "parameters": {
-          "ADDN_UI_CLKOUT1_FREQ_HZ": {
-            "value": "100"
-          },
-          "C0.CS_WIDTH": {
-            "value": "2"
-          },
-          "C0.DDR4_AxiAddressWidth": {
-            "value": "32"
-          },
-          "C0.DDR4_Clamshell": {
-            "value": "true"
-          },
-          "C0_CLOCK_BOARD_INTERFACE": {
-            "value": "default_sysclk_c0_300mhz"
-          },
-          "C0_DDR4_BOARD_INTERFACE": {
-            "value": "ddr4_sdram_c0"
-          },
-          "RESET_BOARD_INTERFACE": {
-            "value": "reset"
-          }
-        },
-        "interface_ports": {
-          "C0_DDR4_S_AXI": {
-            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
-            "mode": "Slave",
-            "memory_map_ref": "C0_DDR4_MEMORY_MAP"
-          }
-        },
-        "addressing": {
-          "memory_maps": {
-            "C0_DDR4_MEMORY_MAP": {
-              "address_blocks": {
-                "C0_DDR4_ADDRESS_BLOCK": {
-                  "base_address": "0",
-                  "range": "4G",
-                  "width": "32",
-                  "usage": "memory"
-                }
-              }
-            }
-          }
-        }
-      },
       "rst_ddr_mig_0": {
         "vlnv": "xilinx.com:ip:proc_sys_reset:5.0",
         "xci_name": "system_rst_ddr_mig_0_0",
@@ -8530,6 +8480,65 @@
               },
               "WUSER_BITS_PER_BYTE": {
                 "value": "0"
+              }
+            }
+          }
+        }
+      },
+      "ddr4_0": {
+        "vlnv": "xilinx.com:ip:ddr4:2.2",
+        "xci_name": "system_ddr4_1_3",
+        "xci_path": "ip/system_ddr4_1_3/system_ddr4_1_3.xci",
+        "inst_hier_path": "ddr4_0",
+        "parameters": {
+          "ADDN_UI_CLKOUT1_FREQ_HZ": {
+            "value": "100"
+          },
+          "C0.CS_WIDTH": {
+            "value": "2"
+          },
+          "C0.DDR4_AxiAddressWidth": {
+            "value": "32"
+          },
+          "C0.DDR4_AxiDataWidth": {
+            "value": "256"
+          },
+          "C0.DDR4_CasLatency": {
+            "value": "18"
+          },
+          "C0.DDR4_CasWriteLatency": {
+            "value": "16"
+          },
+          "C0.DDR4_Clamshell": {
+            "value": "true"
+          },
+          "C0.DDR4_DataWidth": {
+            "value": "32"
+          },
+          "C0.DDR4_InputClockPeriod": {
+            "value": "3332"
+          },
+          "C0.DDR4_MemoryPart": {
+            "value": "MT40A1G8WE-075E"
+          }
+        },
+        "interface_ports": {
+          "C0_DDR4_S_AXI": {
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "mode": "Slave",
+            "memory_map_ref": "C0_DDR4_MEMORY_MAP"
+          }
+        },
+        "addressing": {
+          "memory_maps": {
+            "C0_DDR4_MEMORY_MAP": {
+              "address_blocks": {
+                "C0_DDR4_ADDRESS_BLOCK": {
+                  "base_address": "0",
+                  "range": "4G",
+                  "width": "32",
+                  "usage": "memory"
+                }
               }
             }
           }
@@ -9069,8 +9078,8 @@
       "rst_ddr_mig_0_peripheral_aresetn": {
         "ports": [
           "rst_ddr_mig_0/peripheral_aresetn",
-          "ddr4_0/c0_ddr4_aresetn",
-          "ddr4_smc_0/aresetn"
+          "ddr4_smc_0/aresetn",
+          "ddr4_0/c0_ddr4_aresetn"
         ]
       },
       "rst_ps8_0_96M_interconnect_aresetn": {
@@ -9316,7 +9325,7 @@
               "SEG_axi_lite_generic_reg_0_reg0": {
                 "address_block": "/axi_lite_generic_reg_0/s00_axi/reg0",
                 "offset": "0x00A0050000",
-                "range": "64K"
+                "range": "4K"
               },
               "SEG_ddr4_0_C0_DDR4_ADDRESS_BLOCK": {
                 "address_block": "/ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK",
