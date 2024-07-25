@@ -236,3 +236,6 @@ set_property OUTPUT_IMPEDANCE RDRV_40_40 [get_ports {DDR4_C0_DQS_T[3]}]
 set_property PACKAGE_PIN AK22            [get_ports DDR4_C0_ODT]
 set_property IOSTANDARD SSTL12_DCI       [get_ports DDR4_C0_ODT]
 set_property OUTPUT_IMPEDANCE RDRV_40_40 [get_ports DDR4_C0_ODT]
+
+set_property PACKAGE_PIN AF20            [get_ports DDR4_C0_RESET_N]
+set_property IOSTANDARD LVCMOS12         [get_ports DDR4_C0_RESET_N]
