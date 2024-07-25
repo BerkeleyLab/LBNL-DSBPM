@@ -1,1 +1,1 @@
-../common_dsbpm_zcu208/common_dsbpm_zcu208_top_pins.xdc
+../common_dsbpm/common_dsbpm_top_pins.xdc

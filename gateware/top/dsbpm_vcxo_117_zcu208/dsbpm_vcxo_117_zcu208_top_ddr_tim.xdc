@@ -1,1 +1,1 @@
-../common_dsbpm_zcu208/common_dsbpm_zcu208_top_ddr_tim.xdc
+../common_dsbpm/common_dsbpm_top_ddr_tim.xdc

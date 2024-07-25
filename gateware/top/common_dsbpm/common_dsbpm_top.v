@@ -1,4 +1,4 @@
-module common_dsbpm_zcu208_top #(
+module common_dsbpm_top #(
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
