@@ -1,10 +1,10 @@
-HARDWARE = zcu208
-PROJECT_PART = xczu48dr-fsvg1517-2-e
-PROJECT_BOARD = xilinx.com:zcu208:part0:2.0
+HARDWARE ?= zcu208
+PROJECT_PART ?= xczu48dr-fsvg1517-2-e
+PROJECT_BOARD ?= xilinx.com:zcu208:part0:2.0
 COMMUNICATION = gty
 XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
-FPGA_PLATFORM := zu48
+FPGA_PLATFORM ?= zu48
 FPGA_APPLICATION ?= dsbpm_vcxo_160
 
 CMD_SEP = ;
