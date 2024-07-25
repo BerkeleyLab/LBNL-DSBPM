@@ -1,0 +1,1 @@
+../common_dsbpm/common_dsbpm_top_pins.xdc
