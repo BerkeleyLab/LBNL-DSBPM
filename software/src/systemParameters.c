@@ -63,7 +63,7 @@ systemParametersSetDefaults(void)
     systemParametersDefault.userMGTrefClkOffsetPPM = 0;
     systemParametersDefault.startupDebugFlags = 0;
     systemParametersDefault.rfDivisor = 328;
-    systemParametersDefault.pllMultiplier = 77;
+    systemParametersDefault.pllMultiplier = 81;
     systemParametersDefault.isSinglePass = 0;
     systemParameters.singlePassEvent = 0;
     systemParametersDefault.adcHeartbeatMarker = 152 * 82 * 2000;
