@@ -28,6 +28,11 @@
  */
 #define NOBANK_RUN_BIT         0x1
 
+/*
+ * Coefficient scaling
+ */
+#define SCALE_FACTOR    ((double)0x7FFF)
+
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 #define PT_GEN_TABLE_BUF_SIZE       (2+(2*CFG_PT_GEN_ROW_CAPACITY))
@@ -84,6 +89,23 @@ writeCSR(unsigned int bpm, uint32_t value, uint32_t mask)
 }
 
 /*
+ * float->int scaling
+ */
+static int
+scale(double x)
+{
+    int i, neg = 0;
+
+    if (x < 0) {
+        x = -x;
+        neg = 1;
+    }
+    i = (x * SCALE_FACTOR) + 0.5;
+    if (neg) i = -i;
+    return i;
+}
+
+/*
  * Called when complete file has been uploaded to the TFTP server
  */
 int
@@ -100,9 +122,9 @@ ptGenSetTable(unsigned char *buf, int size)
         for (c = 0 ; c < colCount ; c++) {
             char expectedEnd = (c == (colCount - 1)) ? '\n' : ',';
             char *endp;
-            int x;
+            double x;
 
-            x = strtol((char *)cp, &endp, 0);
+            x = strtod((char *)cp, &endp);
             if ((*endp != expectedEnd)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
                 sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
@@ -111,7 +133,13 @@ ptGenSetTable(unsigned char *buf, int size)
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
-            *ip++ = x;
+            /* The odd-looking comparison is to deal with NANs */
+            if (!(x >= -1.0) && (x <= 1.0)) {
+                sprintf((char *)buf, "Value out of range at line %d", r + 1);
+                printf("Value out of range at line %d\n", r + 1);
+                return -1;
+            }
+            *ip++ = scale(x);
             cp = (unsigned char *)endp + 1;
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
@@ -148,8 +176,8 @@ ptGenGetTable(unsigned char *buf)
         for (c = 0 ; c < colCount ; c++) {
             int i;
             char sep = (c == (colCount - 1)) ? '\n' : ',';
-            int v = *table++;
-            i = sprintf((char *)cp, "%d%c", v, sep);
+            double v = *table++ / SCALE_FACTOR;
+            i = sprintf((char *)cp, "%9.6f%c", v, sep);
             cp += i;
         }
     }
