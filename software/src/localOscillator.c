@@ -206,7 +206,7 @@ optimizeCicShift(unsigned int bpm, int mtTableLength)
     if (remainder) warn("FA CIC DECIMATION FACTOR ISN'T AN INTEGER\n");
     if (faDecimationActual != faDecimationConfig) {
         int shift;
-        printf("FA CIC filter stage count: %d\n", nCICstages);
+        printf("LocalOsc: FA CIC filter stage count: %d\n", nCICstages);
         cicShiftConfig = cicShift(faDecimationConfig, nCICstages);
         cicShiftActual = cicShift(faDecimationActual, nCICstages);
         shift = cicShiftConfig - cicShiftActual;
@@ -216,22 +216,22 @@ optimizeCicShift(unsigned int bpm, int mtTableLength)
             warn("FA CIC SCALING OVERFLOW\n");
             warn("Increase pilot tone table length or attenuate filter inputs.\n\n");
         }
-        if (remainder) printf(" (remainder %d (!!!))", remainder);
-        printf("FA CIC filter FPGA build decimation factor %d (shift %d).\n",
+        if (remainder) printf("LocalOsc:  (remainder %d (!!!))", remainder);
+        printf("LocalOsc: FA CIC filter FPGA build decimation factor %d (shift %d).\n",
                                             faDecimationConfig, cicShiftConfig);
-        printf("FA CIC filter actual decimation factor %d", faDecimationActual);
-        printf(" (shift %d).\n", cicShiftActual);
-        printf("Set CIC shift to %d.\n", shift);
+        printf("LocalOsc: FA CIC filter actual decimation factor %d", faDecimationActual);
+        printf("LocalOsc:  (shift %d).\n", cicShiftActual);
+        printf("LocalOsc: Set CIC shift to %d.\n", shift);
         sdAccumulateSetFaSumShift(bpm, shift);
     }
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
-        printf("optimizeCicShift: nCICstages = %d\n", nCICstages);
-        printf("optimizeCicShift: faDecimationConfig = %d\n", faDecimationConfig);
-        printf("optimizeCicShift: num = %u\n", num);
-        printf("optimizeCicShift: den = %u\n", den);
-        printf("optimizeCicShift: faDecimationActual = %d\n", faDecimationActual);
-        printf("optimizeCicShift: remainder = %d\n", remainder);
+        printf("LocalOsc: optimizeCicShift: nCICstages = %d\n", nCICstages);
+        printf("LocalOsc: optimizeCicShift: faDecimationConfig = %d\n", faDecimationConfig);
+        printf("LocalOsc: optimizeCicShift: num = %u\n", num);
+        printf("LocalOsc: optimizeCicShift: den = %u\n", den);
+        printf("LocalOsc: optimizeCicShift: faDecimationActual = %d\n", faDecimationActual);
+        printf("LocalOsc: optimizeCicShift: remainder = %d\n", remainder);
     }
 }
 
@@ -259,14 +259,14 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
                 sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
                         r + 1, *endp, expectedEnd);
-                printf("Unexpected characters on line %d: %c (expected %c)\n",
+                printf("LocalOsc: Unexpected characters on line %d: %c (expected %c)\n",
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
             /* The odd-looking comparison is to deal with NANs */
             if (!(x >= -1.0) && (x <= 1.0)) {
                 sprintf((char *)buf, "Value out of range at line %d", r + 1);
-                printf("Value out of range at line %d\n", r + 1);
+                printf("LocalOsc: Value out of range at line %d\n", r + 1);
                 return -1;
             }
             *ip++ = scale(x);
@@ -274,7 +274,7 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
                     sprintf((char *)buf, "Too short at line %d", r + 1);
-                    printf("Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
+                    printf("LocalOsc: Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
                     return -1;
                 }
                 table[0] = r + 1;
@@ -286,7 +286,7 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
         }
     }
     sprintf((char *)buf, "Too long at line %d", r + 1);
-    printf("Too long at line %d\n", r + 1);
+    printf("LocalOsc: Too long at line %d\n", r + 1);
     return -1;
 }
 
@@ -349,7 +349,7 @@ localOscRun(unsigned int bpm)
     writeCSR(bpm, v, NOBANK_SINGLE_PASS_BIT | NOBANK_RUN_BIT);
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW)
-        printf("Local oscillator %u running!\n", bpm);
+        printf("LocalOsc: Local oscillator %u running!\n", bpm);
 }
 
 static int
@@ -403,7 +403,7 @@ localOscWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity,
         }
     }
     else {
-        printf("CORRUPT LOCAL OSCILLATOR TABLE\n");
+        printf("LocalOsc: CORRUPT LOCAL OSCILLATOR TABLE\n");
     }
 
     if (goodTables[bpm] == 2) localOscRun(bpm);
@@ -565,7 +565,7 @@ localOscillatorStashEEPROM(int isPt)
 
     fr = f_read(&fil, tableBuf, sizeof(tableBuf), &nRead);
     if (fr != FR_OK) {
-        printf("%s local oscillator file read failed\n", isPt? "PT" : "RF");
+        printf("LocalOsc: %s local oscillator file read failed\n", isPt? "PT" : "RF");
         f_close(&fil);
         return -1;
     }

@@ -129,14 +129,14 @@ ptGenSetTable(unsigned char *buf, int size)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
                 sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
                         r + 1, *endp, expectedEnd);
-                printf("Unexpected characters on line %d: %c (expected %c)\n",
+                printf("PtGen: Unexpected characters on line %d: %c (expected %c)\n",
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
             /* The odd-looking comparison is to deal with NANs */
             if (!(x >= -1.0) && (x <= 1.0)) {
                 sprintf((char *)buf, "Value out of range at line %d", r + 1);
-                printf("Value out of range at line %d\n", r + 1);
+                printf("PtGen: Value out of range at line %d\n", r + 1);
                 return -1;
             }
             *ip++ = scale(x);
@@ -144,7 +144,7 @@ ptGenSetTable(unsigned char *buf, int size)
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
                     sprintf((char *)buf, "Too short at line %d", r + 1);
-                    printf("Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
+                    printf("PtGen: Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
                     return -1;
                 }
                 table[0] = r + 1;
@@ -156,7 +156,7 @@ ptGenSetTable(unsigned char *buf, int size)
         }
     }
     sprintf((char *)buf, "Too long at line %d", r + 1);
-    printf("Too long at line %d\n", r + 1);
+    printf("PtGen: Too long at line %d\n", r + 1);
     return -1;
 }
 
@@ -194,9 +194,9 @@ void ptGenRun(unsigned int bpm, int run)
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
         if (run)
-            printf("PT generation %u enbaled!\n", bpm);
+            printf("PtGen: PT generation %u enbaled!\n", bpm);
         else
-            printf("PT generation %u disabled!\n", bpm);
+            printf("PtGen: PT generation %u disabled!\n", bpm);
     }
 }
 
@@ -237,7 +237,7 @@ ptGenWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity)
         }
     }
     else {
-        printf("CORRUPT PT GENERATION TABLE\n");
+        printf("PtGen: CORRUPT PT GENERATION TABLE\n");
     }
 
     ptGenRun(bpm, 1);
@@ -274,7 +274,7 @@ void ptGenInit(unsigned int bpm)
      * the filesystem readback
      */
     if (!isPtGenRun(bpm)) {
-        printf("PT Generation failed to initialize by filesystem readback. "
+        printf("PtGen: PT Generation failed to initialize by filesystem readback. "
                 "Check previous errrors\n");
     }
 }
@@ -334,7 +334,7 @@ ptGenStashEEPROM()
 
     fr = f_read(&fil, tableBuf, sizeof(tableBuf), &nRead);
     if (fr != FR_OK) {
-        printf("PT generation table file read failed\n");
+        printf("PtGen: PT generation table file read failed\n");
         f_close(&fil);
         return -1;
     }
