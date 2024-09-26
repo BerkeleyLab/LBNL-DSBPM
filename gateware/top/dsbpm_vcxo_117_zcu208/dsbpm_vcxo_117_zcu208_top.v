@@ -17,7 +17,7 @@ module dsbpm_vcxo_117_zcu208 #(
     parameter MAG_WIDTH                 = 26,
     parameter PRODUCT_WIDTH             = AXI_ADC_SAMPLE_WIDTH + LO_WIDTH - 1,
     parameter ACQ_WIDTH                 = 32,
-    parameter SITE_SAMPLES_PER_TURN     = 77,
+    parameter SITE_SAMPLES_PER_TURN     = 81,
     parameter SITE_TURNS_PER_PT         = 19, // 11/19 PT
     parameter SITE_CIC_FA_DECIMATE      = 76,
     parameter SITE_CIC_SA_DECIMATE      = 1000,
