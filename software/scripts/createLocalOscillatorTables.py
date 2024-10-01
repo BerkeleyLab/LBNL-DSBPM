@@ -88,8 +88,8 @@ def ptGenTable(FoffsetL, FoffsetH, Frf, refDivider,
     sll = table[:,1]
     clh = table[:,2]
     slh = table[:,3]
-    cl = (cll + clh)/2*32767
-    sl = (sll + slh)/2*32767
+    cl = (cll + clh)/2
+    sl = (sll + slh)/2
     return py.transpose(np.array([cl, sl]))
 
 def writeTable(name, array, fmt = "%9.6f"):
