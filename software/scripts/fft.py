@@ -29,6 +29,7 @@ npts = math.floor(num_samples/N) * N
 
 data_i = np.genfromtxt(args.file, delimiter = ',')[:,0][:npts]
 data_q = np.genfromtxt(args.file, delimiter = ',')[:,1][:npts]
+data = data_i + 1j*data_q
 
 py.figure()
 py.plot(data_i)
@@ -43,23 +44,18 @@ py.draw()
 
 # FFT
 Fs = rf*N/h
-print(Fs)
-nsamples = len(data_i)
-print(nsamples)
+nsamples = len(data)
 k = np.arange(nsamples)
 T = nsamples/Fs
 frq = k/T
-frq = frq[range(int(nsamples/2))]
+frq = frq[range(int(nsamples))]
 
-Y_i = np.fft.fft(data_i)/nsamples
-Y_i = Y_i[range(int(nsamples/2))]
-Y_q = np.fft.fft(data_q)/nsamples
-Y_q = Y_q[range(int(nsamples/2))]
+Y = np.fft.fft(data)/nsamples
+Y = Y[range(int(nsamples))]
 
 py.figure()
-py.semilogy(frq, abs(Y_i))
-py.semilogy(frq, abs(Y_q))
-legend = ["I", "Q"]
+py.semilogy(frq, abs(Y))
+legend = ["FFT data"]
 py.legend(legend)
 py.title("FFT Data")
 py.xlabel("Freq (MHz):"+ str(nsamples) + " points")
