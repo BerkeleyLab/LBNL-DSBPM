@@ -216,10 +216,10 @@ optimizeCicShift(unsigned int bpm, int mtTableLength)
             warn("FA CIC SCALING OVERFLOW\n");
             warn("Increase pilot tone table length or attenuate filter inputs.\n\n");
         }
-        if (remainder) printf("LocalOsc:  (remainder %d (!!!))", remainder);
+        if (remainder) printf("LocalOsc:  (remainder %d (!!!))\n", remainder);
         printf("LocalOsc: FA CIC filter FPGA build decimation factor %d (shift %d).\n",
                                             faDecimationConfig, cicShiftConfig);
-        printf("LocalOsc: FA CIC filter actual decimation factor %d", faDecimationActual);
+        printf("LocalOsc: FA CIC filter actual decimation factor %d\n", faDecimationActual);
         printf("LocalOsc:  (shift %d).\n", cicShiftActual);
         printf("LocalOsc: Set CIC shift to %d.\n", shift);
         sdAccumulateSetFaSumShift(bpm, shift);
