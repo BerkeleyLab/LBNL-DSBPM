@@ -128,10 +128,8 @@ writeTable('ptTableSR_81_328_L7_19_H11_19_bin_20_conjugate.csv',
 writeTable('ptGen_81_7_low_11_high_19.csv',
            ptGenTable((499.64/328.0)*(1+7.0/19.0), (499.64/328.0)*(1+11.0/19.0),
                            499.64, 328, 81, 81*19, scaleFactor = args.ptScaleFactor,
-                           Feff = 0, conjugate = False),
-          fmt = '%d')
+                           Feff = 0, conjugate = False))
 writeTable('ptGen_77_7_low_11_high_19.csv',
            ptGenTable((499.64/328.0)*(1+7.0/19.0), (499.64/328.0)*(1+11.0/19.0),
                            499.64, 328, 77, 77*19, scaleFactor = args.ptScaleFactor,
-                           Feff = 0, conjugate = False),
-          fmt = '%d')
+                           Feff = 0, conjugate = False))
