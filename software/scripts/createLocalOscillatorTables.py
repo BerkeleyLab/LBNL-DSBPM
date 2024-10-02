@@ -118,7 +118,7 @@ writeTable('ptTableSR_81_328_30_19_bin_20_conjugate.csv',
            ptDemodTable((499.64/328.0)*(30.0/19.0), 499.64, 328, 81, 81*19,
                         scaleFactor = args.demodScaleFactor, Feff = 499.64/328*20, conjugate = True))
 writeTable('ptTableSR_81_328_L7_19_H11_19_bin_20_conjugate.csv',
-           ptDemodTableGen((499.64/328.0)*(7.0/19.0), (499.64/328.0)*(11.0/19.0),
+           ptDemodTableGen((499.64/328.0)*(1+7.0/19.0), (499.64/328.0)*(1+11.0/19.0),
                            499.64, 328, 81, 81*19, scaleFactor = args.demodScaleFactor,
                            Feff = 499.64/328*20, conjugate = True))
 
