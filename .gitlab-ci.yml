@@ -46,6 +46,34 @@ gw_dsbpm_vcxo_117_zcu208:
       - gateware/syn/dsbpm_vcxo_117_zcu208/_xilinx/dsbpm_vcxo_117_zcu208_top/*.runs/impl_1/*.rpt
       - gateware/syn/dsbpm_vcxo_117_zcu208/system.xsa
 
+gw_dsbpm_vcxo_160_lbl208:
+  before_script:
+    - cd gateware/syn/dsbpm_vcxo_160_lbl208 && ls /non-free
+  stage: gateware
+  script:
+    - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_vcxo_160_lbl208_top.bit
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    expire_in: 4 weeks
+    paths:
+      - gateware/syn/dsbpm_vcxo_160_lbl208/dsbpm_vcxo_160_lbl208_top.bit
+      - gateware/syn/dsbpm_vcxo_160_lbl208/_xilinx/dsbpm_vcxo_160_lbl208_top/*.runs/impl_1/*.rpt
+      - gateware/syn/dsbpm_vcxo_160_lbl208/system.xsa
+
+gw_dsbpm_vcxo_117_lbl208:
+  before_script:
+    - cd gateware/syn/dsbpm_vcxo_117_lbl208 && ls /non-free
+  stage: gateware
+  script:
+    - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_vcxo_117_lbl208_top.bit
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    expire_in: 4 weeks
+    paths:
+      - gateware/syn/dsbpm_vcxo_117_lbl208/dsbpm_vcxo_117_lbl208_top.bit
+      - gateware/syn/dsbpm_vcxo_117_lbl208/_xilinx/dsbpm_vcxo_117_lbl208_top/*.runs/impl_1/*.rpt
+      - gateware/syn/dsbpm_vcxo_117_lbl208/system.xsa
+
 # Software jobs
 # Gitlab doesn't seem to suport the usage of variables in
 # a "dependencies" or "needs" statement. So, unroll the job
@@ -87,3 +115,41 @@ sw_dsbpm_vcxo_117_zcu208:
       - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208/platform/export/platform/sw/platform/boot/pmufw.elf
       - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208.elf
       - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208*.bin
+
+sw_dsbpm_vcxo_160_lbl208:
+  before_script:
+    - cd software/app/dsbpm_vcxo_160
+  stage: software
+  script:
+    - make TARGET=dsbpm_vcxo_160_lbl208 clean && PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH make TARGET=dsbpm_vcxo_160_lbl208
+  # Get artifacts from this job, needed to compile the sofware
+  needs:
+    - job: gw_dsbpm_vcxo_160_lbl208
+      artifacts: true
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    expire_in: 4 weeks
+    paths:
+      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_lbl208/platform/zynqmp_fsbl/fsbl_a53.elf
+      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_lbl208/platform/export/platform/sw/platform/boot/pmufw.elf
+      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_lbl208.elf
+      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_lbl208*.bin
+
+sw_dsbpm_vcxo_117_lbl208:
+  before_script:
+    - cd software/app/dsbpm_vcxo_117
+  stage: software
+  script:
+    - make TARGET=dsbpm_vcxo_117_lbl208 clean && PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH make TARGET=dsbpm_vcxo_117_lbl208
+  # Get artifacts from this job, needed to compile the sofware
+  needs:
+    - job: gw_dsbpm_vcxo_117_lbl208
+      artifacts: true
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    expire_in: 4 weeks
+    paths:
+      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_lbl208/platform/zynqmp_fsbl/fsbl_a53.elf
+      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_lbl208/platform/export/platform/sw/platform/boot/pmufw.elf
+      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_lbl208.elf
+      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_lbl208*.bin

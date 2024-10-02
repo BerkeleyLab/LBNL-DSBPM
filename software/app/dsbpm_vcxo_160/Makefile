@@ -118,6 +118,9 @@ __ST7789V_HDR_FILES =\
 ifeq ($(TARGET),dsbpm_vcxo_160_zcu208)
 	__ST7789V_SRC_FILES += \
 		st7789v_stub.c
+else ifeq ($(TARGET),dsbpm_vcxo_160_lbl208)
+	__ST7789V_SRC_FILES += \
+		st7789v_stub.c
 #else ifeq ($(TARGET),dsbpm_???)
 #	__ST7789V_SRC_FILES += \
 #		st7789v.c
@@ -141,11 +144,13 @@ LIBS = -Wl,--start-group,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lm
 
 ifeq ($(TARGET),dsbpm_vcxo_160_zcu208)
 	USER_FLAGS += -D__TARGET_DSBPM_ZCU208__
+else ifeq ($(TARGET),dsbpm_vcxo_160_lbl208)
+	USER_FLAGS += -D__TARGET_DSBPM_LBL208__
 else
 	USER_FLAGS += -D__TARGET_NOT_RECOGNIZED__
 endif
 
-INCLUDE_DIRS = \
+INCLUDE_DIRS += \
 	$(SW_SRC_DIR) \
 	$(TARGET_DIR) \
 	$(TARGET)/platform/export/platform/sw/platform/standalone_domain/bspinclude/include \
