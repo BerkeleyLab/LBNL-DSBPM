@@ -38,20 +38,21 @@ and redirect stdout/stderr to a file so you can inspect it later:
 
 ```bash
 ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
-(time make PLATFORM=<PLATFORM_NAME> APP=<APP_NAME> CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf-; date) 2>&1 | tee make_output
+(time make PLATFORM=<PLATFORM_NAME> APP=<APP_NAME> CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
 ```
 
 For now the following combinations of PLATFORM and APP are supported:
 
-| APP / PLATFORM | zcu111 | zcu208 |
-|:--------------:|:------:|:------:|
-|       bpm      |        |    x   |
+|  APP / PLATFORM  | zcu208 | lbl208 |
+|:----------------:|:------:|:------:|
+| dsbpm_vcxo_117   |   x    |    x   |
+| dsbpm_vcxo_160   |   x    |    x   |
 
 So, for example, to generate the DSBPM application for the ZCU208 board:
 
 ```bash
 ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
-(time make PLATFORM=zcu208 APP=dsbpm CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf-; date) 2>&1 | tee make_output
+(time make PLATFORM=zcu208 APP=dsbpm_vcxo_160 CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
 ```
 
 ### Deploying
@@ -67,7 +68,7 @@ The following script can download the gateware via JTAG:
 
 ```bash
 cd gateware/scripts
-xsct download_bit.tcl ../syn/dsbpm_zcu208/dsbpm_zcu208_top.bit
+xsct download_bit.tcl ../syn/<APP>_<PLATFORM>/<APP>_<PLATFORM>_top.bit
 ```
 
 #### Deploying software
@@ -76,7 +77,7 @@ The following script can download the software via JTAG:
 
 ```bash
 cd software/scripts
-xsct download_elf.tcl ../../gateware/syn/dsbpm_zcu208/psu_init.tcl ../app/dsbpm/dsbpm_zcu208.elf
+xsct download_elf.tcl ../../gateware/syn/<APP>_<PLATFORM>/psu_init.tcl ../app/<APP>/<APP>_<PLATFORM>.elf
 ```
 
 ### Updates
@@ -90,7 +91,7 @@ The following system parameters can be updated via TFTP:
 
 #### Update System parameters table
 
-An example of the parameters used can be found at: `software/app/dsbpm/scripts/sysParms.csv`
+An example of the parameters used can be found at: `software/app/<APP>/scripts/sysParms.csv`
 
 ```bash
 tftp -v -m binary <system IP> -c put sysParms.csv sysParms.csv
@@ -98,7 +99,7 @@ tftp -v -m binary <system IP> -c put sysParms.csv sysParms.csv
 
 #### Update RF table
 
-An example of the RF table can be found at: `software/app/dsbpm/scripts/rfTableSR_81_328_bin_20_conjugate.csv`
+An example of the RF table can be found at: `software/app/<APP>/scripts/rfTableSR_81_328_bin_20_conjugate.csv`
 
 ```bash
 tftp -v -m binary <system IP> -c put <RF TABLE>.csv rfTable.csv
@@ -106,7 +107,7 @@ tftp -v -m binary <system IP> -c put <RF TABLE>.csv rfTable.csv
 
 #### Update Pilot tone table
 
-An example of the PT table can be found at: `software/app/dsbpm/scripts/ptTableSR_81_328_11_19_bin_20_conjugate.csv`
+An example of the PT table can be found at: `software/app/<APP>/scripts/ptTableSR_81_328_11_19_bin_20_conjugate.csv`
 
 ```bash
 tftp -v -m binary <system IP> -c put <PT TABLE>.csv ptTable.csv
@@ -122,12 +123,12 @@ When copying `BOOT.bin`, the user needs to reboot the system via a power cycle
 or via the console `boot` command.
 
 Another option to upgrade the image is to use the `programFlash.sh` script
-located at: `software/app/dsbpm/scripts`. The script will automatically
+located at: `software/app/<APP>/scripts`. The script will automatically
 readback the image file from the system and peform a byte-to-byte comparison
 to detect possible transmission errors.
 
 ```bash
-cd software/app/dsbpm
+cd software/app/<APP>
 sh ./scripts/programFlash.sh <system IP> [BOOT.bin filename]
 ```
 
