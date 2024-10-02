@@ -17,10 +17,10 @@ module common_dsbpm_top #(
     parameter MAG_WIDTH                 = 26,
     parameter PRODUCT_WIDTH             = AXI_ADC_SAMPLE_WIDTH + LO_WIDTH - 1,
     parameter ACQ_WIDTH                 = 32,
-    parameter SITE_SAMPLES_PER_TURN     = 81,
-    parameter SITE_TURNS_PER_PT         = 19, // 11/19 PT
-    parameter SITE_CIC_FA_DECIMATE      = 76,
-    parameter SITE_CIC_SA_DECIMATE      = 1000,
+    parameter SITE_SAMPLES_PER_TURN     = 100,  // Max samples per turn
+    parameter SITE_TURNS_PER_PT         = 19,   // 11/19 PT
+    parameter SITE_CIC_FA_DECIMATE      = 100,  // Max FA decimation rate
+    parameter SITE_CIC_SA_DECIMATE      = 2000, // Max SA decimation rate
     parameter SITE_CIC_STAGES           = 2) (
     input  USER_MGT_SI570_CLK_P, USER_MGT_SI570_CLK_N,
     input  SFP2_RX_P, SFP2_RX_N,
