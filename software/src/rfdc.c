@@ -191,8 +191,8 @@ static void rfADCCfgStaticDefaults(void)
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_ADC_TILE, tile,
                                           XRFDC_EXTERNAL_CLK,
-                                          CFG_ADC_REF_CLK_FREQ,
-                                          CFG_ADC_SAMPLING_CLK_FREQ);
+                                          ADC_REF_CLK_FREQ,
+                                          ADC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS) fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
     }
 }
@@ -232,14 +232,14 @@ static void rfADCCfgDefaults(void)
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
-#ifdef CFG_ADC_NCO_FREQ
+#ifdef ADC_NCO_FREQ
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             XRFdc_Mixer_Settings mixer;
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile, adc, &mixer);
             if (i != XST_SUCCESS) warn("ADC Tile:Block %d:%d XRFdc_GetMixerSettings() = %d",
                     tile, adc, i);
 
-            mixer.Freq = CFG_ADC_NCO_FREQ;
+            mixer.Freq = ADC_NCO_FREQ;
             mixer.EventSource = XRFDC_EVNT_SRC_SYSREF;
             i = XRFdc_SetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile, adc, &mixer);
             if (i != XST_SUCCESS) warn("ADC Tile:Block %d:%d XRFdc_SetMixerSettings() = %d",
@@ -284,8 +284,8 @@ static void rfDACCfgStaticDefaults(void)
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_DAC_TILE, tile,
                                           XRFDC_EXTERNAL_CLK,
-                                          CFG_DAC_REF_CLK_FREQ,
-                                          CFG_DAC_SAMPLING_CLK_FREQ);
+                                          DAC_REF_CLK_FREQ,
+                                          DAC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS) fatal("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
     }
 }
@@ -325,7 +325,7 @@ static void rfDACCfgDefaults(void)
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         // Override GUI mixer settings
-#ifdef CFG_DAC_NCO_FREQ
+#ifdef DAC_NCO_FREQ
         // Because we are using I/Q -> real mixer we only have
         // 1 datapath enable per DAC
         for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
@@ -336,7 +336,7 @@ static void rfDACCfgDefaults(void)
                 if (i != XST_SUCCESS) warn("DAC Tile:Block %d:%d XRFdc_GetMixerSettings() = %d",
                         tile, dac*CFG_DAC_DUC_OFFSET + duc, i);
 
-                mixer.Freq = CFG_DAC_NCO_FREQ;
+                mixer.Freq = DAC_NCO_FREQ;
                 mixer.EventSource = XRFDC_EVNT_SRC_SYSREF;
                 i = XRFdc_SetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac*CFG_DAC_DUC_OFFSET + duc, &mixer);
                 if (i != XST_SUCCESS) warn("DAC Tile:Block %d:%d XRFdc_SetMixerSettings() = %d",

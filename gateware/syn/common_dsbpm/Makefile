@@ -6,6 +6,7 @@ XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
 FPGA_PLATFORM ?= zu48
 FPGA_APPLICATION ?= dsbpm_vcxo_160
+SAMPLES_PER_TURN ?= 81
 
 CMD_SEP = ;
 __THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -188,7 +189,7 @@ system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(IP_CORES_XDCS) $(SYSTEM_TOP_TIM_XDC)
 %gitHash.vh: gitHashVerilog.sh
 	sh $(GW_SCRIPTS_DIR)/gitHashVerilog.sh > $@
 
-%gpioIDX.v: $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/config.h $(SW_TGT_DIR)/$(FPGA_APPLICATION)_$(HARDWARE)/gpio.h
+%gpioIDX.v: $(SW_TGT_COMMON_DIR)/gpio.h
 	sh $(GW_SCRIPTS_DIR)/createVerilogIDX.sh $^ > $@
 
 ipcores_repos.tcl: ipcores_repos.tcl.in

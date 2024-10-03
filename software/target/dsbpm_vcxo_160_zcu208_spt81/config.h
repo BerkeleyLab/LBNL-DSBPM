@@ -113,8 +113,8 @@
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. 81*40 = 3240
  */
-//#define CFG_ADC_SAMPLING_CLK_FREQ   4935.468
-#define CFG_ADC_SAMPLING_CLK_FREQ   3240.000
+//#define ADC_SAMPLING_CLK_FREQ   4935.468
+#define ADC_SAMPLING_CLK_FREQ   3240.000
 
 /*
  * ADC reference clock
@@ -123,15 +123,15 @@
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. 81*40 = 3240
  */
-//#define CFG_ADC_REF_CLK_FREQ   4935.468
-#define CFG_ADC_REF_CLK_FREQ   3240.000
+//#define ADC_REF_CLK_FREQ   4935.468
+#define ADC_REF_CLK_FREQ   3240.000
 
 /*
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. We want to shift the carrier to the 20th bin.
  *  Since the RF is at bin 328 or -328, bin 20 would be at -308
  */
-#define CFG_ADC_NCO_FREQ -308.000
+#define ADC_NCO_FREQ -308.000
 
 /*
  * DAC sampling clock frequency
@@ -140,8 +140,8 @@
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. 81*40 = 3240
  */
-//#define CFG_DAC_SAMPLING_CLK_FREQ   4935.468
-#define CFG_DAC_SAMPLING_CLK_FREQ   3240.000
+//#define DAC_SAMPLING_CLK_FREQ   4935.468
+#define DAC_SAMPLING_CLK_FREQ   3240.000
 
 /*
  * DAC reference clock
@@ -150,15 +150,15 @@
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. 81*40 = 3240
  */
-//#define CFG_DAC_REF_CLK_FREQ   4935.468
-#define CFG_DAC_REF_CLK_FREQ   3240.000
+//#define DAC_REF_CLK_FREQ   4935.468
+#define DAC_REF_CLK_FREQ   3240.000
 
 /*
  *  Fake frequency to fool API into calculating the correct
  *  NCO frequency. We want to shift the bin to RF, which is at
  *  bin 328 or -328
  */
-#define CFG_DAC_NCO_FREQ 328.000
+#define DAC_NCO_FREQ 328.000
 
 /*
  *  Recorder capacities, in samples. Waveform recorder pads

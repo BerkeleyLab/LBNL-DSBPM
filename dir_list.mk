@@ -21,6 +21,7 @@ GW_SYN_DIR         = $(GATEWARE_DIR)/syn
 
 SW_LIBS_DIR        = $(SOFTWARE_DIR)/libs
 SW_TGT_DIR         = $(SOFTWARE_DIR)/target
+SW_TGT_COMMON_DIR  = $(SW_TGT_DIR)/common_dsbpm
 SW_SCRIPTS_DIR     = $(SOFTWARE_DIR)/scripts
 SW_SRC_DIR     	   = $(SOFTWARE_DIR)/src
 SW_APP_DIR         = $(SOFTWARE_DIR)/app
