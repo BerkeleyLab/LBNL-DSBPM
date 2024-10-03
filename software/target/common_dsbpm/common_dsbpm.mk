@@ -9,7 +9,7 @@ __SRC_COMMON_DSBPM_FILES = \
 	iic.c
 SRC_COMMON_DSBPM_FILES = $(addprefix $(COMMON_DSBPM_DIR)/, $(__SRC_COMMON_DSBPM_FILES))
 
-# For top-level makfile
+# For top-level makefile
 HDR_FILES += $(HDR_COMMON_DSBPM_FILES)
 SRC_FILES += $(SRC_COMMON_DSBPM_FILES)
 INCLUDE_DIRS += $(COMMON_DSBPM_DIR)
