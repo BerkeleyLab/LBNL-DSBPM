@@ -15,9 +15,6 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
 
 # Gateware jobs
-# Gitlab doesn't seem to suport the usage of variables in
-# a "dependencies" or "needs" statement. So, unroll the job
-# description, as to simplify job descriptions
 gw_dsbpm:
   before_script:
     - cd gateware/syn/dsbpm_${PLATFORM} && ls /non-free
@@ -37,9 +34,11 @@ gw_dsbpm:
 
 # Software jobs
 # Gitlab doesn't seem to suport the usage of variables in
-# a "dependencies" or "needs" statement. So, unroll the job
-# description...
+# a matrix:parallel statement. So, deuplicate the variables in
+# the variables section
 sw_dsbpm_zcu208:
+  variables:
+    PLATFORM: zcu208
   before_script:
     - cd software/app/dsbpm
   stage: software
@@ -70,6 +69,8 @@ sw_dsbpm_zcu208:
         VCXO_TYPE: 160
 
 sw_dsbpm_lbl208:
+  variables:
+    PLATFORM: lbl208
   before_script:
     - cd software/app/dsbpm
   stage: software
