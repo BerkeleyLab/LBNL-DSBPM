@@ -6,7 +6,6 @@ XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
 FPGA_PLATFORM ?= zu48
 FPGA_APPLICATION ?= dsbpm
-SAMPLES_PER_TURN ?= 81
 
 CMD_SEP = ;
 __THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
