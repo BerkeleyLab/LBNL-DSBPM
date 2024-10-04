@@ -5,7 +5,7 @@ COMMUNICATION = gty
 XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
 FPGA_PLATFORM ?= zu48
-FPGA_APPLICATION ?= dsbpm_vcxo_160
+FPGA_APPLICATION ?= dsbpm
 SAMPLES_PER_TURN ?= 81
 
 CMD_SEP = ;
@@ -15,7 +15,7 @@ THIS_DIR := $(__THIS_DIR:/=)
 include ../../../dir_list.mk
 
 # Top level design name
-TARGET ?= dsbpm_vcxo_160_zcu208
+TARGET ?= dsbpm_zcu208
 
 PLATFORM_TARGET = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(FPGA_APPLICATION)
 

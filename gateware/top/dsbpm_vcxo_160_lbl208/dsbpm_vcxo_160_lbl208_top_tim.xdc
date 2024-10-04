@@ -1,1 +1,0 @@
-../common_dsbpm/common_dsbpm_top_tim.xdc
