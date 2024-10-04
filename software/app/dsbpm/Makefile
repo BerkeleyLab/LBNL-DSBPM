@@ -147,9 +147,9 @@ LIB_DIRS = $(TARGET_VARIANT)/platform/export/platform/sw/platform/standalone_dom
 LIB_FLAGS = $(addprefix -L, $(LIB_DIRS))
 LIBS = -Wl,--start-group,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lmetal,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-llwip4,-lgcc,-lc,--end-group -Wl,--start-group,-lxilffs,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxilpm,-lxil,-lgcc,-lc,--end-group -Wl,--start-group,-lxil,-lgcc,-lc,-lmetal,--end-group
 
-ifeq ($(TARGET),dsbpm_vcxo_160_zcu208)
+ifeq ($(TARGET),dsbpm_zcu208)
 	USER_FLAGS += -D__TARGET_DSBPM_ZCU208__
-else ifeq ($(TARGET),dsbpm_vcxo_160_lbl208)
+else ifeq ($(TARGET),dsbpm_lbl208)
 	USER_FLAGS += -D__TARGET_DSBPM_LBL208__
 else
 	USER_FLAGS += -D__TARGET_NOT_RECOGNIZED__
