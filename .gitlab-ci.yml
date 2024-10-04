@@ -43,8 +43,9 @@ sw_dsbpm_zcu208:
   before_script:
     - cd software/app/dsbpm
   stage: software
-  script: >
-    - make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
+  script:
+    - >
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
       PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH
       make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM}
   # Get artifacts from this job, needed to compile the sofware
@@ -75,8 +76,9 @@ sw_dsbpm_lbl208:
   before_script:
     - cd software/app/dsbpm
   stage: software
-  script: >
-    - make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
+  script:
+    - >
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
       PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH
       make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM}
   # Get artifacts from this job, needed to compile the sofware
