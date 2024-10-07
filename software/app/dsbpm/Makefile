@@ -120,10 +120,10 @@ __ST7789V_HDR_FILES =\
 	lv_font.h \
 	st7789v.h
 
-ifeq ($(TARGET),dsbpm_vcxo_160_zcu208)
+ifeq ($(TARGET),dsbpm_zcu208)
 	__ST7789V_SRC_FILES += \
 		st7789v_stub.c
-else ifeq ($(TARGET),dsbpm_vcxo_160_lbl208)
+else ifeq ($(TARGET),dsbpm_lbl208)
 	__ST7789V_SRC_FILES += \
 		st7789v_stub.c
 #else ifeq ($(TARGET),dsbpm_???)
