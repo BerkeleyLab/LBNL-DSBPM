@@ -231,24 +231,10 @@ OBUF #(
     .O(EVR_FB_CLK),
     .I(evrClkMon)
 );
+`endif
 
 // CLk104 SYNC in reference clock
-wire evrClkSyncInMon;
-ODDRE1 ODDRE1_CLK104_SYNC_IN_MON (
-   .Q(evrClkSyncInMon),
-   .C(evrClk),
-   .D1(1'b1),
-   .D2(1'b0),
-   .SR(1'b0)
-);
-
-OBUF #(
-    .SLEW("FAST")
-) OBUF_CLK104_SYNC_IN (
-    .O(CLK104_SYNC_IN),
-    .I(evrClkSyncInMon)
-);
-`endif
+assign CLK104_SYNC_IN = 1'b0;
 
 // Check EVR markers
 wire [31:0] evrSyncStatus;
