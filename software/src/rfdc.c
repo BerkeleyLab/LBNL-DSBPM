@@ -483,7 +483,7 @@ rfDCsyncType(int type)
      * giving up
      */
     if (type & RFDC_ADC) {
-        for (i = 0; i < 100; ++i) {
+        for (i = 0; i < 8; ++i) {
             status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_ADC_TILE, &adcConfig);
             if (status == XRFDC_MTS_OK) {
                 printf("ADC synchronization complete.\n");
@@ -492,12 +492,12 @@ rfDCsyncType(int type)
 
             warn("XRFdc_MultiConverter_Sync (tiles) ADC failed: %d, try %d",
                     status, i);
-            microsecondSpin(1000);
+            microsecondSpin(10000);
         }
     }
 
     if (type & RFDC_DAC) {
-        for (i = 0; i < 100; ++i) {
+        for (i = 0; i < 8; ++i) {
             status = XRFdc_MultiConverter_Sync(&rfDC, XRFDC_DAC_TILE, &dacConfig);
             if (status == XRFDC_MTS_OK) {
                 printf("DAC synchronization complete.\n");
@@ -506,7 +506,7 @@ rfDCsyncType(int type)
 
             warn("XRFdc_MultiConverter_Sync (tiles) DAC failed: %d, try %d",
                     status, i);
-            microsecondSpin(1000);
+            microsecondSpin(10000);
         }
     }
 
