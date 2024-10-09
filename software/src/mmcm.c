@@ -86,7 +86,7 @@ mmcmSetRFDCDivClkDivider(int divider)
     uint32_t v = RD(XPAR_RFADC_MMCM_BASEADDR, 0x200);
 
     v &= ~0xFF;
-    v |= (divider & 0xFF);
+    v |= (divInt & 0xFF);
     WR(XPAR_RFADC_MMCM_BASEADDR, 0x200, v);
 }
 
@@ -146,7 +146,7 @@ void
 mmcmInit(void)
 {
     showRFDCClk("Old ");
-    mmcmSetRFDCDivClkDivider(ADC_CLK_MMCM_DIVCLK_DIVIDER)
+    mmcmSetRFDCDivClkDivider(ADC_CLK_MMCM_DIVCLK_DIVIDER);
     mmcmSetRFDCClkMultiplier(ADC_CLK_MMCM_MULTIPLIER);
     mmcmSetRFDCClk0Divider(ADC_CLK_MMCM_CLK0_DIVIDER);
     mmcmSetRFDCClk1Divider(ADC_CLK_MMCM_CLK1_DIVIDER);
