@@ -2,10 +2,10 @@
  * RFDC AXI MMCM (adcClk/dacClk source) configuration
  * Values are scaled by a factor of 1000.
  */
-#define ADC_CLK_MMCM_DIVCLK_DIVIDE 41000
-#define ADC_CLK_MMCM_MULTIPLIER    101250
-#define ADC_CLK_MMCM_CLK0_DIVIDER  10000
-#define ADC_CLK_MMCM_CLK1_DIVIDER  10000
+#define ADC_CLK_MMCM_DIVCLK_DIVIDER 41000
+#define ADC_CLK_MMCM_MULTIPLIER     101250
+#define ADC_CLK_MMCM_CLK0_DIVIDER   10000
+#define ADC_CLK_MMCM_CLK1_DIVIDER   10000
 
 /*
  * Number of ADC AXI clocks per SYSREF clock
