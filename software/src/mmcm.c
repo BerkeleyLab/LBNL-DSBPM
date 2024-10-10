@@ -80,6 +80,17 @@ showRFDCClk(const char *msg)
 }
 
 void
+mmcmSetRFDCDivClkDivider(int divider)
+{
+    int divInt = divider / 1000;
+    uint32_t v = RD(XPAR_RFADC_MMCM_BASEADDR, 0x200);
+
+    v &= ~0xFF;
+    v |= (divInt & 0xFF);
+    WR(XPAR_RFADC_MMCM_BASEADDR, 0x200, v);
+}
+
+void
 mmcmSetRFDCClkMultiplier(int multiplier)
 {
     int mulInt = multiplier / 1000;
@@ -135,8 +146,9 @@ void
 mmcmInit(void)
 {
     showRFDCClk("Old ");
+    mmcmSetRFDCDivClkDivider(ADC_CLK_MMCM_DIVCLK_DIVIDER);
     mmcmSetRFDCClkMultiplier(ADC_CLK_MMCM_MULTIPLIER);
-    mmcmSetRFDCClk0Divider(ADC_CLK_MMCM_DIVIDER);
+    mmcmSetRFDCClk0Divider(ADC_CLK_MMCM_CLK0_DIVIDER);
     mmcmSetRFDCClk1Divider(ADC_CLK_MMCM_CLK1_DIVIDER);
     mmcmStartReconfig();
     showRFDCClk("");
