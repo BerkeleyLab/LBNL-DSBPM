@@ -13,4 +13,7 @@ int lmx2594Readback(int muxSelect, uint32_t *values, int capacity);
 int lmx2594ReadbackFirst(uint32_t *values, int capacity);
 int lmx2594Status(void);
 
+void lmk04xxConfig(const uint32_t *values, int n);
+int lmk04xxReadback(uint32_t *values, int capacity);
+
 #endif  /* _RFCLK_H_ */

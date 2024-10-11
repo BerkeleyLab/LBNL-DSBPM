@@ -11,20 +11,38 @@
 /*
  * Configure LMK04208/LMK04828B jitter cleaner.
  */
+
+void
+lmk04xxConfig(const uint32_t *values, int n)
+{
+    int i;
+
+    /*
+     * Write registers with values from TICS Pro.
+     */
+    for (i = 0 ; i < n ; i++) {
+        lmk04828Bwrite(values[i]);
+    }
+}
+
+int
+lmk04xxReadback(uint32_t *values, int capacity)
+{
+    int i;
+    int n = lmk04xxSize;
+    for (i = 0 ; (i < n) && (i < capacity) ; i++) {
+        int r = n - i - 1;
+        int v = lmk04828Bread(r);
+        *values++ = (r << 8) | (v & 0xFF);
+    }
+
+    return n;
+}
+
 void
 rfClkInitLMK04xx(void)
 {
-    int i;
-#if defined (__TARGET_DSBPM_ZCU208__) || defined(__TARGET_DSBPM_LBL208__)
-    static const uint32_t lmk04828B[] = {
-#include "lmk04828B.h"
-    };
-    for (i = 0 ; i < sizeof lmk04828B / sizeof lmk04828B[0] ; i++) {
-        lmk04828Bwrite(lmk04828B[i]);
-    }
-#else
-#   error "Unrecognized __TARGET_XXX__ macro"
-#endif
+    lmk04xxConfig(lmk04xxValues, lmk04xxSize);
 }
 
 /*
