@@ -82,6 +82,9 @@ extern const unsigned int lmx2594MuxSel[];
 extern const uint32_t *lmx2594Values[];
 extern uint32_t lmx2594Sizes[];
 
+extern const uint32_t *lmk04xxValues;
+extern uint32_t lmk04xxSize;
+
 void iicInit(void);
 int iicRead(unsigned int deviceIndex, int subAddress, uint8_t *buf, int n);
 int iicWrite(unsigned int deviceIndex, const uint8_t *buf, int n);

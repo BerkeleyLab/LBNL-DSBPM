@@ -26,11 +26,24 @@ const uint32_t lmx2594DACDefaults[] = {
 #include "lmx2594DAC.h"
 };
 
+const uint32_t lmk04xxDefaults[] = {
+#if defined (__TARGET_DSBPM_ZCU208__) || defined(__TARGET_DSBPM_LBL208__)
+#   include "lmk04828B.h"
+#else
+#   error "Unrecognized __TARGET_XXX__ macro"
+#endif
+};
+
 #define LMX2594ADC_SIZE (sizeof lmx2594ADCDefaults/sizeof lmx2594ADCDefaults[0])
 #define LMX2594DAC_SIZE (sizeof lmx2594DACDefaults/sizeof lmx2594DACDefaults[0])
 
+#define LMK04XX_SIZE    (sizeof lmk04xxDefaults/sizeof lmk04xxDefaults[0])
+
 const uint32_t *lmx2594Values[LMX2594_MUX_SEL_SIZE];
 uint32_t lmx2594Sizes[LMX2594_MUX_SEL_SIZE];
+
+const uint32_t *lmk04xxValues;
+uint32_t lmk04xxSize;
 
 #define C0_M_IIC_ADDRESS  0x75   /* Address of controller 0 multiplexer */
 #define C1_M0_IIC_ADDRESS 0x74   /* Address of controller 1 multiplexer 0 */
@@ -146,6 +159,9 @@ iicInit(void)
     lmx2594Values[1] = lmx2594DACDefaults;
     lmx2594Sizes[0] = LMX2594ADC_SIZE;
     lmx2594Sizes[1] = LMX2594DAC_SIZE;
+
+    lmk04xxValues = lmk04xxDefaults;
+    lmk04xxSize = LMK04XX_SIZE;
 
     /*
      * Configure port expander 0_1 as output and drive low -- this works
