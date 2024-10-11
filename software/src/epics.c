@@ -191,13 +191,39 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
     case DSBPM_PROTOCOL_CMD_HI_PLL_CONFIG:
         switch (lo) {
         case DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_SET:
-            lmx2594ConfigAllSame(cmdp->args, commandArgCount);
+            if (idx >= LMX2594_MUX_SEL_SIZE) {
+                return -1;
+            }
+
+            lmx2594Config(idx, cmdp->args, commandArgCount);
             replyArgCount = 0;
             break;
 
         case DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_GET:
-            replyArgCount = lmx2594ReadbackFirst(replyp->args,
+            if (idx >= LMX2594_MUX_SEL_SIZE) {
+                return -1;
+            }
+
+            replyArgCount = lmx2594Readback(idx, replyp->args,
                                                      DSBPM_PROTOCOL_ARG_CAPACITY);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_PLL_CLEANER_CONFIG_LO_SET:
+            if (idx != 0) {
+                return -1;
+            }
+
+            lmk04xxConfig(cmdp->args, commandArgCount);
+            replyArgCount = 0;
+            break;
+
+        case DSBPM_PROTOCOL_CMD_PLL_CLEANER_CONFIG_LO_GET:
+            if (idx != 0) {
+                return -1;
+            }
+
+            replyArgCount = lmk04xxReadback(replyp->args,
+                    DSBPM_PROTOCOL_ARG_CAPACITY);
             break;
 
         default: return -1;
