@@ -11,6 +11,7 @@
 #include "epics.h"
 #include "epicsApplicationCommands.h"
 #include "evr.h"
+#include "iic.h"
 #include "gpio.h"
 #include "mgt.h"
 #include "rfclk.h"
