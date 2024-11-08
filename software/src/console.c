@@ -263,7 +263,7 @@ cmdNET(int argc, char **argv)
     char *endp;
 
     if (argc == 1) {
-        ipv4 = systemParameters.netConfig.ipv4;
+        ipv4 = currentNetConfig.ipv4;
     }
     else if (argc == 2) {
         cp = argv[1];
@@ -332,7 +332,7 @@ cmdMAC(int argc, char **argv)
     char *cp;
 
     if (argc == 1) {
-        memcpy(macBuf, systemParameters.netConfig.ethernetMAC, sizeof macBuf);
+        memcpy(macBuf, currentNetConfig.ethernetMAC, sizeof macBuf);
     }
     else if (argc == 2) {
         i = parseMAC(argv[1], macBuf);

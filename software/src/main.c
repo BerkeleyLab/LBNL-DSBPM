@@ -72,8 +72,6 @@ main(void)
 {
     int isRecovery;
     int bpm;
-    unsigned char *enetMAC;
-    const struct sysNetParms *ipv4;
     static ip_addr_t ipaddr, netmask, gateway;
     static struct netif netif;
 
@@ -101,14 +99,12 @@ main(void)
 
     if (isRecovery) {
         printf("==== Recovery mode -- Using default network parameters ====\n");
-        enetMAC = netDefault.ethernetMAC;
-        ipv4 = &netDefault.ipv4;
+        currentNetConfig = netDefault;
     }
     else {
-        enetMAC = systemParameters.netConfig.ethernetMAC;
-        ipv4 = &systemParameters.netConfig.ipv4;
+        currentNetConfig = systemParameters.netConfig;
     }
-    drawIPv4Address(&ipv4->address, isRecovery);
+    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
 
     /* Set up hardware */
     sysmonInit();
@@ -131,15 +127,15 @@ main(void)
     /* Start network */
     lwip_init();
     printf("Network:\n");
-    printf("       MAC: %s\n", formatMAC(enetMAC));
-    showNetworkConfiguration(ipv4);
-    ipaddr.addr = ipv4->address;
-    netmask.addr = ipv4->netmask;
-    gateway.addr = ipv4->gateway;
+    printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
+    showNetworkConfiguration(&currentNetConfig.ipv4);
+    ipaddr.addr = currentNetConfig.ipv4.address;
+    netmask.addr = currentNetConfig.ipv4.netmask;
+    gateway.addr = currentNetConfig.ipv4.gateway;
     printf("If things lock up at this point it's likely because\n"
            "the network driver can't negotiate a connection.\n");
     displayShowStatusLine("-- Intializing Network --");
-    if (!xemac_add(&netif, &ipaddr, &netmask, &gateway, enetMAC,
+    if (!xemac_add(&netif, &ipaddr, &netmask, &gateway, currentNetConfig.ethernetMAC,
                                                      XPAR_XEMACPS_0_BASEADDR)) {
         fatal("Error adding network interface");
     }

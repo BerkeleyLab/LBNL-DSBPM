@@ -17,6 +17,7 @@ struct systemParameters systemParametersCandidate;
 #define MAX_SYSTEM_PARAMETERS_BUF_SIZE (1+MB(1))
 
 struct sysNetConfig netDefault;
+struct sysNetConfig currentNetConfig;
 struct systemParameters systemParametersDefault;
 
 /*
