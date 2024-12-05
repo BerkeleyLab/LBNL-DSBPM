@@ -47,16 +47,23 @@ class IDT8A34XXXVisitor(NodeVisitor):
                 reg_list.append(child[0])
 
         for reg in reg_list:
-            regline = f"{reg['Size']}, {reg['Offset']},"
-            reg_str = f"{reg['Data']}".removeprefix("0x")
-            n = 2 # byte
+            # offset will be part of data, so size = size +1
+            reg_size = str(int(reg['Size'], 16) + 1)
+            reg_offset = reg['Offset']
+
+            reg_data_str = f"{reg['Data']}".removeprefix("0x")
             # Split hex number into hex bytes
             n = 2 # byte
-            regsplit = [reg_str[i : i + n] for i in range(0, len(reg_str), n)]
-            regdata = [f"0x{d.ljust(2, '0')}" for d in regsplit]
-            regdata_str = ", ".join(regdata)
+            reg_data_split = [reg_data_str[i : i + n] for i in range(0, len(reg_data_str), n)]
+            reg_data = [f"0x{d.ljust(2, '0')}" for d in reg_data_split]
+            # reverse the list because we write LSB first
+            reg_data.reverse()
+            # add device I2C address to the data buffer
+            reg_data.insert(0, reg_offset)
 
-            regline += " {" + regdata_str + "}"
+            reg_data_str = ", ".join(reg_data)
+
+            regline = reg_size + ", {" + reg_data_str + "}"
 
             print("{" + regline + "},")
 
