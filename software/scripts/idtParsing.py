@@ -40,13 +40,25 @@ class IDT8A34XXXVisitor(NodeVisitor):
     def visit_expr(self, node, visited_children):
         """ Returns the overall output """
 
-        output = []
+        reg_list = []
 
         for child in visited_children:
             if (child and child[0]) is not None:
-                output.append(child[0])
+                reg_list.append(child[0])
 
-        return output
+        for reg in reg_list:
+            regline = f"{reg['Size']}, {reg['Offset']},"
+            reg_str = f"{reg['Data']}".removeprefix("0x")
+            n = 2 # byte
+            # Split hex number into hex bytes
+            n = 2 # byte
+            regsplit = [reg_str[i : i + n] for i in range(0, len(reg_str), n)]
+            regdata = [f"0x{d.ljust(2, '0')}" for d in regsplit]
+            regdata_str = ", ".join(regdata)
+
+            regline += " {" + regdata_str + "}"
+
+            print("{" + regline + "},")
 
     def visit_reginstr(self, node, visited_children):
         """ Makes a dictionary of a register instruction """
@@ -61,7 +73,7 @@ class IDT8A34XXXVisitor(NodeVisitor):
     def visit_offsetcl(self, node, visited_children):
         """ Gets the offset clause key/value pair, return a tuple """
         key, _, value = node.children
-        return key.text, value.text
+        return key.text, "0x" + value.text
 
     def visit_datacl(self, node, visited_children):
         """ Gets the data clause key/value pair, return a tuple """
@@ -100,7 +112,6 @@ def main():
 
         iv = IDT8A34XXXVisitor()
         output = iv.visit(tree)
-        print(output)
 
 
 if __name__ == "__main__":
