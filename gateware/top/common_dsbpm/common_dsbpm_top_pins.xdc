@@ -10,6 +10,14 @@ set_property IOSTANDARD LVCMOS12    [get_ports SFP2_TX_ENABLE]
 set_property PACKAGE_PIN M32        [get_ports USER_MGT_SI570_CLK_N]
 set_property PACKAGE_PIN M31        [get_ports USER_MGT_SI570_CLK_P]
 
+# 8A34001 Q7 OUT
+set_property PACKAGE_PIN V32        [get_ports IDT_8A34001_Q7_CLK_N]
+set_property PACKAGE_PIN V31        [get_ports IDT_8A34001_Q7_CLK_P]
+
+# 8A34001 Q11 OUT
+set_property PACKAGE_PIN Y32        [get_ports IDT_8A34001_Q11_CLK_N]
+set_property PACKAGE_PIN Y31        [get_ports IDT_8A34001_Q11_CLK_P]
+
 # User DIP switch
 set_property PACKAGE_PIN M18        [get_ports {DIP_SWITCH[0]}]
 set_property PACKAGE_PIN L14        [get_ports {DIP_SWITCH[1]}]

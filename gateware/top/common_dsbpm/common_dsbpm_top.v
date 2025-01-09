@@ -27,6 +27,9 @@ module common_dsbpm_top #(
     output SFP2_TX_P, SFP2_TX_N,
     output SFP2_TX_ENABLE,
 
+    input  IDT_8A34001_Q7_CLK_P, IDT_8A34001_Q7_CLK_N,
+    input  IDT_8A34001_Q11_CLK_P, IDT_8A34001_Q11_CLK_N,
+
     input  FPGA_REFCLK_OUT_C_P, FPGA_REFCLK_OUT_C_N,
     input  SYSREF_FPGA_C_P, SYSREF_FPGA_C_N,
     input  SYSREF_RFSOC_C_P, SYSREF_RFSOC_C_N,
@@ -135,6 +138,42 @@ BUFG_GT userMgtChkClkBuf (.O(mgtRefClkMonitor),
                           .CLRMASK(1'b0),
                           .DIV(3'd0),
                           .I(USER_MGT_SI570_CLK_O2));
+
+// Get IDT_8A34001_Q7_CLK MGT reference clock
+// Configure ODIV2 to run at O/2.
+wire IDT_8A34001_Q7_CLK, IDT_8A34001_Q7_CLK_O2;
+IBUFDS_GTE4 #(.REFCLK_HROW_CK_SEL(2'b01))
+  EVR_GTY_gt129_refclk1Buf(.I(IDT_8A34001_Q7_CLK_P),
+                              .IB(IDT_8A34001_Q7_CLK_N),
+                              .CEB(1'b0),
+                              .O(IDT_8A34001_Q7_CLK),
+                              .ODIV2(IDT_8A34001_Q7_CLK_O2));
+wire mgt129Refclk1Monitor;
+BUFG_GT userMgt129Refclk1Buf (.O(mgt129Refclk1Monitor),
+                          .CE(1'b1),
+                          .CEMASK(1'b0),
+                          .CLR(1'b0),
+                          .CLRMASK(1'b0),
+                          .DIV(3'd0),
+                          .I(IDT_8A34001_Q7_CLK_O2));
+
+// Get USER MGT reference clock
+// Configure ODIV2 to run at O/2.
+wire IDT_8A34001_Q11_CLK, IDT_8A34001_Q11_CLK_O2;
+IBUFDS_GTE4 #(.REFCLK_HROW_CK_SEL(2'b01))
+  EVR_GTY_gt128_refclk1Buf(.I(IDT_8A34001_Q11_CLK_P),
+                              .IB(IDT_8A34001_Q11_CLK_N),
+                              .CEB(1'b0),
+                              .O(IDT_8A34001_Q11_CLK),
+                              .ODIV2(IDT_8A34001_Q11_CLK_O2));
+wire mgt128Refclk1Monitor;
+BUFG_GT userMgt128Refclk1Buf (.O(mgt128Refclk1Monitor),
+                          .CE(1'b1),
+                          .CEMASK(1'b0),
+                          .CLR(1'b0),
+                          .CLRMASK(1'b0),
+                          .DIV(3'd0),
+                          .I(IDT_8A34001_Q11_CLK_O2));
 
 //////////////////////////////////////////////////////////////////////////////
 // Front panel controls
@@ -389,7 +428,7 @@ assign ddrTriggerBus = ddrForward[71:64];
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-localparam FREQ_COUNTERS_NUM = 11;
+localparam FREQ_COUNTERS_NUM = 13;
 localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
 reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
@@ -411,6 +450,8 @@ freq_multi_count #(
   frequencyCounters (
     .unk_clk({user_sysref_dac, user_sysref_adc,
               dacClk, rfdc_dac0_clk,
+              mgt128Refclk1Monitor,
+              mgt129Refclk1Monitor,
               mgtRefClkMonitor,
               FPGA_REFCLK_OUT_C, rfdc_adc0_clk,
               adcClk, evrTxClk,
