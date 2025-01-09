@@ -49,6 +49,7 @@ __SRC_FILES = \
 	lossOfBeam.c \
 	main.c \
 	mgt.c \
+	idtClk.c \
 	mmcm.c \
 	platform_zynqmp.c \
 	positionCalc.c \
@@ -87,6 +88,7 @@ __HDR_FILES = \
 	lossOfBeam.h \
 	lv_font.h \
 	mgt.h \
+	idtClk.h \
 	mmcm.h \
 	platform.h \
 	platform_config.h \
@@ -165,7 +167,7 @@ INCLUDE_FLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 .PHONY: all clean bsp
 
 vpath *.c $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
-vpath *.h $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
+vpath *.h $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR) $(SW_TGT_COMMON_DIR)
 vpath *.o $(SW_SRC_DIR) $(ST7789V_DIR)
 
 %softwareBuildDate.h: $(SRC_FILES) $(HDR_FILES)

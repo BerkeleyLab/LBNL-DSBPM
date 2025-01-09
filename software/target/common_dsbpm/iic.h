@@ -37,7 +37,7 @@
 #define IIC_INDEX_SI5341                 24
 #define IIC_INDEX_USER_SI570             25
 #define IIC_INDEX_USER_MGT_SI570         26
-#define IIC_INDEX_SI5382                 27
+#define IIC_INDEX_8A34001                27
 #define IIC_INDEX_I2C2SPI                28
 #define IIC_INDEX_RFMC                   29
 #define IIC_INDEX_FMC                    30

@@ -17,6 +17,8 @@
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+
 /*
  * Diagnostics
  */
