@@ -13,6 +13,7 @@
 #include "ffs.h"
 #include "gpio.h"
 #include "iic.h"
+#include "idtClk.h"
 #include "mgt.h"
 #include "mmcm.h"
 #include "platform.h"
@@ -109,6 +110,7 @@ main(void)
     /* Set up hardware */
     sysmonInit();
     sfpChk();
+    mgtClkIDTInit();
     eyescanInit();
     mgtInit();
     evrInit();
