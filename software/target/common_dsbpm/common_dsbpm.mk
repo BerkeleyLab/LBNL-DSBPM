@@ -22,3 +22,6 @@ INCLUDE_DIRS += $(COMMON_DSBPM_DIR)
 
 %lmx2594DAC.h: %lmx2594DAC.tcs
 	sh $(SW_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
+
+%idt8A34001.h: %idt8A34001.txt
+	python $(SW_SCRIPTS_DIR)/idtParsing.py -f $< > $@
