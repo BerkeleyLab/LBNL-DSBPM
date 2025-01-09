@@ -28,7 +28,7 @@ INCLUDE_DIRS += $(COMMON_DSBPM_DIR)
 	sh $(SW_SCRIPTS_DIR)/createRFCLKheader.sh $< > $@
 
 %idt8A34001.h: %idt8A34001.txt
-	python $(SW_SCRIPTS_DIR)/idtParsing.py -f $< > $@
+	python3 $(SW_SCRIPTS_DIR)/idtParsing.py -f $< > $@
 
 clean::
 	$(RM) -rf $(HDR_GEN_COMMON_DSBPM_FILES)
