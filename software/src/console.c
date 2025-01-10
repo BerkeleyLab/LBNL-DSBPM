@@ -219,7 +219,7 @@ cmdFMON(int argc, char **argv)
         printf("           Frequency measurements are low accuracy.\n");
     }
     for (i = 0 ; i < sizeof names / sizeof names[0] ; i++) {
-        printf("%16s clock:%*.*f\n", names[i], usingPPS ? 11 : 8,
+        printf("%20s clock:%*.*f\n", names[i], usingPPS ? 11 : 8,
                                                usingPPS ? 6 : 4,
                                                frequencyMonitorGet(i) / 1.0e6);
     }
