@@ -23,6 +23,8 @@ module dsbpm_lbl208 #(
     parameter SITE_CIC_SA_DECIMATE      = 2000, // Max SA decimation rate
     parameter SITE_CIC_STAGES           = 2) (
     input  USER_MGT_SI570_CLK_P, USER_MGT_SI570_CLK_N,
+    input  IDT_8A34001_Q7_CLK_P, IDT_8A34001_Q7_CLK_N,
+    input  IDT_8A34001_Q11_CLK_P, IDT_8A34001_Q11_CLK_N,
     input  SFP2_RX_P, SFP2_RX_N,
     output SFP2_TX_P, SFP2_TX_N,
     output SFP2_TX_ENABLE,
@@ -116,6 +118,10 @@ common_dsbpm_top #(
     common_dsbpm_top_inst (
     .USER_MGT_SI570_CLK_P(USER_MGT_SI570_CLK_P),
     .USER_MGT_SI570_CLK_N(USER_MGT_SI570_CLK_N),
+    .IDT_8A34001_Q7_CLK_P(IDT_8A34001_Q7_CLK_P),
+    .IDT_8A34001_Q7_CLK_N(IDT_8A34001_Q7_CLK_N),
+    .IDT_8A34001_Q11_CLK_P(IDT_8A34001_Q11_CLK_P),
+    .IDT_8A34001_Q11_CLK_N(IDT_8A34001_Q11_CLK_N),
     .SFP2_RX_P(SFP2_RX_P),
     .SFP2_RX_N(SFP2_RX_N),
     .SFP2_TX_P(SFP2_TX_P),
