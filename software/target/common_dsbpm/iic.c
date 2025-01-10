@@ -77,7 +77,7 @@ static struct deviceInfo deviceTable[] = {
     { 1,            1, 0x36 }, // SI5341
     { 1,            2, 0x5D }, // USER_SI570
     { 1,            3, 0x5D }, // USER_MGT_SI570
-    { 1,            4, 0x58 }, // 8A34001
+    { 1,            4, 0x5B }, // 8A34001
     { 1,            5, 0x2F }, // I2C2SPI
     { 1,            6, 0x50 }, // RFMC
     { 1,            8, 0x50 }, // FMC
