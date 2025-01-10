@@ -41,6 +41,7 @@ sw_dsbpm_zcu208:
   variables:
     PLATFORM: zcu208
   before_script:
+    - python3 -m pip install -r requirements.txt
     - cd software/app/dsbpm
   stage: software
   script:
@@ -74,6 +75,7 @@ sw_dsbpm_lbl208:
   variables:
     PLATFORM: lbl208
   before_script:
+    - python3 -m pip install -r requirements.txt
     - cd software/app/dsbpm
   stage: software
   script:
