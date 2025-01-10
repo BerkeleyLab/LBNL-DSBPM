@@ -56,8 +56,6 @@ class IDT8A34XXXVisitor(NodeVisitor):
             n = 2 # byte
             reg_data_split = [reg_data_str[i : i + n] for i in range(0, len(reg_data_str), n)]
             reg_data = [f"0x{d.ljust(2, '0')}" for d in reg_data_split]
-            # reverse the list because we write LSB first
-            reg_data.reverse()
             # add device I2C address to the data buffer
             reg_data.insert(0, reg_offset)
 
