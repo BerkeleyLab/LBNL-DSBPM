@@ -2,6 +2,8 @@
 # build for GTY4 transceiver. The other MGT clocks are already constrained
 # by system.bd build
 create_clock -period 6.4 [get_ports USER_MGT_SI570_CLK_P]
+create_clock -period 6.4 [get_ports IDT_8A34001_Q7_CLK_P]
+create_clock -period 6.4 [get_ports IDT_8A34001_Q11_CLK_P]
 
 # RFDC clocks
 # 499.64 MHz
@@ -36,9 +38,11 @@ set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_obj
 # EVR to DAC clock, EVR hearbeat marker
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT1}]] $clk_dac_period
 
-# Set max delay path between USER_MGT_SI570_CLK_O2 and MGT ref clock,
+# Set max delay path between MGT reference clocks O2 and system clock,
 # only used at the frequency meter module
 set_max_delay -datapath_only -from [get_clocks USER_MGT_SI570_CLK_O2] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks IDT_8A34001_Q7_CLK_O2] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks IDT_8A34001_Q11_CLK_O2] -to [get_clocks clk_pl_0] $clk_pl_0_period
 
 # Set max delay path between SYS clock and RX MGT clock. Crossing domains already
 # and with ASYNC_REG properties in RTL.
