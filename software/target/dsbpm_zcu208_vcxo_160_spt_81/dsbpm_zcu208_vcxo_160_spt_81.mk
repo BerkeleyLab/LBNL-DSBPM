@@ -1,0 +1,21 @@
+__DSBPM_ZCU208_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+DSBPM_ZCU208_DIR := $(__DSBPM_ZCU208_DIR:/=)
+
+__HDR_GEN_DSBPM_ZCU208_FILES = \
+	lmk04828B.h \
+	lmx2594ADC.h \
+	lmx2594DAC.h
+HDR_GEN_DSBPM_ZCU208_FILES = $(addprefix $(DSBPM_ZCU208_DIR)/, $(__HDR_GEN_DSBPM_ZCU208_FILES))
+
+__HDR_DSBPM_ZCU208_FILES = \
+	config.h
+HDR_DSBPM_ZCU208_FILES = $(addprefix $(DSBPM_ZCU208_DIR)/, $(__HDR_DSBPM_ZCU208_FILES))
+
+# For top-level makfile
+HDR_FILES += $(HDR_GEN_DSBPM_ZCU208_FILES)
+HDR_FILES += $(HDR_DSBPM_ZCU208_FILES)
+
+include $(DSBPM_ZCU208_DIR)/../common_dsbpm/common_dsbpm.mk
+
+clean::
+	$(RM) -rf $(HDR_GEN_DSBPM_ZCU208_FILES)

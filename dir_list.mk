@@ -13,12 +13,15 @@ GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 BEDROCK_DIR        = $(SUBMODULES_DIR)/bedrock
 EVR_DIR            = $(MODULES_DIR)/evr
 
+GW_TOP_DIR         = $(GATEWARE_DIR)/top
+GW_TOP_COMMON_DIR  = $(GW_TOP_DIR)/common_dsbpm
 GW_SYN_DIR         = $(GATEWARE_DIR)/syn
 
 # Sofware
 
 SW_LIBS_DIR        = $(SOFTWARE_DIR)/libs
 SW_TGT_DIR         = $(SOFTWARE_DIR)/target
+SW_TGT_COMMON_DIR  = $(SW_TGT_DIR)/common_dsbpm
 SW_SCRIPTS_DIR     = $(SOFTWARE_DIR)/scripts
 SW_SRC_DIR     	   = $(SOFTWARE_DIR)/src
 SW_APP_DIR         = $(SOFTWARE_DIR)/app

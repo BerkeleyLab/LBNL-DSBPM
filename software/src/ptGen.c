@@ -28,6 +28,11 @@
  */
 #define NOBANK_RUN_BIT         0x1
 
+/*
+ * Coefficient scaling
+ */
+#define SCALE_FACTOR    ((double)0x7FFF)
+
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 #define PT_GEN_TABLE_BUF_SIZE       (2+(2*CFG_PT_GEN_ROW_CAPACITY))
@@ -84,6 +89,23 @@ writeCSR(unsigned int bpm, uint32_t value, uint32_t mask)
 }
 
 /*
+ * float->int scaling
+ */
+static int
+scale(double x)
+{
+    int i, neg = 0;
+
+    if (x < 0) {
+        x = -x;
+        neg = 1;
+    }
+    i = (x * SCALE_FACTOR) + 0.5;
+    if (neg) i = -i;
+    return i;
+}
+
+/*
  * Called when complete file has been uploaded to the TFTP server
  */
 int
@@ -100,23 +122,29 @@ ptGenSetTable(unsigned char *buf, int size)
         for (c = 0 ; c < colCount ; c++) {
             char expectedEnd = (c == (colCount - 1)) ? '\n' : ',';
             char *endp;
-            int x;
+            double x;
 
-            x = strtol((char *)cp, &endp, 0);
+            x = strtod((char *)cp, &endp);
             if ((*endp != expectedEnd)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
                 sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
                         r + 1, *endp, expectedEnd);
-                printf("Unexpected characters on line %d: %c (expected %c)\n",
+                printf("PtGen: Unexpected characters on line %d: %c (expected %c)\n",
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
-            *ip++ = x;
+            /* The odd-looking comparison is to deal with NANs */
+            if (!(x >= -1.0) && (x <= 1.0)) {
+                sprintf((char *)buf, "Value out of range at line %d", r + 1);
+                printf("PtGen: Value out of range at line %d\n", r + 1);
+                return -1;
+            }
+            *ip++ = scale(x);
             cp = (unsigned char *)endp + 1;
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
                     sprintf((char *)buf, "Too short at line %d", r + 1);
-                    printf("Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
+                    printf("PtGen: Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
                     return -1;
                 }
                 table[0] = r + 1;
@@ -128,7 +156,7 @@ ptGenSetTable(unsigned char *buf, int size)
         }
     }
     sprintf((char *)buf, "Too long at line %d", r + 1);
-    printf("Too long at line %d\n", r + 1);
+    printf("PtGen: Too long at line %d\n", r + 1);
     return -1;
 }
 
@@ -148,8 +176,8 @@ ptGenGetTable(unsigned char *buf)
         for (c = 0 ; c < colCount ; c++) {
             int i;
             char sep = (c == (colCount - 1)) ? '\n' : ',';
-            int v = *table++;
-            i = sprintf((char *)cp, "%d%c", v, sep);
+            double v = *table++ / SCALE_FACTOR;
+            i = sprintf((char *)cp, "%9.6f%c", v, sep);
             cp += i;
         }
     }
@@ -166,9 +194,9 @@ void ptGenRun(unsigned int bpm, int run)
 
     if (debugFlags & DEBUGFLAG_LOCAL_OSC_SHOW) {
         if (run)
-            printf("PT generation %u enbaled!\n", bpm);
+            printf("PtGen: PT generation %u enbaled!\n", bpm);
         else
-            printf("PT generation %u disabled!\n", bpm);
+            printf("PtGen: PT generation %u disabled!\n", bpm);
     }
 }
 
@@ -209,7 +237,7 @@ ptGenWrite(unsigned int bpm, int32_t *dst, const int32_t *src, int capacity)
         }
     }
     else {
-        printf("CORRUPT PT GENERATION TABLE\n");
+        printf("PtGen: CORRUPT PT GENERATION TABLE\n");
     }
 
     ptGenRun(bpm, 1);
@@ -246,7 +274,7 @@ void ptGenInit(unsigned int bpm)
      * the filesystem readback
      */
     if (!isPtGenRun(bpm)) {
-        printf("PT Generation failed to initialize by filesystem readback. "
+        printf("PtGen: PT Generation failed to initialize by filesystem readback. "
                 "Check previous errrors\n");
     }
 }
@@ -306,7 +334,7 @@ ptGenStashEEPROM()
 
     fr = f_read(&fil, tableBuf, sizeof(tableBuf), &nRead);
     if (fr != FR_OK) {
-        printf("PT generation table file read failed\n");
+        printf("PtGen: PT generation table file read failed\n");
         f_close(&fil);
         return -1;
     }

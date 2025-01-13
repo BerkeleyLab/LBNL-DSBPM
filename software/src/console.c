@@ -206,7 +206,9 @@ cmdFMON(int argc, char **argv)
                                    "ADC AXI",
                                    "RFDC ADC0",
                                    "FPGA_REFCLK_OUT",
-                                   "MGTref/2",
+                                   "MGT131 Ref1/2 (EVR)",
+                                   "MGT129 Ref1/2 (FOFB)",
+                                   "MGT128 Ref1/2 (FOFB)",
                                    "RFDC DAC0",
                                    "DAC AXI",
                                    "User SYSREF ADC",
@@ -217,7 +219,7 @@ cmdFMON(int argc, char **argv)
         printf("           Frequency measurements are low accuracy.\n");
     }
     for (i = 0 ; i < sizeof names / sizeof names[0] ; i++) {
-        printf("%16s clock:%*.*f\n", names[i], usingPPS ? 11 : 8,
+        printf("%20s clock:%*.*f\n", names[i], usingPPS ? 11 : 8,
                                                usingPPS ? 6 : 4,
                                                frequencyMonitorGet(i) / 1.0e6);
     }
@@ -263,7 +265,7 @@ cmdNET(int argc, char **argv)
     char *endp;
 
     if (argc == 1) {
-        ipv4 = systemParameters.netConfig.ipv4;
+        ipv4 = currentNetConfig.ipv4;
     }
     else if (argc == 2) {
         cp = argv[1];
@@ -332,7 +334,7 @@ cmdMAC(int argc, char **argv)
     char *cp;
 
     if (argc == 1) {
-        memcpy(macBuf, systemParameters.netConfig.ethernetMAC, sizeof macBuf);
+        memcpy(macBuf, currentNetConfig.ethernetMAC, sizeof macBuf);
     }
     else if (argc == 2) {
         i = parseMAC(argv[1], macBuf);

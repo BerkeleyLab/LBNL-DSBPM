@@ -13,77 +13,94 @@ variables:
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
   GIT_SUBMODULE_STRATEGY: normal
+  FF_SCRIPT_SECTIONS: "true"
 
 # Gateware jobs
-# Gitlab doesn't seem to suport the usage of variables in
-# a "dependencies" or "needs" statement. So, unroll the job
-# description, as to simplify job descriptions
-gw_dsbpm_vcxo_160_zcu208:
+gw_dsbpm:
   before_script:
-    - cd gateware/syn/dsbpm_vcxo_160_zcu208 && ls /non-free
+    - cd gateware/syn/dsbpm_${PLATFORM} && ls /non-free
   stage: gateware
   script:
-    - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_vcxo_160_zcu208_top.bit
+    - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_${PLATFORM}_top.bit
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     expire_in: 4 weeks
     paths:
-      - gateware/syn/dsbpm_vcxo_160_zcu208/dsbpm_vcxo_160_zcu208_top.bit
-      - gateware/syn/dsbpm_vcxo_160_zcu208/_xilinx/dsbpm_vcxo_160_zcu208_top/*.runs/impl_1/*.rpt
-      - gateware/syn/dsbpm_vcxo_160_zcu208/system.xsa
-
-gw_dsbpm_vcxo_117_zcu208:
-  before_script:
-    - cd gateware/syn/dsbpm_vcxo_117_zcu208 && ls /non-free
-  stage: gateware
-  script:
-    - make clean && PATH=$XILINX_VIVADO/bin:$PATH make dsbpm_vcxo_117_zcu208_top.bit
-  artifacts:
-    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
-    expire_in: 4 weeks
-    paths:
-      - gateware/syn/dsbpm_vcxo_117_zcu208/dsbpm_vcxo_117_zcu208_top.bit
-      - gateware/syn/dsbpm_vcxo_117_zcu208/_xilinx/dsbpm_vcxo_117_zcu208_top/*.runs/impl_1/*.rpt
-      - gateware/syn/dsbpm_vcxo_117_zcu208/system.xsa
+      - gateware/syn/dsbpm_${PLATFORM}/dsbpm_${PLATFORM}_top.bit
+      - gateware/syn/dsbpm_${PLATFORM}/_xilinx/dsbpm_${PLATFORM}_top/*.runs/impl_1/*.rpt
+      - gateware/syn/dsbpm_${PLATFORM}/system.xsa
+  parallel:
+    matrix:
+      - PLATFORM: [zcu208, lbl208]
 
 # Software jobs
 # Gitlab doesn't seem to suport the usage of variables in
-# a "dependencies" or "needs" statement. So, unroll the job
-# description...
-sw_dsbpm_vcxo_160_zcu208:
+# a matrix:parallel statement. So, deuplicate the variables in
+# the variables section
+sw_dsbpm_zcu208:
+  variables:
+    PLATFORM: zcu208
   before_script:
-    - cd software/app/dsbpm_vcxo_160
+    - python3 -m pip install -r requirements.txt
+    - cd software/app/dsbpm
   stage: software
   script:
-    - make TARGET=dsbpm_vcxo_160_zcu208 clean && PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH make TARGET=dsbpm_vcxo_160_zcu208
+    - >
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
+      PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM}
   # Get artifacts from this job, needed to compile the sofware
   needs:
-    - job: gw_dsbpm_vcxo_160_zcu208
+    - job: gw_dsbpm
+      parallel:
+        matrix:
+          - PLATFORM: zcu208
       artifacts: true
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     expire_in: 4 weeks
     paths:
-      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_zcu208/platform/zynqmp_fsbl/fsbl_a53.elf
-      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_zcu208/platform/export/platform/sw/platform/boot/pmufw.elf
-      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_zcu208.elf
-      - software/app/dsbpm_vcxo_160/dsbpm_vcxo_160_zcu208*.bin
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/zynqmp_fsbl/fsbl_a53.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/export/platform/sw/platform/boot/pmufw.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}*.bin
+  parallel:
+    matrix:
+      - SAMPLES_PER_TURN: [77, 81]
+        VCXO_TYPE: 117
+      - SAMPLES_PER_TURN: 81
+        VCXO_TYPE: 160
 
-sw_dsbpm_vcxo_117_zcu208:
+sw_dsbpm_lbl208:
+  variables:
+    PLATFORM: lbl208
   before_script:
-    - cd software/app/dsbpm_vcxo_117
+    - python3 -m pip install -r requirements.txt
+    - cd software/app/dsbpm
   stage: software
   script:
-    - make TARGET=dsbpm_vcxo_117_zcu208 clean && PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH make TARGET=dsbpm_vcxo_117_zcu208
+    - >
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM} clean &&
+      PATH=$XILINX_VITIS/bin:$XILINX_VITIS/gnu/aarch64/lin/aarch64-none/bin:$PATH
+      make SAMPLES_PER_TURN=${SAMPLES_PER_TURN} VCXO_TYPE=${VCXO_TYPE} TARGET=dsbpm_${PLATFORM}
   # Get artifacts from this job, needed to compile the sofware
   needs:
-    - job: gw_dsbpm_vcxo_117_zcu208
+    - job: gw_dsbpm
+      parallel:
+        matrix:
+          - PLATFORM: lbl208
       artifacts: true
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     expire_in: 4 weeks
     paths:
-      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208/platform/zynqmp_fsbl/fsbl_a53.elf
-      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208/platform/export/platform/sw/platform/boot/pmufw.elf
-      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208.elf
-      - software/app/dsbpm_vcxo_117/dsbpm_vcxo_117_zcu208*.bin
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/zynqmp_fsbl/fsbl_a53.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/export/platform/sw/platform/boot/pmufw.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}.elf
+      - software/app/dsbpm/dsbpm_${PLATFORM}_vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}*.bin
+  parallel:
+    matrix:
+      - SAMPLES_PER_TURN: [77, 81]
+        VCXO_TYPE: 117
+      - SAMPLES_PER_TURN: 81
+        VCXO_TYPE: 160
