@@ -19,6 +19,7 @@ module preliminaryProcessing #(
     parameter GAIN_WIDTH              = MAG_WIDTH + 1,
     parameter PRODUCT_WIDTH           = ADC_WIDTH + LO_WIDTH - 1) (
     input                        clk,
+
     input       [DATA_WIDTH-1:0] gpioData,
     input                        localOscillatorAddressStrobe,
     input                        localOscillatorCsrStrobe,
@@ -30,6 +31,7 @@ module preliminaryProcessing #(
     input             [NADC-1:0] autotrimGainStrobes,
     output wire [DATA_WIDTH-1:0] autotrimCsr, autotrimThreshold,
     output wire [DATA_WIDTH-1:0] gainRBK0, gainRBK1, gainRBK2, gainRBK3,
+
     input                 [63:0] sysTimestamp,
     input                        adcClk,
     input        [ADC_WIDTH-1:0] adc0, adc1, adc2, adc3,
@@ -42,38 +44,62 @@ module preliminaryProcessing #(
     output wire  [ADC_WIDTH-1:0] adc0OutPh, adc1OutPh, adc2OutPh, adc3OutPh,
     input                        adcExceedsThreshold, adcUseThisSample,
     output wire                  adcLoSynced,
+
     input                        evrClk,
     input                        evrFaMarker, evrSaMarker,
     input                 [63:0] evrTimestamp,
     input                        evrSinglePassTrigger,evrHbMarker,
+
     output reg                   sysSingleTrig,
     output wire                  adcSingleTrig,
-    output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg, plProductsDbg, phProductsDbg,
-    output wire  [LO_WIDTH-1:0]  rfLOcosDbg, rfLOsinDbg, plLOcosDbg, plLOsinDbg, phLOcosDbg, phLOsinDbg,
-    output wire  [8*MAG_WIDTH-1:0] tbtSumsDbg,
-    output wire                  tbtSumsValidDbg,
-    output wire  [4*MAG_WIDTH-1:0] tbtMagsDbg,
-    output wire                  tbtMagsValidDbg,
+
     output wire                  tbtToggle,
     output reg                   rfTbtMagValid,
     output wire  [MAG_WIDTH-1:0] rfTbtMag0, rfTbtMag1, rfTbtMag2, rfTbtMag3,
-    output wire                  cicFaMagValidDbg,
-    output wire  [MAG_WIDTH-1:0] cicFaMag0Dbg, cicFaMag1Dbg, cicFaMag2Dbg, cicFaMag3Dbg,
+
     output wire                  faToggle,
     output reg                   rfFaMagValid,
     output wire  [MAG_WIDTH-1:0] rfFaMag0, rfFaMag1, rfFaMag2, rfFaMag3,
+
     output wire                  adcTbtLoadAccumulator,
     output wire                  adcTbtLatchAccumulator,
     output wire                  adcMtLoadAndLatch,
+
     output reg                   saToggle,
     output reg                   saValid,
     output reg            [63:0] sysSaTimestamp,
+
     output reg   [MAG_WIDTH-1:0] rfMag0, rfMag1, rfMag2, rfMag3,
     output reg   [MAG_WIDTH-1:0] plMag0, plMag1, plMag2, plMag3,
     output reg   [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
     output reg                   ptToggle,
     output reg                   ptValid,
-    output reg                   overflowFlag);
+    output reg                   overflowFlag,
+
+    // Debug outputs
+    output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg,
+    output wire  [8*PRODUCT_WIDTH-1:0] plProductsDbg,
+    output wire  [8*PRODUCT_WIDTH-1:0] phProductsDbg,
+
+    output wire  [LO_WIDTH-1:0]  rfLOcosDbg,
+    output wire  [LO_WIDTH-1:0]  rfLOsinDbg,
+    output wire  [LO_WIDTH-1:0]  plLOcosDbg,
+    output wire  [LO_WIDTH-1:0]  plLOsinDbg,
+    output wire  [LO_WIDTH-1:0]  phLOcosDbg
+    output wire  [LO_WIDTH-1:0]  phLOsinDbg,
+
+    output wire  [8*MAG_WIDTH-1:0] tbtSumsDbg,
+    output wire                  tbtSumsValidDbg,
+
+    output wire  [4*MAG_WIDTH-1:0] tbtMagsDbg,
+    output wire                  tbtMagsValidDbg,
+
+    output wire  [MAG_WIDTH-1:0] cicFaMag0Dbg
+    output wire  [MAG_WIDTH-1:0] cicFaMag1Dbg,
+    output wire  [MAG_WIDTH-1:0] cicFaMag2Dbg,
+    output wire  [MAG_WIDTH-1:0] cicFaMag3Dbg,
+    output wire                  cicFaMagValidDbg
+);
 
 wire sysUseRMS           = localOscillatorCsr[2];
 wire sysIsSinglePassMode = localOscillatorCsr[1];
