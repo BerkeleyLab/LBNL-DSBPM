@@ -662,9 +662,11 @@ always @(posedge clk) begin
     end
 end
 
+///////////////////////////////////////////////////////////////////////////////
 // The CORDIC block
 // Shared by all channels and all streams
 // Extra bits are SA decimation flag, FA decimation flag and channel number.
+///////////////////////////////////////////////////////////////////////////////
 localparam CORDIC_M_TUSER_WIDTH = STREAM_SELECT_WIDTH + 4;
 wire [CORDIC_M_TUSER_WIDTH-1:0] cordicTUSER;
 wire [1:0] cordicADC = cordicTUSER[0+:2];
@@ -691,7 +693,7 @@ reg [(4*MAG_WIDTH)-1:0] tbtMags;
 reg tbtTrimStrobe = 0;
 always @(posedge clk) begin
     if (cordicTVALID && (cordicStream == STREAM_TBT)) begin
-        tbtMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] = cordicMagnitude;
+        tbtMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] <= cordicMagnitude;
         if (cordicADC == 2'd3) tbtTrimStrobe <= 1;
     end
     else begin
