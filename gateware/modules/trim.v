@@ -29,12 +29,6 @@ for (i = 0 ; i < 4 ; i = i + 1) begin : trim
     wire [GAIN_WIDTH-1:0] gain = gains[i*GAIN_WIDTH+:GAIN_WIDTH];
     wire [PRODUCT_WIDTH-1:0] product;
 
-//`ifndef SIMULATE
-//    trimMultiplier trimMultiplier (.CLK(clk),
-//                                   .A(mag),
-//                                   .B(gain),
-//                                   .P(product));
-//`endif
     fullMultiplier #(
         .NUM_PIPELINE_LEVELS(MULTIPLIER_LATENCY),
         .A_WIDTH(MAG_WIDTH),
