@@ -691,7 +691,7 @@ reg [(4*MAG_WIDTH)-1:0] tbtMags;
 reg tbtTrimStrobe = 0;
 always @(posedge clk) begin
     if (cordicTVALID && (cordicStream == STREAM_TBT)) begin
-        tbtMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] = cordicMagnitude;
+        tbtMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] <= cordicMagnitude;
         if (cordicADC == 2'd3) tbtTrimStrobe <= 1;
     end
     else begin
