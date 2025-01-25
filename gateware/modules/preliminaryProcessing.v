@@ -32,6 +32,14 @@ module preliminaryProcessing #(
     output wire [DATA_WIDTH-1:0] autotrimCsr, autotrimThreshold,
     output wire [DATA_WIDTH-1:0] gainRBK0, gainRBK1, gainRBK2, gainRBK3,
 
+    input             [NADC-1:0] calRFGainStrobes,
+    output wire [DATA_WIDTH-1:0] gainCalRFRBK0, gainCalRFRBK1, gainCalRFRBK2, gainCalRFRBK3,
+
+    input             [NADC-1:0] calPLGainStrobes,
+    output wire [DATA_WIDTH-1:0] gainCalPLRBK0, gainCalPLRBK1, gainCalPLRBK2, gainCalPLRBK3,
+    input             [NADC-1:0] calPHGainStrobes,
+    output wire [DATA_WIDTH-1:0] gainCalPHRBK0, gainCalPHRBK1, gainCalPHRBK2, gainCalPHRBK3,
+
     input                 [63:0] sysTimestamp,
     input                        adcClk,
     input        [ADC_WIDTH-1:0] adc0, adc1, adc2, adc3,
@@ -70,9 +78,9 @@ module preliminaryProcessing #(
     output reg            [63:0] sysSaTimestamp,
 
     output reg   [MAG_WIDTH-1:0] rfMag0, rfMag1, rfMag2, rfMag3,
-    output reg   [MAG_WIDTH-1:0] plMag0, plMag1, plMag2, plMag3,
-    output reg   [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
-    output reg                   ptToggle,
+    output wire  [MAG_WIDTH-1:0] plMag0, plMag1, plMag2, plMag3,
+    output wire  [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
+    output wire                  ptToggle,
     output reg                   ptValid,
     output reg                   overflowFlag,
 
@@ -85,16 +93,16 @@ module preliminaryProcessing #(
     output wire  [LO_WIDTH-1:0]  rfLOsinDbg,
     output wire  [LO_WIDTH-1:0]  plLOcosDbg,
     output wire  [LO_WIDTH-1:0]  plLOsinDbg,
-    output wire  [LO_WIDTH-1:0]  phLOcosDbg
+    output wire  [LO_WIDTH-1:0]  phLOcosDbg,
     output wire  [LO_WIDTH-1:0]  phLOsinDbg,
 
     output wire  [8*MAG_WIDTH-1:0] tbtSumsDbg,
-    output wire                  tbtSumsValidDbg,
+    output wire                    tbtSumsValidDbg,
 
     output wire  [4*MAG_WIDTH-1:0] tbtMagsDbg,
-    output wire                  tbtMagsValidDbg,
+    output wire                    tbtMagsValidDbg,
 
-    output wire  [MAG_WIDTH-1:0] cicFaMag0Dbg
+    output wire  [MAG_WIDTH-1:0] cicFaMag0Dbg,
     output wire  [MAG_WIDTH-1:0] cicFaMag1Dbg,
     output wire  [MAG_WIDTH-1:0] cicFaMag2Dbg,
     output wire  [MAG_WIDTH-1:0] cicFaMag3Dbg,
@@ -715,24 +723,42 @@ fourCordic #(.IO_WIDTH(MAG_WIDTH),
               .overflowFlag(cordicOverflowFlag));
 
 // TBT values don't undergo any filtering
-reg [(4*MAG_WIDTH)-1:0] tbtMags;
-reg tbtTrimStrobe = 0;
+reg [(NADC*MAG_WIDTH)-1:0] tbtUncalMags;
+reg tbtUncalTrimStrobe = 0;
 always @(posedge clk) begin
     if (cordicTVALID && (cordicStream == STREAM_TBT)) begin
-        tbtMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] <= cordicMagnitude;
-        if (cordicADC == 2'd3) tbtTrimStrobe <= 1;
+        tbtUncalMags[cordicADC*MAG_WIDTH+: MAG_WIDTH] <= cordicMagnitude;
+        if (cordicADC == 2'd3) tbtUncalTrimStrobe <= 1;
     end
     else begin
-        tbtTrimStrobe <= 0;
+        tbtUncalTrimStrobe <= 0;
     end
 end
 
-assign tbtMagsDbg = tbtMags;
-assign tbtMagsValidDbg = tbtTrimStrobe;
+assign tbtMagsDbg = tbtUncalMags;
+assign tbtMagsValidDbg = tbtUncalTrimStrobe;
+
+// Calibration gain for TbT magnitudes
+wire [(NADC*MAG_WIDTH)-1:0] tbtMags;
+wire tbtTrimStrobe;
+trimGPIO #(.NUM_GAINS(NADC),
+           .MAG_WIDTH(MAG_WIDTH),
+           .GAIN_WIDTH(GAIN_WIDTH))
+  tbtCalibrationTrim (
+    .clk(clk),
+
+    .gpioData(gpioData),
+    .gainStrobes(calRFGainStrobes),
+    .gainRBK({gainCalRFRBK3, gainCalRFRBK2, gainCalRFRBK1, gainCalRFRBK0}),
+
+    .strobe(tbtUncalTrimStrobe),
+    .magnitudes(tbtUncalMags),
+    .trimmedStrobe(tbtTrimStrobe),
+    .trimmed(tbtMags));
 
 // CIC PILOT TONE FA DECIMATION
 wire ptDecimatedToggle;
-wire [(4*MAG_WIDTH)-1:0] decimatedPlMags, decimatedPhMags;
+wire [(NADC*MAG_WIDTH)-1:0] decimatedPlUncalMags, decimatedPhUncalMags;
 faDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_FA_DECIMATE),
              .STAGES(CIC_STAGES))
@@ -743,7 +769,7 @@ faDecimate #(.DATA_WIDTH(MAG_WIDTH),
     .inputValid(cordicTVALID && (cordicStream == STREAM_PL)),
     .cicShift(faCICshift),
     .decimateFlag(cordicFaDecimateFlag),
-    .outputData(decimatedPlMags));
+    .outputData(decimatedPlUncalMags));
 
 faDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_FA_DECIMATE),
@@ -757,23 +783,68 @@ faDecimate #(.DATA_WIDTH(MAG_WIDTH),
     .decimateFlag(cordicFaDecimateFlag),
     // High pilot tone comes last so use it to flip ptDecimatedToggle.
     .outputToggle(ptDecimatedToggle),
-    .outputData(decimatedPhMags));
+    .outputData(decimatedPhUncalMags));
 
 // Pilot tone toggle.
 reg ptDecimatedMatch = 0;
-reg [(4*MAG_WIDTH)-1:0] trimPlMags, trimPhMags;
+reg [MAG_WIDTH-1:0] plUncalMag0, plUncalMag1, plUncalMag2, plUncalMag3;
+reg [MAG_WIDTH-1:0] phUncalMag0, phUncalMag1, phUncalMag2, phUncalMag3;
+reg ptUncalToggle = 0;
+reg ptUncalToggle_d = 0;
+reg ptUncalSrobe;
 always @(posedge clk) begin
+    ptUncalToggle_d <= ptUncalToggle;
+
     if (ptDecimatedMatch != ptDecimatedToggle) begin
         ptDecimatedMatch <= ptDecimatedToggle;
-        {plMag3, plMag2, plMag1, plMag0} <= decimatedPlMags;
-        {phMag3, phMag2, phMag1, phMag0} <= decimatedPhMags;
-        ptToggle <= !ptToggle;
+        {plUncalMag3, plUncalMag2, plUncalMag1, plUncalMag0} <= decimatedPlUncalMags;
+        {phUncalMag3, phUncalMag2, phUncalMag1, phUncalMag0} <= decimatedPhUncalMags;
+        ptUncalToggle <= !ptUncalToggle;
+    end
+
+    if (ptUncalToggle != ptUncalToggle_d) begin
+        ptUncalSrobe <= 1'b1;
+    end
+    else begin
+        ptUncalSrobe <= 1'b0;
     end
 end
 
+// Calibration gain for PL magnitudes
+trimGPIO #(.NUM_GAINS(NADC),
+           .MAG_WIDTH(MAG_WIDTH),
+           .GAIN_WIDTH(GAIN_WIDTH))
+  plCalibrationTrim (
+    .clk(clk),
+
+    .gpioData(gpioData),
+    .gainStrobes(calPLGainStrobes),
+    .gainRBK({gainCalPLRBK3, gainCalPLRBK2, gainCalPLRBK1, gainCalPLRBK0}),
+
+    .strobe(ptUncalSrobe),
+    .magnitudes({plUncalMag3, plUncalMag2, plUncalMag1, plUncalMag0}),
+    .trimmedToggle(),
+    .trimmed({plMag3, plMag2, plMag1, plMag0}));
+
+// Calibration gain for PH magnitudes
+trimGPIO #(.NUM_GAINS(NADC),
+           .MAG_WIDTH(MAG_WIDTH),
+           .GAIN_WIDTH(GAIN_WIDTH))
+  phCalibrationTrim (
+    .clk(clk),
+
+    .gpioData(gpioData),
+    .gainStrobes(calPHGainStrobes),
+    .gainRBK({gainCalPHRBK3, gainCalPHRBK2, gainCalPHRBK1, gainCalPHRBK0}),
+
+    .strobe(ptUncalSrobe),
+    .magnitudes({phUncalMag3, phUncalMag2, phUncalMag1, phUncalMag0}),
+    .trimmedToggle(ptToggle),
+    .trimmed({phMag3, phMag2, phMag1, phMag0}));
+
 // CIC RF FA DECIMATION
-wire rfDecimatedToggle;
-wire [MAG_WIDTH-1:0] cicFaMag0, cicFaMag1, cicFaMag2, cicFaMag3;
+wire rfUncalDecimatedToggle;
+wire [MAG_WIDTH-1:0] cicFaUncalMag0, cicFaUncalMag1, cicFaUncalMag2, cicFaUncalMag3;
 reg saDecimateFlag;
 always @(posedge clk) begin
     if (cordicTVALID && cordicFaDecimateFlag) begin
@@ -790,14 +861,47 @@ faDecimate #(.DATA_WIDTH(MAG_WIDTH),
     .inputValid(cordicTVALID && (cordicStream == STREAM_RF)),
     .cicShift(faCICshift),
     .decimateFlag(cordicFaDecimateFlag),
-    .outputToggle(rfDecimatedToggle),
-    .outputData({cicFaMag3, cicFaMag2, cicFaMag1, cicFaMag0}));
+    .outputToggle(rfUncalDecimatedToggle),
+    .outputData({cicFaUncalMag3, cicFaUncalMag2, cicFaUncalMag1, cicFaUncalMag0}));
 
 assign cicFaMagValidDbg = faTrimStrobe;
-assign cicFaMag3Dbg = cicFaMag3;
-assign cicFaMag2Dbg = cicFaMag2;
-assign cicFaMag1Dbg = cicFaMag1;
-assign cicFaMag0Dbg = cicFaMag0;
+assign cicFaMag3Dbg = cicFaUncalMag3;
+assign cicFaMag2Dbg = cicFaUncalMag2;
+assign cicFaMag1Dbg = cicFaUncalMag1;
+assign cicFaMag0Dbg = cicFaUncalMag0;
+
+// Calibration gain for FA magnitudes
+
+reg rfUncalDecimatedToggle_d;
+reg rfUncalDecimatedSrobe;
+always @(posedge clk) begin
+    rfUncalDecimatedToggle_d <= rfUncalDecimatedToggle;
+
+    if (rfUncalDecimatedToggle != rfUncalDecimatedToggle_d) begin
+        rfUncalDecimatedSrobe <= 1'b1;
+    end
+    else begin
+        rfUncalDecimatedSrobe <= 1'b0;
+    end
+end
+
+// Calibration gain for FA magnitudes
+wire rfDecimatedToggle;
+wire [MAG_WIDTH-1:0] cicFaMag0, cicFaMag1, cicFaMag2, cicFaMag3;
+trimGPIO #(.NUM_GAINS(NADC),
+           .MAG_WIDTH(MAG_WIDTH),
+           .GAIN_WIDTH(GAIN_WIDTH))
+  faCalibrationTrim (
+    .clk(clk),
+
+    .gpioData(gpioData),
+    .gainStrobes(calRFGainStrobes),
+    .gainRBK({gainCalRFRBK3, gainCalRFRBK2, gainCalRFRBK1, gainCalRFRBK0}),
+
+    .strobe(rfUncalDecimatedSrobe),
+    .magnitudes({cicFaUncalMag3, cicFaUncalMag2, cicFaUncalMag1, cicFaUncalMag0}),
+    .trimmedToggle(rfDecimatedToggle),
+    .trimmed({cicFaMag3, cicFaMag2, cicFaMag1, cicFaMag0}));
 
 //
 // Auto trim
