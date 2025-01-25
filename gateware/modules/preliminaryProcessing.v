@@ -851,7 +851,8 @@ always @(posedge clk) begin
     end
 end
 
-trim #(.MAG_WIDTH(MAG_WIDTH),
+trim #(.NUM_GAINS(NADC),
+       .MAG_WIDTH(MAG_WIDTH),
        .GAIN_WIDTH(GAIN_WIDTH))
   faTrim (
     .clk(clk),
@@ -861,7 +862,8 @@ trim #(.MAG_WIDTH(MAG_WIDTH),
     .trimmedToggle(faToggle),
     .trimmed({rfFaMag3, rfFaMag2, rfFaMag1, rfFaMag0}));
 
-trim #(.MAG_WIDTH(MAG_WIDTH),
+trim #(.NUM_GAINS(NADC),
+       .MAG_WIDTH(MAG_WIDTH),
        .GAIN_WIDTH(GAIN_WIDTH))
   tbtTrim (
     .clk(clk),
