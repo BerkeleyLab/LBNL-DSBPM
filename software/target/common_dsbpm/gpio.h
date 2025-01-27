@@ -79,8 +79,20 @@
 #define GPIO_IDX_DACTABLE_ADDRESS        72 // DAC table address
 #define GPIO_IDX_DACTABLE_CSR            73 // DAC table CSR
 #define GPIO_IDX_AFE_SPI_CSR             74 // AFE SPI devices (R/W)
+#define GPIO_IDX_RF_GAIN_FACTOR_0        75 // ADC 0 RF gain
+#define GPIO_IDX_RF_GAIN_FACTOR_1        76 // ADC 1 RF gain
+#define GPIO_IDX_RF_GAIN_FACTOR_2        77 // ADC 2 RF gain
+#define GPIO_IDX_RF_GAIN_FACTOR_3        78 // ADC 3 RF gain
+#define GPIO_IDX_PL_GAIN_FACTOR_0        79 // ADC 0 low freq pilot tone gain
+#define GPIO_IDX_PL_GAIN_FACTOR_1        80 // ADC 1 low freq pilot tone gain
+#define GPIO_IDX_PL_GAIN_FACTOR_2        81 // ADC 2 low freq pilot tone gain
+#define GPIO_IDX_PL_GAIN_FACTOR_3        82 // ADC 3 low freq pilot tone gain
+#define GPIO_IDX_PH_GAIN_FACTOR_0        83 // ADC 0 high freq pilot tone gain
+#define GPIO_IDX_PH_GAIN_FACTOR_1        84 // ADC 1 high freq pilot tone gain
+#define GPIO_IDX_PH_GAIN_FACTOR_2        85 // ADC 2 high freq pilot tone gain
+#define GPIO_IDX_PH_GAIN_FACTOR_3        86 // ADC 3 high freq pilot tone gain
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_AFE_SPI_CSR-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_PH_GAIN_FACTOR_3-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
 // For compatibility
