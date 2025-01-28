@@ -79,6 +79,12 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
                 adcChannel, chainNumber));
         pk->gainFactor[i] = GPIO_READ(REG(GPIO_IDX_ADC_GAIN_FACTOR_0 +
                 adcChannel, chainNumber));
+        pk->calibRFFactor[i] = GPIO_READ(REG(GPIO_IDX_RF_GAIN_FACTOR_0 +
+                adcChannel, chainNumber));
+        pk->calibPLFactor[i] = GPIO_READ(REG(GPIO_IDX_PL_GAIN_FACTOR_0 +
+                adcChannel, chainNumber));
+        pk->calibPHFactor[i] = GPIO_READ(REG(GPIO_IDX_PH_GAIN_FACTOR_0 +
+                adcChannel, chainNumber));
         pk->rfADCDSA[i] = rfADCGetDSADSBPM(chainNumber, adcChannel);
         pk->afeAtt[i] = afeAttenGet(chainNumber, adcChannel);
 
