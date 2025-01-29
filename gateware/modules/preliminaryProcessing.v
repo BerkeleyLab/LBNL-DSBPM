@@ -735,9 +735,6 @@ always @(posedge clk) begin
     end
 end
 
-assign tbtMagsDbg = tbtUncalMags;
-assign tbtMagsValidDbg = tbtUncalTrimStrobe;
-
 // Calibration gain for TbT magnitudes
 wire [(NADC*MAG_WIDTH)-1:0] tbtMags;
 wire tbtTrimStrobe;
@@ -755,6 +752,9 @@ trimGPIO #(.NUM_GAINS(NADC),
     .magnitudes(tbtUncalMags),
     .trimmedStrobe(tbtTrimStrobe),
     .trimmed(tbtMags));
+
+assign tbtMagsDbg = tbtMags;
+assign tbtMagsValidDbg = tbtTrimStrobe;
 
 // CIC PILOT TONE FA DECIMATION
 wire ptDecimatedToggle;
@@ -864,12 +864,6 @@ faDecimate #(.DATA_WIDTH(MAG_WIDTH),
     .outputToggle(rfUncalDecimatedToggle),
     .outputData({cicFaUncalMag3, cicFaUncalMag2, cicFaUncalMag1, cicFaUncalMag0}));
 
-assign cicFaMagValidDbg = faTrimStrobe;
-assign cicFaMag3Dbg = cicFaUncalMag3;
-assign cicFaMag2Dbg = cicFaUncalMag2;
-assign cicFaMag1Dbg = cicFaUncalMag1;
-assign cicFaMag0Dbg = cicFaUncalMag0;
-
 // Calibration gain for FA magnitudes
 
 reg rfUncalDecimatedToggle_d;
@@ -887,6 +881,7 @@ end
 
 // Calibration gain for FA magnitudes
 wire rfDecimatedToggle;
+wire rfDecimatedStrobe;
 wire [MAG_WIDTH-1:0] cicFaMag0, cicFaMag1, cicFaMag2, cicFaMag3;
 trimGPIO #(.NUM_GAINS(NADC),
            .MAG_WIDTH(MAG_WIDTH),
@@ -901,7 +896,14 @@ trimGPIO #(.NUM_GAINS(NADC),
     .strobe(rfUncalDecimatedSrobe),
     .magnitudes({cicFaUncalMag3, cicFaUncalMag2, cicFaUncalMag1, cicFaUncalMag0}),
     .trimmedToggle(rfDecimatedToggle),
+    .trimmedStrobe(rfDecimatedStrobe),
     .trimmed({cicFaMag3, cicFaMag2, cicFaMag1, cicFaMag0}));
+
+assign cicFaMagValidDbg = rfDecimatedStrobe;
+assign cicFaMag3Dbg = cicFaMag3;
+assign cicFaMag2Dbg = cicFaMag2;
+assign cicFaMag1Dbg = cicFaMag1;
+assign cicFaMag0Dbg = cicFaMag0;
 
 //
 // Auto trim
