@@ -2,6 +2,7 @@
 // Convert ADC values to synchronously-demodulated or RMS magnitudes
 //
 module preliminaryProcessing #(
+    parameter CHIPSCOPE_DBG           = "FALSE",
     parameter SYSCLK_RATE             = 100000000,
     parameter MAG_WIDTH               = 26,
     parameter IQ_DATA                 = "FALSE",
@@ -1116,57 +1117,69 @@ always @(posedge clk) begin
     end
 end
 
-//`ifndef SIMULATE
-//
-//wire [255:0] probe;
-//ila_td256_s4096_cap ila_td256_s4096_cap_inst (
-//    .clk(clk),
-//    .probe0(probe)
-//);
-//
-//assign probe[3] = ptToggle;
-//assign probe[4] = ptToggle_d;
-//assign probe[5] = sysPtStable;
-//assign probe[6] = sysPtStable_m;
-//assign probe[7] = ptDecimatedToggle;
-//assign probe[8] = ptDecimatedMatch;
-//assign probe[9] = awaitGainsAndRf;
-//assign probe[10] = gainDoneMatch;
-//assign probe[11] = rfDecimatedMatch;
-//assign probe[12] = rfDecimatedToggle;
-//assign probe[13] = faTrimStrobe;
-//assign probe[14] = adcMtLoadAndLatch;
-//assign probe[15] = rfFaMagValid;
-//assign probe[16] = faTrimStrobe;
-//assign probe[18:17] = cordicADC;
-//assign probe[19] = cordicTVALID;
-//assign probe[21:20] = cordicStream;
-//assign probe[22] = adcFaSync;
-//assign probe[23] = adcFaDecimateFlag;
-//assign probe[24] = sysFaDecimateFlag;
-//assign probe[25] = sysMtMatch_p;
-//assign probe[26] = sysMtToggle_p;
-//assign probe[27] = evrFaMarker;
-//assign probe[28] = adcFaEvent_m;
-//assign probe[29] = adcFaEvent;
-//assign probe[30] = adcFaEvent_d1;
-//assign probe[31] = adcMtLoadAndLatchToggle;
-//assign probe[32] = saDecimateFlag;
-//assign probe[33] = saDecimatedToggle;
-//assign probe[34] = saValid;
-//assign probe[35] = faToggle;
-//assign probe[36] = evrSaMarker;
-//assign probe[37] = adcSaSync;
-//assign probe[38] = adcSaDecimateFlag;
-//assign probe[39] = sysSaDecimateFlag;
-//assign probe[40] = cordicSaDecimateFlag;
-//assign probe[41] = cordicFaDecimateFlag;
-//
-//assign probe[64+MAG_WIDTH-1:64] = rfFaMag0;
-//assign probe[96+MAG_WIDTH-1:96] = cicFaMag0;
-//assign probe[128+MAG_WIDTH-1:128] = cordicMagnitude;
-//assign probe[160+MAG_WIDTH-1:160] = rfSaMag0;
-//
-//`endif
+generate
+if (CHIPSCOPE_DBG != "TRUE" && CHIPSCOPE_DBG != "FALSE") begin
+    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
+
+generate
+if (CHIPSCOPE_DBG == "TRUE") begin
+
+`ifndef SIMULATE
+
+wire [255:0] probe;
+ila_td256_s4096_cap ila_td256_s4096_cap_inst (
+    .clk(clk),
+    .probe0(probe)
+);
+
+assign probe[3] = ptToggle;
+assign probe[4] = ptToggle_d;
+assign probe[5] = sysPtStable;
+assign probe[6] = sysPtStable_m;
+assign probe[7] = ptDecimatedToggle;
+assign probe[8] = ptDecimatedMatch;
+assign probe[9] = awaitGainsAndRf;
+assign probe[10] = gainDoneMatch;
+assign probe[11] = rfDecimatedMatch;
+assign probe[12] = rfDecimatedToggle;
+assign probe[13] = faTrimStrobe;
+assign probe[14] = adcMtLoadAndLatch;
+assign probe[15] = rfFaMagValid;
+assign probe[16] = faTrimStrobe;
+assign probe[18:17] = cordicADC;
+assign probe[19] = cordicTVALID;
+assign probe[21:20] = cordicStream;
+assign probe[22] = adcFaSync;
+assign probe[23] = adcFaDecimateFlag;
+assign probe[24] = sysFaDecimateFlag;
+assign probe[25] = sysMtMatch_p;
+assign probe[26] = sysMtToggle_p;
+assign probe[27] = evrFaMarker;
+assign probe[28] = adcFaEvent_m;
+assign probe[29] = adcFaEvent;
+assign probe[30] = adcFaEvent_d1;
+assign probe[31] = adcMtLoadAndLatchToggle;
+assign probe[32] = saDecimateFlag;
+assign probe[33] = saDecimatedToggle;
+assign probe[34] = saValid;
+assign probe[35] = faToggle;
+assign probe[36] = evrSaMarker;
+assign probe[37] = adcSaSync;
+assign probe[38] = adcSaDecimateFlag;
+assign probe[39] = sysSaDecimateFlag;
+assign probe[40] = cordicSaDecimateFlag;
+assign probe[41] = cordicFaDecimateFlag;
+
+assign probe[64+MAG_WIDTH-1:64] = rfFaMag0;
+assign probe[96+MAG_WIDTH-1:96] = cicFaMag0;
+assign probe[128+MAG_WIDTH-1:128] = cordicMagnitude;
+assign probe[160+MAG_WIDTH-1:160] = rfSaMag0;
+
+`endif
+
+end // end if
+endgenerate
 
 endmodule
