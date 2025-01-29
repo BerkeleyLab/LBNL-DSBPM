@@ -16,6 +16,7 @@
 #include "util.h"
 #include "ptGen.h"
 #include "autotrim.h"
+#include "calibrationGains.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
 
