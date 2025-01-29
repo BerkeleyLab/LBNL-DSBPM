@@ -1136,8 +1136,6 @@ ila_td256_s4096_cap ila_td256_s4096_cap_inst (
 
 assign probe[3] = ptToggle;
 assign probe[4] = ptToggle_d;
-assign probe[5] = sysPtStable;
-assign probe[6] = sysPtStable_m;
 assign probe[7] = ptDecimatedToggle;
 assign probe[8] = ptDecimatedMatch;
 assign probe[9] = awaitGainsAndRf;

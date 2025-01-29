@@ -1767,7 +1767,8 @@ assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
     magPAD, prelimProcPhMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
     magPAD, prelimProcPhMag3[dsbpm] };
-preliminaryProcessing #(.SYSCLK_RATE(SYSCLK_RATE),
+preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
+                        .SYSCLK_RATE(SYSCLK_RATE),
                         .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
                         .MAG_WIDTH(MAG_WIDTH),
                         .IQ_DATA(IQ_DATA),
