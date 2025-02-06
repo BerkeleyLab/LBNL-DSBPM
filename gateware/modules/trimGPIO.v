@@ -60,6 +60,14 @@ always @(posedge clk) begin
     end
 end
 
+generate
+for(i = 0; i < NUM_GAINS; i = i+1) begin
+
+assign gainRBK[i*GPIO_WIDTH+:GPIO_WIDTH] = {{(GPIO_WIDTH-GAIN_WIDTH){1'b0}} ,gains[i*GAIN_WIDTH+:GAIN_WIDTH]};
+
+end
+endgenerate
+
 trim #(
     .NUM_GAINS(NUM_GAINS),
     .MAG_WIDTH(MAG_WIDTH),
