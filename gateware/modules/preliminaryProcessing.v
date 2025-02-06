@@ -880,7 +880,8 @@ always @(posedge clk) begin
     end
 end
 
-// Calibration gain for FA magnitudes
+// Calibration gain for FA magnitudes. We apply the same gains
+// for TbT and FA
 wire rfDecimatedToggle;
 wire rfDecimatedStrobe;
 wire [MAG_WIDTH-1:0] cicFaMag0, cicFaMag1, cicFaMag2, cicFaMag3;
@@ -890,9 +891,11 @@ trimGPIO #(.NUM_GAINS(NADC),
   faCalibrationTrim (
     .clk(clk),
 
+    // We apply the same gains for TbT and FA. No need to read
+    // the readback from FA
     .gpioData(gpioData),
     .gainStrobes(calRFGainStrobes),
-    .gainRBK({gainCalRFRBK3, gainCalRFRBK2, gainCalRFRBK1, gainCalRFRBK0}),
+    .gainRBK(),
 
     .strobe(rfUncalDecimatedSrobe),
     .magnitudes({cicFaUncalMag3, cicFaUncalMag2, cicFaUncalMag1, cicFaUncalMag0}),
