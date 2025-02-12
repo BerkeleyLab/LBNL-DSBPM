@@ -56,13 +56,11 @@ SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc $(TARGET)_top_ddr_tim.xdc
 include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
 
-IP_CORES += evrGTY rmsBandSelect trimMultiplier positionCalcDivider positionCalcMultiplier adcCordic adcToSysFIFO ila_td256_s4096_cap
+IP_CORES += evrGTY rmsBandSelect positionCalcDivider positionCalcMultiplier adcCordic adcToSysFIFO ila_td256_s4096_cap
 evrGTY_DIR = $(PLATFORM_TARGET)/evrGTY
 evrGTY_TOP = $(evrGTY_DIR)/synth/evrGTY.v
 rmsBandSelect_DIR = $(PLATFORM_TARGET)/rmsBandSelect
 rmsBandSelect_TOP = $(rmsBandSelect_DIR)/synth/rmsBandSelect.vhd
-trimMultiplier_DIR = $(PLATFORM_TARGET)/trimMultiplier
-trimMultiplier_TOP = $(trimMultiplier_DIR)/synth/trimMultiplier.vhd
 positionCalcDivider_DIR = $(PLATFORM_TARGET)/positionCalcDivider
 positionCalcDivider_TOP = $(positionCalcDivider_DIR)/synth/positionCalcDivider.vhd
 positionCalcMultiplier_DIR = $(PLATFORM_TARGET)/positionCalcMultiplier
@@ -74,8 +72,8 @@ adcToSysFIFO_TOP = $(adcToSysFIFO_DIR)/synth/adcToSysFIFO.vhd
 ila_td256_s4096_cap_DIR = $(PLATFORM_TARGET)/ila_td256_s4096_cap
 ila_td256_s4096_cap_TOP = $(ila_td256_s4096_cap_DIR)/synth/ila_td256_s4096_cap.v
 
-IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(trimMultiplier_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $($(ila_td256_s4096_cap_TOP)
-IP_CORES_DIRS += $(evrGTY_DIR) $(rmsBandSelect_DIR) $(trimMultiplier_DIR) $(positionCalcDivider_DIR) $(positionCalcMultiplier_DIR) $(adcCordic_DIR) $(adcToSysFIFO_DIR) $(ila_td256_s4096_cap_DIR)
+IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $($(ila_td256_s4096_cap_TOP)
+IP_CORES_DIRS += $(evrGTY_DIR) $(rmsBandSelect_DIR) $(positionCalcDivider_DIR) $(positionCalcMultiplier_DIR) $(adcCordic_DIR) $(adcToSysFIFO_DIR) $(ila_td256_s4096_cap_DIR)
 IP_CORES_XDCS += $(evrGTY_TOP:%.v=%.xdc)
 
 IP_CORES_SRCS_DIRS = $(IP_CORES_DIRS)
@@ -131,7 +129,6 @@ VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
 # the switches that will be consumed by iverilog later
 evrGTY_VFLAGS_COMMAND_FILE = evrGTY_iverilog_cfile.txt
 rmsBandSelect_VFLAGS_COMMAND_FILE = rmsBandSelect_iverilog_cfile.txt
-trimMultiplier_VFLAGS_COMMAND_FILE = trimMultiplier_iverilog_cfile.txt
 positionCalcDivider_VFLAGS_COMMAND_FILE = positionCalcDivider_iverilog_cfile.txt
 positionCalcMultiplier_VFLAGS_COMMAND_FILE = positionCalcMultiplier_iverilog_cfile.txt
 adcCordic_VFLAGS_COMMAND_FILE = adcCordic_iverilog_cfile.txt
@@ -141,7 +138,6 @@ ila_td256_s4096_cap_VFLAGS_COMMAND_FILE = ila_td256_s4096_cap_iverilog_cfile.txt
 VFLAGS_COMMAND_FILE += \
 					  $(evrGTY_VFLAGS_COMMAND_FILE)
 # $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-# $(trimMultiplier_VFLAGS_COMMAND_FILE)
 # $(positionCalcDivider_VFLAGS_COMMAND_FILE)
 # $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
 # $(adcCordic_VFLAGS_COMMAND_FILE)
@@ -169,7 +165,7 @@ vpath %.sh $(GW_SCRIPTS_DIR)
 # List top level depedencies here. Eveything named .bit will be used as
 # a top-level target in top_rules.mk. .v and .sv files will be used as
 # prerequisites as well as a system_top.xdc file
-$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) rmsBandSelect.xci trimMultiplier.xci positionCalcDivider.xci positionCalcMultiplier.xci adcCordic.xci adcToSysFIFO.xci ila_td256_s4096_cap.xci
+$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) rmsBandSelect.xci positionCalcDivider.xci positionCalcMultiplier.xci adcCordic.xci adcToSysFIFO.xci ila_td256_s4096_cap.xci
 $(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(IP_CORES_TOP_LVL_SRCS) $(BD_TOP_LVL_SRCS) cordicg_b22.v
 
 $(EXTRA_VFLAGS_DEP): % : %.in
@@ -243,7 +239,6 @@ CLEAN += $(VFLAGS_COMMAND_FILE)
 # but we don't need it for iverilog as we only use it when not simulating
 CLEAN += $(ila_td256_s4096_cap_VFLAGS_COMMAND_FILE)
 CLEAN += $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-CLEAN += $(trimMultiplier_VFLAGS_COMMAND_FILE)
 CLEAN += $(positionCalcDivider_VFLAGS_COMMAND_FILE)
 CLEAN += $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
 CLEAN += $(adcCordic_VFLAGS_COMMAND_FILE)

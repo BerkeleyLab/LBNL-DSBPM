@@ -1089,11 +1089,11 @@
         "parameters": {
           "AXI_ARBITRATION_SCHEME": {
             "value": "RD_PRI_REG",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "BURST_LENGTH": {
             "value": "8",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "CAN_DEBUG": {
             "value": "false",
@@ -1101,47 +1101,47 @@
           },
           "CAS_LATENCY": {
             "value": "18",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "CAS_WRITE_LATENCY": {
             "value": "16",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "CS_ENABLED": {
             "value": "true",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "CUSTOM_PARTS": {
             "value": "no_file_loaded",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "DATA_MASK_ENABLED": {
             "value": "DM_NO_DBI",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "DATA_WIDTH": {
             "value": "32",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "MEMORY_PART": {
             "value": "MT40A1G8WE-075E",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "MEMORY_TYPE": {
             "value": "Components",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "MEM_ADDR_MAP": {
             "value": "ROW_COLUMN_BANK",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "SLOT": {
             "value": "Single",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           },
           "TIMEPERIOD_PS": {
             "value": "833",
-            "value_src": "user_prop"
+            "value_src": "default_prop"
           }
         }
       },
@@ -2306,7 +2306,7 @@
             "value_src": "default"
           },
           "CLK_DOMAIN": {
-            "value": "system_ddr4_1_3_c0_ddr4_ui_clk",
+            "value": "system_ddr4_0_0_c0_ddr4_ui_clk",
             "value_src": "default_prop"
           },
           "DATA_WIDTH": {
@@ -3524,7 +3524,7 @@
             "value": "ddr_aximm_dbg"
           },
           "CLK_DOMAIN": {
-            "value": "system_ddr4_1_3_c0_ddr4_ui_clk",
+            "value": "system_ddr4_0_0_c0_ddr4_ui_clk",
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
@@ -4508,7 +4508,7 @@
             "value": "123.38671"
           },
           "CLKOUT2_USED": {
-            "value": "true"
+            "value": "false"
           },
           "CLKOUT3_DRIVES": {
             "value": "Buffer"
@@ -4541,13 +4541,13 @@
             "value": "10.000"
           },
           "MMCM_CLKOUT1_DIVIDE": {
-            "value": "10"
+            "value": "1"
           },
           "MMCM_DIVCLK_DIVIDE": {
             "value": "41"
           },
           "NUM_OUT_CLKS": {
-            "value": "2"
+            "value": "1"
           },
           "PRIM_IN_FREQ": {
             "value": "499.640"
@@ -8487,8 +8487,8 @@
       },
       "ddr4_0": {
         "vlnv": "xilinx.com:ip:ddr4:2.2",
-        "xci_name": "system_ddr4_1_3",
-        "xci_path": "ip/system_ddr4_1_3/system_ddr4_1_3.xci",
+        "xci_name": "system_ddr4_0_0",
+        "xci_path": "ip/system_ddr4_0_0_1/system_ddr4_0_0.xci",
         "inst_hier_path": "ddr4_0",
         "parameters": {
           "ADDN_UI_CLKOUT1_FREQ_HZ": {
@@ -8983,7 +8983,12 @@
           "usp_rf_data_converter_0/m1_axis_aclk",
           "usp_rf_data_converter_0/m2_axis_aclk",
           "usp_rf_data_converter_0/m3_axis_aclk",
-          "ddr4_smc_0/aclk1"
+          "ddr4_smc_0/aclk1",
+          "dacClk",
+          "usp_rf_data_converter_0/s0_axis_aclk",
+          "usp_rf_data_converter_0/s1_axis_aclk",
+          "usp_rf_data_converter_0/s2_axis_aclk",
+          "usp_rf_data_converter_0/s3_axis_aclk"
         ]
       },
       "ddr4_0_c0_ddr4_ui_clk": {
@@ -9063,16 +9068,6 @@
         "ports": [
           "evrMgtResetDone",
           "evr_axi_0/mgt_reset_done"
-        ]
-      },
-      "rfadc_mmcm_clk_out2": {
-        "ports": [
-          "rfadc_mmcm/clk_out2",
-          "dacClk",
-          "usp_rf_data_converter_0/s0_axis_aclk",
-          "usp_rf_data_converter_0/s1_axis_aclk",
-          "usp_rf_data_converter_0/s2_axis_aclk",
-          "usp_rf_data_converter_0/s3_axis_aclk"
         ]
       },
       "rst_ddr_mig_0_peripheral_aresetn": {
