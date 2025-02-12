@@ -38,21 +38,15 @@ and redirect stdout/stderr to a file so you can inspect it later:
 
 ```bash
 ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
-(time make PLATFORM=<PLATFORM_NAME> APP=<APP_NAME> CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
+(time make PLATFORM=<PLATFORM_NAME> APP=<APP_NAME> SAMPLES_PER_TURN= <SAMPLES_PER_TURN> VCXO_TYPE=<VCXO_TYPE> CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
 ```
 
-For now the following combinations of PLATFORM and APP are supported:
-
-|  APP / PLATFORM  | zcu208 | lbl208 |
-|:----------------:|:------:|:------:|
-| dsbpm_vcxo_117   |   x    |    x   |
-| dsbpm_vcxo_160   |   x    |    x   |
-
-So, for example, to generate the DSBPM application for the ZCU208 board:
+So, for example, to generate the DSBPM application for the ZCU208 board, 81 samples per turn
+and VCXO with center frequency of 160MHz:
 
 ```bash
 ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/aarch64-none
-(time make PLATFORM=zcu208 APP=dsbpm_vcxo_160 CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
+(time make PLATFORM=zcu208 APP=dsbpm SAMPLES_PER_TURN=81 VCXO_TYPE=160 CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
 ```
 
 ### Deploying

@@ -22,9 +22,9 @@
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
 #define DSBPM_PROTOCOL_MAGIC                    0xD06F9891
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91986FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9892
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9992
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x92986FD0
+                                                0x92996FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9893
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
                                                 0x93986FD0
@@ -65,6 +65,9 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 ptLoMag[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 ptHiMag[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 gainFactor[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt32 calibRFFactor[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt32 calibPLFactor[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt32 calibPHFactor[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 rfADCDSA[DSBPM_PROTOCOL_ADC_COUNT];
     epicsInt32  xPos[DSBPM_PROTOCOL_DSP_COUNT];
     epicsInt32  yPos[DSBPM_PROTOCOL_DSP_COUNT];
@@ -154,6 +157,9 @@ struct dsbpmWaveformAck {
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_AFE_ATT                0x0580
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CURRENT            0x0600
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CTL                0x0680
+# define DSBPM_PROTOCOL_CMD_LONGOUT_LO_RF_GAINS               0x0700
+# define DSBPM_PROTOCOL_CMD_LONGOUT_LO_PL_GAINS               0x0780
+# define DSBPM_PROTOCOL_CMD_LONGOUT_LO_PH_GAINS               0x0800
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_EVENT_ACTION       0x0900
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_TRIGGER_DELAY      0x0A00
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC                0x0F00
