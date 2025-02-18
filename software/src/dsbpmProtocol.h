@@ -22,12 +22,12 @@
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
 #define DSBPM_PROTOCOL_MAGIC                    0xD06F9891
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91986FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9992
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9A92
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x92996FD0
-#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9893
+                                                0x929A6FD0
+#define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9993
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
-                                                0x93986FD0
+                                                0x93996FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_DATA      0xD06F9794
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_DATA \
                                                 0x94976FD0
