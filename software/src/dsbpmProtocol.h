@@ -54,7 +54,7 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 magic;
     epicsUInt32 packetNumber;
     epicsUInt32 seconds;
-    epicsUInt32 ticks;
+    epicsUInt32 fraction;
     epicsUInt8  clipStatus;
     epicsUInt8  cellCommStatus[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt8  autotrimStatus[DSBPM_PROTOCOL_DSP_COUNT];
@@ -98,7 +98,7 @@ struct dsbpmWaveformHeader {
     epicsUInt32 waveformNumber;
     epicsUInt16 recorderNumber;
     epicsUInt32 seconds;
-    epicsUInt32 ticks;
+    epicsUInt32 fraction;
     epicsUInt32 byteCount;
     epicsUInt32 bytesPerSample;
     epicsUInt32 bytesPerAtom;
