@@ -20,15 +20,15 @@
 //////////////////////////////////////////////////////////////////////////////////
 module DataBufferCntrlr(
     input             RxClock,
-     input            SysClock,
+    input            SysClock,
     input             Reset,
     input             PacketStart,
     input             PacketStop,
     input  [7:0]     DataIn,
     input  [10:0] Address,
-     input             ReadEna,
+    input             ReadEna,
     output reg        PacketReady,
-     output reg [11:0] PacketSize,
+    output reg [11:0] PacketSize,
     output [7:0]     DataOut,
     output reg        PacketFault
     );

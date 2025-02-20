@@ -2,9 +2,9 @@
  * RFDC AXI MMCM (adcClk/dacClk source) configuration
  * Values are scaled by a factor of 1000.
  */
-#define ADC_CLK_MMCM_DIVCLK_DIVIDER 41000
-#define ADC_CLK_MMCM_MULTIPLIER     101250
-#define ADC_CLK_MMCM_CLK0_DIVIDER   10000
+#define ADC_CLK_MMCM_DIVCLK_DIVIDER 1000
+#define ADC_CLK_MMCM_MULTIPLIER     3375
+#define ADC_CLK_MMCM_CLK0_DIVIDER   10250
 
 /*
  * Number of ADC AXI clocks per SYSREF clock
@@ -19,7 +19,7 @@
 /*
  * Number of FPGA_REFCLK_OUT_C clocks per SYSREF clock
  */
-#define REFCLK_OUT_PER_SYSREF   328
+#define REFCLK_OUT_PER_SYSREF   246
 
 /*
  * ADC sampling clock frequency

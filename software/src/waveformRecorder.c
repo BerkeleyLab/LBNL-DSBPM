@@ -42,7 +42,7 @@
 #define WR_REG_OFFSET_ADDRESS_LSB_POINTER  3
 #define WR_REG_OFFSET_ADDRESS_MSB_POINTER  4
 #define WR_REG_OFFSET_TIMESTAMP_SECONDS    5
-#define WR_REG_OFFSET_TIMESTAMP_TICKS      6
+#define WR_REG_OFFSET_TIMESTAMP_FRACTION      6
 
 
 /*
@@ -105,7 +105,7 @@ showRec(struct recorderData *rp)
     showWfrReg("LSB Addr",WR_READ(rp, WR_REG_OFFSET_ADDRESS_LSB_POINTER));
     showWfrReg("MSD Addr",WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER));
     showWfrReg("Sec", WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_SECONDS));
-    showWfrReg("Tick",WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_TICKS));
+    showWfrReg("Fraction",WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_FRACTION));
 }
 
 static void
@@ -392,7 +392,7 @@ headerPacket(struct recorderData *rp)
         hp->recorderNumber = rp->recorderNumber;
         hp->waveformNumber = rp->waveformNumber;
         hp->seconds = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_SECONDS);
-        hp->ticks = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_TICKS);
+        hp->fraction = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_FRACTION);
         hp->byteCount = rp->bytesLeft = count * rp->bytesPerSample;
         hp->bytesPerSample = rp->bytesPerSample;
         hp->bytesPerAtom = rp->bytesPerAtom;
