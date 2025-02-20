@@ -19,7 +19,7 @@
 /*
  * Number of FPGA_REFCLK_OUT_C clocks per SYSREF clock
  */
-#define REFCLK_OUT_PER_SYSREF   328
+#define REFCLK_OUT_PER_SYSREF   246
 
 /*
  * ADC sampling clock frequency
