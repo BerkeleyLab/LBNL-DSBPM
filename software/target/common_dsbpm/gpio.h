@@ -59,7 +59,7 @@
 #define GPIO_IDX_PRELIM_PT_HI_MAG_2      52 // ADC 2 high freq pilot tone magnitude
 #define GPIO_IDX_PRELIM_PT_HI_MAG_3      53 // ADC 3 high freq pilot tone magnitude
 #define GPIO_IDX_SA_TIMESTAMP_SEC        54 // Slow acquisition time stamp
-#define GPIO_IDX_SA_TIMESTAMP_TICKS      55 // Slow acquisition time stamp
+#define GPIO_IDX_SA_TIMESTAMP_FRACTION   55 // Slow acquisition time stamp
 #define GPIO_IDX_POSITION_CALC_CSR       56 // Position calculation control/status
 #define GPIO_IDX_POSITION_CALC_XCAL      57 // X calibration factor
 #define GPIO_IDX_POSITION_CALC_YCAL      58 // Y calibration factor

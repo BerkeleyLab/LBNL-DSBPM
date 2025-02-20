@@ -32,7 +32,7 @@ static u16_t      subscriberPort;
  * Send values to subscriber
  */
 static void
-publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
+publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
 {
     int i;
     int adcChannel, dacChannel, chainNumber;
@@ -48,7 +48,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saTicks)
     pk = (struct dsbpmSlowAcquisition *)p->payload;
     pk->packetNumber = packetNumber++;
     pk->seconds = saSeconds;
-    pk->ticks = saTicks;
+    pk->fraction = saFraction;
     pk->magic = DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION;
     for (i = 0 ; i < DSBPM_PROTOCOL_DSP_COUNT ; i++) {
         chainNumber = i;
@@ -116,40 +116,40 @@ publisherCheck(void)
 {
     struct pbuf *p;
     unsigned int saSeconds;
-    unsigned int saTicks;
-    static unsigned int previousSaSeconds, previousSaTicks;
+    unsigned int saFraction;
+    static unsigned int previousSaSeconds, previousSaFraction;
 
     /*
      * Wait for SA time stamp to stabilize
      */
-    saTicks = GPIO_READ(GPIO_IDX_SA_TIMESTAMP_TICKS);
+    saFraction = GPIO_READ(GPIO_IDX_SA_TIMESTAMP_FRACTION);
     for (;;) {
-        unsigned int checkTicks;
+        unsigned int checkFraction;
         saSeconds = GPIO_READ(GPIO_IDX_SA_TIMESTAMP_SEC);
-        checkTicks = GPIO_READ(GPIO_IDX_SA_TIMESTAMP_TICKS);
-        if (checkTicks == saTicks) break;
-        saTicks = checkTicks;
+        checkFraction = GPIO_READ(GPIO_IDX_SA_TIMESTAMP_FRACTION);
+        if (checkFraction == saFraction) break;
+        saFraction = checkFraction;
     }
     if (subscriberPort == 0) {
         previousSaSeconds = saSeconds;
-        previousSaTicks = saTicks;
+        previousSaFraction = saFraction;
     }
     else {
-        if ((saTicks != previousSaTicks) || (saSeconds != previousSaSeconds)) {
-            int evrTickDiff = (saTicks - previousSaTicks) +
-                                ((saSeconds-previousSaSeconds) * 124910000);
+        if ((saFraction != previousSaFraction) || (saSeconds != previousSaSeconds)) {
+            int evrTickDiff = (saFraction - previousSaFraction) / 4.294967296 +
+                                ((saSeconds-previousSaSeconds) * 1e9);
             unsigned int sysMicroseconds = MICROSECONDS_SINCE_BOOT();
             static int sysMicrosecondsOld, evrTickDiffOld, sysTickDiffOld;
             int sysTickDiff = (sysMicroseconds - sysMicrosecondsOld) *
                 ((float) 99999001/1000000);
             if ((debugFlags & DEBUGFLAG_SA_TIMING_CHECK)
-             && ((evrTickDiff < 11241900) || (evrTickDiff > 13740100)
+             && ((evrTickDiff < 90000000) || (evrTickDiff > 110000000)
               || (sysTickDiff < 9700000) || (sysTickDiff > 10200000))) {
                 printf("old:%d:%09d  new:%d:%09d "
                        "evrTickDiff:%d sysTickDiff:%d "
                        "evrTickDiffOld:%d sysTickDiffOld:%d\n",
-                                             previousSaSeconds, previousSaTicks,
-                                             saSeconds, saTicks,
+                                             previousSaSeconds, previousSaFraction,
+                                             saSeconds, saFraction,
                                              evrTickDiff, sysTickDiff,
                                              evrTickDiffOld, sysTickDiffOld);
             }
@@ -157,8 +157,8 @@ publisherCheck(void)
             evrTickDiffOld = evrTickDiff;
             sysTickDiffOld = sysTickDiff;
             previousSaSeconds = saSeconds;
-            previousSaTicks = saTicks;
-            publishSlowAcquisition(saSeconds, saTicks);
+            previousSaFraction = saFraction;
+            publishSlowAcquisition(saSeconds, saFraction);
         }
 
         if ((p = wfrCheckForWork()) != NULL) {

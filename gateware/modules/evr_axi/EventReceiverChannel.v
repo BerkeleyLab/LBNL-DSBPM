@@ -19,13 +19,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module EventReceiverChannel(
-    input                Clock,
-    input                 Reset,
-    input                  myEvent,
-     input     [31:0]    myDelay,
-     input    [31:0]    myWidth,
-     input                myPolarity,
-    output                 trigger
+    input               Clock,
+    input               Reset,
+    input               myEvent,
+    input        [31:0] myDelay,
+    input        [31:0] myWidth,
+    input               myPolarity,
+    output              trigger
     );
 
      reg [31:0] delayCounter;
