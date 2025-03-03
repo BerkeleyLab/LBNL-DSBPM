@@ -14,8 +14,17 @@ GIT_COMMIT = $(shell git rev-parse --short=8 --verify HEAD || echo "NOCOMMIT")
 BIT      ?= $(GW_DSBPM_TGT_DIR)/$(TARGET)_top.bit
 SAMPLES_PER_TURN ?= 81
 VCXO_TYPE ?= 160
+VARIANT ?=
 
-VARIANT_OPTS = vcxo_$(VCXO_TYPE)_spt_$(SAMPLES_PER_TURN)
+VARIANT_MOD =
+
+ifneq ($(VARIANT),)
+	VARIANT_MOD = $(VARIANT)_
+else
+	VARIANT_MOD =
+endif
+
+VARIANT_OPTS = $(VARIANT_MOD)vcxo_$(VCXO_TYPE)_spt_$(SAMPLES_PER_TURN)
 
 TARGET_VARIANT = $(TARGET)_$(VARIANT_OPTS)
 BIF   = BOOTGEN.bif
