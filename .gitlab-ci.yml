@@ -70,6 +70,7 @@ sw_dsbpm_zcu208:
         VCXO_TYPE: 117
       - SAMPLES_PER_TURN: 81
         VCXO_TYPE: 160
+        VARIANT: ["", "alsu_sr"]
 
 sw_dsbpm_lbl208:
   variables:
@@ -104,3 +105,4 @@ sw_dsbpm_lbl208:
         VCXO_TYPE: 117
       - SAMPLES_PER_TURN: 81
         VCXO_TYPE: 160
+        VARIANT: ["", "alsu_sr"]
