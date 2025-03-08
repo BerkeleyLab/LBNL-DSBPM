@@ -186,14 +186,21 @@ rfADClinkCouplingIsAC(void)
 
 static void rfADCCfgStaticDefaults(void)
 {
-    int i, tile;
+    int i, tile, adc;
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         i = XRFdc_DynamicPLLConfig(&rfDC, XRFDC_ADC_TILE, tile,
                                           XRFDC_EXTERNAL_CLK,
                                           ADC_REF_CLK_FREQ,
                                           ADC_SAMPLING_CLK_FREQ);
-        if (i != XST_SUCCESS) fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+        if (i != XST_SUCCESS)
+            fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+
+        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
+            i = XRFdc_SetDither(&rfDC, tile, adc, 1);
+            if (i != XST_SUCCESS)
+                warn("ADC Tile:Block %d:%d XRFdc_SetDither() = %d", tile, adc, i);
+        }
     }
 }
 
