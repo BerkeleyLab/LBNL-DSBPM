@@ -5,6 +5,7 @@ PLATFORM         ?= zcu208
 APP              ?= dsbpm
 SAMPLES_PER_TURN ?= 81
 VCXO_TYPE        ?= 160
+VARIANT          ?=
 
 TARGET       = $(APP)_$(PLATFORM)
 GW_TGT_DIR   = $(GW_SYN_DIR)/$(TARGET)
@@ -19,7 +20,7 @@ bit:
 	make -C $(GW_TGT_DIR) TARGET=$(TARGET) $(TARGET)_top.bit
 
 sw:
-	make -C $(SW_TGT_DIR) SAMPLES_PER_TURN=$(SAMPLES_PER_TURN) VCXO_TYPE=$(VCXO_TYPE) TARGET=$(TARGET) BIT=$(BIT) all
+	make -C $(SW_TGT_DIR) VARIANT=$(VARIANT) SAMPLES_PER_TURN=$(SAMPLES_PER_TURN) VCXO_TYPE=$(VCXO_TYPE) TARGET=$(TARGET) BIT=$(BIT) all
 
 clean:
 	make -C $(GW_TGT_DIR) TARGET=$(TARGET) clean
