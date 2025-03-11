@@ -87,6 +87,8 @@ rfADCshow(void)
                 printf(", XRFdc_GetCalFreeze=%d", i);
             }
             printf("\n");
+            XRFdc_GetDither(&rfDC, tile, adc, &v);
+            printf("         Dither: %s\n", v ? "enabled" : "disabled");
             i = XRFdc_GetMixerSettings(&rfDC, XRFDC_ADC_TILE, tile,adc,&mixer);
             if (i == XST_SUCCESS) {
                 printf("   Mixer Settings\n");
