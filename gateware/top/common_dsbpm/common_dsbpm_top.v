@@ -1744,13 +1744,13 @@ assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
     {32-1{1'b0}},
     prelimProcOverflow[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag0[dsbpm] };
+    magPAD, prelimProcRfFaMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag1[dsbpm] };
+    magPAD, prelimProcRfFaMag1[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag2[dsbpm] };
+    magPAD, prelimProcRfFaMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag3[dsbpm] };
+    magPAD, prelimProcRfFaMag3[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
     magPAD, prelimProcPlMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
