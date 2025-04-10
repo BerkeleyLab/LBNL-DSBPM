@@ -161,7 +161,7 @@ iicInit(void)
     buf[4] = 0x00; /* Port 1: No polarity inversion */
     buf[5] = ~0x02; /* Port 0: All inputs, except bit 1 */
     buf[6] = ~0x00; /* Port 1: All inputs */
-    if (!iicWrite(IIC_INDEX_TCA6416A_PORT, buf, 7)) fatal("Configure TCA6416");
+    if (!iicWrite(IIC_INDEX_TCA6416A_PORT, buf, 7)) warn("Configure TCA6416");
 
     /*
      * Configure SC18IS602 to:
@@ -173,7 +173,7 @@ iicInit(void)
      */
     buf[0] = 0xF0; /* Function ID F0h */
     buf[1] = 0x02; /* See above */
-    if (!iicWrite(IIC_INDEX_I2C2SPI, buf, 2)) fatal("Configure SC18IS602");
+    if (!iicWrite(IIC_INDEX_I2C2SPI, buf, 2)) warn("Configure SC18IS602");
 }
 
 static int
