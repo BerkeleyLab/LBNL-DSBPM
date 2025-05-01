@@ -385,45 +385,56 @@ endgenerate
 //
 // Forward the EVR trigger bus and time stamp to the ADC clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] adcTriggerBus;
 wire [63:0] adcTimestamp;
-wire [71:0] evrForward, adcForward;
-assign evrForward = { evrTriggerBus, evrTimestamp };
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToADC(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(adcClk),
-             .outData(adcForward));
-assign adcTimestamp = adcForward[63:0];
-assign adcTriggerBus = adcForward[71:64];
+             .outData(adcTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] adcTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToADC (
+    .dataIn(evrTriggerBus),
+    .clk(adcClk),
+    .dataOut(adcTriggerBus));
 
 //
 // Forward the EVR trigger bus and time stamp to the system clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] sysTriggerBus;
 wire [63:0] sysTimestamp;
-wire [71:0] sysForward;
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToSys(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(sysClk),
-             .outData(sysForward));
-assign sysTimestamp = sysForward[63:0];
-assign sysTriggerBus = sysForward[71:64];
+             .outData(sysTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] sysTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToSys (
+    .dataIn(evrTriggerBus),
+    .clk(sysClk),
+    .dataOut(sysTriggerBus));
 
 //
 // Forward the EVR trigger bus and time stamp to the DDR clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] ddrTriggerBus;
 wire [63:0] ddrTimestamp;
-wire [71:0] ddrForward;
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToDDR(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(ddr4_ui_clk),
-             .outData(ddrForward));
-assign ddrTimestamp = ddrForward[63:0];
-assign ddrTriggerBus = ddrForward[71:64];
+             .outData(ddrTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] ddrTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToDDR (
+    .dataIn(evrTriggerBus),
+    .clk(ddr4_ui_clk),
+    .dataOut(ddrTriggerBus));
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
