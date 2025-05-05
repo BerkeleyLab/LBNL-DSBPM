@@ -60,9 +60,9 @@ sw_dsbpm_zcu208:
     - if: $VARIANT != ""
       variables:
         VARIANT_MOD: "${VARIANT}_"
-    - if: $VARIANT == ""
+    - if: ($VARIANT == null) || ($VARIANT == "")
       variables:
-        VARIANT_MOD: "${VARIANT}"
+        VARIANT_MOD: ""
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     expire_in: 4 weeks
@@ -102,9 +102,9 @@ sw_dsbpm_lbl208:
     - if: $VARIANT != ""
       variables:
         VARIANT_MOD: "${VARIANT}_"
-    - if: $VARIANT == ""
+    - if: ($VARIANT == null) || ($VARIANT == "")
       variables:
-        VARIANT_MOD: "${VARIANT}"
+        VARIANT_MOD: ""
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     expire_in: 4 weeks
