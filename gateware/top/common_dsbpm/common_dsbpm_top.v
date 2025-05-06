@@ -687,7 +687,8 @@ genericWaveformRecorder #(
     .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH), // twice as large as input (DATA_WIDTH)
-    .FIFO_CAPACITY(ADC_FIFO_CAPACITY))
+    .FIFO_CAPACITY(ADC_FIFO_CAPACITY),
+    .CHIPSCOPE_DBG((dsbpm == 0)? "TRUE" : "FALSE"))
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
