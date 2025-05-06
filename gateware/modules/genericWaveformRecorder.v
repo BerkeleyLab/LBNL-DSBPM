@@ -10,6 +10,7 @@ module genericWaveformRecorder #(
     // https://developer.arm.com/documentation/ihi0022/e/, page
     // A3-46)
     parameter HIGH_BANDWIDTH_MODE = "FALSE",
+    parameter CHIPSCOPE_DBG   = "FALSE",
     parameter DATA_WIDTH      = 128,
     parameter TIMESTAMP_WIDTH = 64,
     parameter BUS_WIDTH       = 32,
@@ -440,6 +441,55 @@ always @(posedge clk) begin
     default: state <= S_WAIT;
     endcase
 end
+
+generate
+if (CHIPSCOPE_DBG != "TRUE" && CHIPSCOPE_DBG != "FALSE") begin
+    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
+
+generate
+if (CHIPSCOPE_DBG == "TRUE") begin
+
+`ifndef SIMULATE
+
+wire [255:0] probe;
+ila_td256_s4096_cap ila_td256_s4096_cap_inst (
+    .clk(clk),
+    .probe0(probe)
+);
+
+assign probe[0+:8]         = triggers;
+assign probe[9]            = fifo_wr_en;
+assign probe[10]           = acqArmed;
+assign probe[11]           = dataValid;
+assign probe[12]           = triggerFlag;
+assign probe[13]           = fifo_rd_en;
+assign probe[14]           = fifoOverflow;
+assign probe[15]           = fifoEmpty;
+assign probe[18:16]        = state;
+assign probe[24:19]        = beatCount;
+
+assign probe[25]           = axi_AWVALID;
+assign probe[26]           = axi_AWREADY;
+assign probe[27]           = axi_WLAST;
+assign probe[28]           = axi_WVALID;
+assign probe[29]           = axi_WREADY;
+assign probe[30]           = axi_BVALID;
+
+assign probe[32+:32]       = axi_AWADDR;
+assign probe[64+:8]        = axi_AWLEN;
+assign probe[72+:3]        = axi_AWSIZE;
+assign probe[128+:32]      = axi_WDATA[31:0];
+assign probe[160+:2]       = axi_BRESP;
+
+assign probe[168+:32]      = fifoIn[31:0];
+assign probe[200+:32]      = fifoOut[31:0];
+
+`endif
+
+end // end if
+endgenerate
 
 //
 // clk to sysClk
