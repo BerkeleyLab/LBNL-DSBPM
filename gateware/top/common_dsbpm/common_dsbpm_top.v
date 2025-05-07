@@ -509,10 +509,6 @@ localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
 // I and Q interleaved
 localparam AXIS_DAC_SAMPLE_WIDTH = CFG_DAC_AXI_SAMPLES_PER_CLOCK * DAC_SAMPLE_WIDTH;
 
-// FIFO sizes
-localparam ADC_FIFO_CAPACITY = 2048;
-localparam DDC_FIFO_CAPACITY = 256;
-
 //////////////////////////////////////////////////////////////////////////////
 // Waveform recorders
 //
@@ -687,7 +683,6 @@ genericWaveformRecorder #(
     .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH), // twice as large as input (DATA_WIDTH)
-    .FIFO_CAPACITY(ADC_FIFO_CAPACITY),
     .CHIPSCOPE_DBG((dsbpm == 0)? "TRUE" : "FALSE"))
   adcWaveformRecorder(
     .sysClk(sysClk),
@@ -747,8 +742,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_TBT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   tbtWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -803,8 +797,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_FA_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   faWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -859,8 +852,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   plWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -915,8 +907,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   phWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -975,8 +966,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   tbtPosWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -1028,8 +1018,7 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_FA_POS_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
   faPosWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
