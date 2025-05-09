@@ -33,6 +33,11 @@ module genericWaveformRecorder #(
     input                  [7:0] triggers,
     input  [TIMESTAMP_WIDTH-1:0] timestamp,
 
+    // diagnostic inputs
+    // If diagExtMode = 1, diagExtData will be used
+    input                        diagExtMode,
+    input        [BUS_WIDTH-1:0] diagExtData,
+
     output wire [AXI_ADDR_WIDTH-1:0] axi_AWADDR,
     output wire                [7:0] axi_AWLEN,
     output reg                       axi_AWVALID = 0,
@@ -178,8 +183,15 @@ reg [7:0] triggerReg, triggerReg_d;
 //
 // Data transfer
 //
-reg [BUS_WIDTH-1:0] diagCountHold;
-reg [BUS_WIDTH-1:0] diagCount;
+reg [BUS_WIDTH-1:0] diagCount = 0;
+always @(posedge clk) begin
+    if (valid) begin
+        diagCount <= diagCount + 1;
+    end
+end
+
+wire [BUS_WIDTH-1:0] diagData = (diagExtMode == 1'b1) ?
+    diagExtData : diagCount;
 
 //
 // AXI state machine
@@ -217,12 +229,8 @@ generate
 if (DATA_WIDTH == AXI_DATA_WIDTH) begin
 
 assign dataValid = valid;
-assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagCount} :
+assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagData} :
     data;
-
-always @(posedge clk) begin
-    if (valid) diagCount <= diagCount + 1;
-end
 
 assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
                             {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
@@ -238,16 +246,16 @@ always @(posedge clk) begin
     end
 end
 
+reg [BUS_WIDTH-1:0] diagDataHold = 0;
 assign dataValid = valid && dataPhase;
 assign fifoIn = csrDiagMode ? {
-        data[DATA_WIDTH-1:BUS_WIDTH], diagCount,
-        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagCountHold} :
+        data[DATA_WIDTH-1:BUS_WIDTH], diagData,
+        dataHold[DATA_WIDTH-1:BUS_WIDTH], diagDataHold} :
         {data, dataHold};
 
 always @(posedge clk) begin
     if (valid) begin
-        diagCount <= diagCount + 1;
-        diagCountHold <= diagCount;
+        diagDataHold <= diagData;
     end
 end
 
