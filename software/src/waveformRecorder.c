@@ -70,6 +70,7 @@ struct recorderData {
     unsigned int    regBase;
     unsigned int    csrModeBits;
     unsigned int    bytesPerSample;
+    unsigned int    cyclesPerWord;
     unsigned int    bytesPerAtom;
     unsigned int    triggerMask;
     unsigned int    pretrigCount;
@@ -138,6 +139,7 @@ wfrInit(unsigned int bpm)
 {
     int i, r;
     int bytesPerSample, bytesPerAtom, pretrigCount, acqCount, maxPretrig, acqSampleCapacity;
+    int cyclesPerWord;
     struct recorderData *rp;
     static UINTPTR iBufBase[CFG_DSBPM_COUNT];
 
@@ -154,7 +156,8 @@ wfrInit(unsigned int bpm)
         switch(i) {
         case 0:
             r = GPIO_IDX_ADC_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
-            bytesPerSample = 16; /* 4 I/Q 16-bit ADCs */
+            bytesPerSample = 16; // 4 I/Q 16-bit ADCs
+            cyclesPerWord = 2; // 2 ADC cycles per AXI word
             bytesPerAtom = 2; // 16-bit atoms
             acqSampleCapacity = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
@@ -165,6 +168,7 @@ wfrInit(unsigned int bpm)
         case 1:
             r = GPIO_IDX_TBT_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
@@ -175,6 +179,7 @@ wfrInit(unsigned int bpm)
         case 2:
             r = GPIO_IDX_FA_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_FA_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_FA_SAMPLE_CAPACITY;
@@ -186,6 +191,7 @@ wfrInit(unsigned int bpm)
             r = i == 3 ? GPIO_IDX_PL_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM :
                 GPIO_IDX_PH_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit pilot tone magnitudes values */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_PT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_PT_SAMPLE_CAPACITY;
@@ -196,6 +202,7 @@ wfrInit(unsigned int bpm)
         case 5:
             r = GPIO_IDX_TBT_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
@@ -206,6 +213,7 @@ wfrInit(unsigned int bpm)
         case 6:
             r = GPIO_IDX_FA_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
@@ -226,6 +234,7 @@ wfrInit(unsigned int bpm)
         rp->acqCount = acqCount;
         rp->maxPretrigger = maxPretrig;
         rp->bytesPerSample = bytesPerSample;
+        rp->cyclesPerWord = cyclesPerWord;
         rp->bytesPerAtom = bytesPerAtom;
         rp->commState = CS_IDLE;
         rp->dsbpmNumber = bpm;
@@ -236,8 +245,8 @@ wfrInit(unsigned int bpm)
         wrWrite(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER, iBufBase[bpm] >> 32);
         rp->csrModeBits = 0;
         wrWrite(rp, WR_REG_OFFSET_CSR, rp->csrModeBits);
-        rp->acqSampleCapacity = acqSampleCapacity;
-        rp->acqByteCapacity = bytesPerSample * acqSampleCapacity;
+        rp->acqSampleCapacity = acqSampleCapacity * cyclesPerWord;
+        rp->acqByteCapacity = bytesPerSample * acqSampleCapacity * cyclesPerWord;
         iBufBase[bpm] += rp->acqByteCapacity;
     }
 }
