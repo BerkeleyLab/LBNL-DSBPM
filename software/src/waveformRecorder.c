@@ -12,6 +12,12 @@
 #include "util.h"
 #include "memcpy2.h"
 
+#define MAX_RECORDERS                   16
+
+#if CFG_NUM_RECORDERS > MAX_RECORDERS
+# error "CFG_NUM_RECORDERS is greater than 16"
+#endif
+
 /*
  * Read/write CSR bits
  */
@@ -440,8 +446,11 @@ wfrStatus(unsigned int bpm)
 
     for (i = CFG_NUM_RECORDERS - 1 ; i >= 0 ; i--) {
         epicsUInt32 csr = WR_READ(&recorderData[bpm][i], WR_REG_OFFSET_CSR);
-        s = (s << 1) | ((csr & WR_CSR_ARM) != 0);
+        s = (s << 1) |
+            (((csr & WR_CSR_AXI_FIFO_OVERRUN) != 0) << MAX_RECORDERS) |
+            ((csr & WR_CSR_ARM) != 0);
     }
+
     return s;
 }
 
