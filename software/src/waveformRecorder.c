@@ -391,7 +391,7 @@ headerPacket(struct recorderData *rp)
             ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
     rp->startByteOffset = ((nextAddress - rp->acqBuf) +
                            rp->acqByteCapacity -
-                           (rp->acqCount * rp->bytesPerSample)) %
+                           (rp->acqCount * rp->bytesPerSample * rp->cyclesPerWord)) %
                                                         rp->acqByteCapacity;
     p = pbuf_alloc(PBUF_TRANSPORT, sizeof(*hp), PBUF_RAM);
     if (p) {
@@ -402,7 +402,7 @@ headerPacket(struct recorderData *rp)
         hp->waveformNumber = rp->waveformNumber;
         hp->seconds = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_SECONDS);
         hp->fraction = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_FRACTION);
-        hp->byteCount = rp->bytesLeft = count * rp->bytesPerSample;
+        hp->byteCount = rp->bytesLeft = count * rp->bytesPerSample * rp->cyclesPerWord;
         hp->bytesPerSample = rp->bytesPerSample;
         hp->bytesPerAtom = rp->bytesPerAtom;
         rp->commState = CS_HEADER;
@@ -410,11 +410,11 @@ headerPacket(struct recorderData *rp)
         rp->sysUsAtPreviousPacket = MICROSECONDS_SINCE_BOOT();
         if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
             printf("acqCount:%d(%X)  start byte offset:%d(%X)  bytesLeft:%d\n"
-                   "    bytesPerSample:%d  bytesPerAtom:%d\n",
+                   "    bytesPerSample:%d  bytesPerAtom:%d cyclesPerWord:%d\n",
                                     rp->acqCount, rp->acqCount,
                                     rp->startByteOffset, rp->startByteOffset,
                                     rp->bytesLeft, rp->bytesPerSample,
-                                    rp->bytesPerAtom);
+                                    rp->bytesPerAtom, rp->cyclesPerWord);
     }
     else {
         if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
@@ -467,7 +467,7 @@ recorderDiagnosticCheck(struct recorderData *rp)
             ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
     unsigned int bIndex = ((nextAddress - rp->acqBuf) +
                            rp->acqByteCapacity -
-                           (count * rp->bytesPerSample)) % rp->acqByteCapacity;
+                           (count * rp->bytesPerSample * rp->cyclesPerWord)) % rp->acqByteCapacity;
 
     showRec(rp);
     for (i = 0 ; i < HISTSIZE ; i++) histogram[i] = 0;
@@ -661,14 +661,14 @@ waveformRecorderCommand(int waveformCommand, unsigned int index,
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT:
         if (val >= 0) {
             if (val > rp->maxPretrigger) val = rp->maxPretrigger;
-            rp->pretrigCount = val;
+            rp->pretrigCount = (val + rp->cyclesPerWord - 1) / rp->cyclesPerWord;
         }
         break;
 
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT:
         if (val > 0) {
             if (val > rp->acqSampleCapacity) val = rp->acqSampleCapacity;
-            rp->acqCount = val;
+            rp->acqCount = (val + rp->cyclesPerWord - 1) / rp->cyclesPerWord;
         }
         break;
 
