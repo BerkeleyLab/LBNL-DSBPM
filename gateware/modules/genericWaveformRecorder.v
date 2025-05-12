@@ -315,6 +315,7 @@ always @(posedge clk) begin
         full <= 0;
         if (csrArmed) begin
             if (!acqArmed) begin
+                overrun <= 0;
                 writeAddr <= 0;
                 acqPretrigLeft <= csrPretrigCount;
                 acqLeft <= csrAcqCount;
