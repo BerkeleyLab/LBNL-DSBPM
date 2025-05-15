@@ -2125,7 +2125,7 @@ wire spiCLK, spiLE, spiSDI;
 afeSPI #(
   .CLK_RATE(SYSCLK_RATE),
   .CSB_WIDTH(1),
-  .BIT_RATE(1000000),
+  .BIT_RATE(100000),
   .DEBUG("false")
 ) afeSPI (
     .clk(sysClk),
