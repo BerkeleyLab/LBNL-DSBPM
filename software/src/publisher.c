@@ -66,6 +66,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->autotrimStatus[i] = autotrimStatus(i);
         pk->sdSyncStatus[i] = localOscGetSdSyncStatus(i);
         pk->cellCommStatus[i] = 0;
+        pk->clockStatus[i] = GPIO_READ(REG(GPIO_IDX_CLOCK_STATUS, chainNumber));
     }
     pk->clipStatus = rfADCstatus();
     for (i = 0 ; i < DSBPM_PROTOCOL_ADC_COUNT ; i++) {
