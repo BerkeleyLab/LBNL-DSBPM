@@ -33,7 +33,7 @@
 #define NOBANK_SINGLE_PASS_BIT 0x2
 #define NOBANK_DSP_USE_RMS_BIT 0x4
 /* Synchronous demodulation synchronization status */
-#define NOBANK_SD_STATUS_SHIFT 27
+#define NOBANK_SD_STATUS_SHIFT 4
 #define NOBANK_SD_STATUS_MASK  (0x3 << NOBANK_SD_STATUS_SHIFT)
 
 /*
