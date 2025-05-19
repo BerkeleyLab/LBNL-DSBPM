@@ -3,22 +3,23 @@
 
 module evrSROC #(
     parameter SYSCLK_FREQUENCY = -1,
-    parameter DEBUG            = "false"
+    parameter DEBUG            = "false",
+    parameter DIVISOR_WIDTH    = 10,
+    parameter COUNTER_WIDTH    = DIVISOR_WIDTH - 1
     ) (
     input              sysClk,
     input              csrStrobe,
     input       [31:0] GPIO_OUT,
     output wire [31:0] csr,
 
-    input                           evrClk,
-    (*mark_debug=DEBUG*) input      evrHeartbeatMarker,
-    (*mark_debug=DEBUG*) input      evrPulsePerSecondMarker,
-    (*mark_debug=DEBUG*) output reg evrSROCsynced = 0,
-    (*mark_debug=DEBUG*) output reg evrSROC = 0,
-    (*mark_debug=DEBUG*) output reg evrSROCstrobe = 0);
-
-localparam DIVISOR_WIDTH = 10;
-localparam COUNTER_WIDTH = DIVISOR_WIDTH - 1;
+    input                                               evrClk,
+    (*mark_debug=DEBUG*) input                          evrHeartbeatMarker,
+    (*mark_debug=DEBUG*) input                          evrPulsePerSecondMarker,
+    (*mark_debug=DEBUG*) output reg                     evrSROCsynced = 0,
+    (*mark_debug=DEBUG*) output reg                     evrSROC = 0,
+    (*mark_debug=DEBUG*) output reg                     evrSROCstrobe = 0,
+    (*mark_debug=DEBUG*) output     [COUNTER_WIDTH-1:0] evrCounterDbg,
+    (*mark_debug=DEBUG*) output     [31:0]              evrCounterHBDbg);
 
 reg [DIVISOR_WIDTH:0] sysClkDivisor = 0;
 (*mark_debug=DEBUG*)reg [COUNTER_WIDTH-1:0] reloadLo, reloadHi;
@@ -34,6 +35,7 @@ assign csr = {{16-DIVISOR_WIDTH{1'b0}}, sysClkDivisor,
               {16-3{1'b0}}, pulsePerSecondValid, heartBeatValid, evrSROCsynced};
 
 (*mark_debug=DEBUG*)reg [COUNTER_WIDTH-1:0] evrCounter = 0;
+(*mark_debug=DEBUG*)reg [31:0] evrCounterHB = 0;
 reg evrHeartbeatMarker_d;
 always @(posedge evrClk) begin
     evrHeartbeatMarker_d <= evrHeartbeatMarker;
@@ -41,23 +43,31 @@ always @(posedge evrClk) begin
         evrSROC <= 1;
         evrSROCstrobe <= 1;
         evrCounter <= reloadHi;
+        evrCounterHB <= 0;
         evrSROCsynced <= (!evrSROC && (evrCounter == 0));
     end
-    else if (evrCounter == 0) begin
-        evrSROC <= !evrSROC;
-        if (evrSROC) begin
+    else begin
+        evrCounterHB <= evrCounterHB + 1;
+
+        if (evrCounter == 0) begin
+            evrSROC <= !evrSROC;
+            if (evrSROC) begin
+                evrSROCstrobe <= 0;
+                evrCounter <= reloadLo;
+            end
+            else begin
+                evrSROCstrobe <= 1;
+                evrCounter <= reloadHi;
+            end
+        end else begin
             evrSROCstrobe <= 0;
-            evrCounter <= reloadLo;
+            evrCounter <= evrCounter - 1;
         end
-        else begin
-            evrSROCstrobe <= 1;
-            evrCounter <= reloadHi;
-        end
-    end else begin
-        evrSROCstrobe <= 0;
-        evrCounter <= evrCounter - 1;
     end
 end
+
+assign evrCounterDbg = evrCounter;
+assign evrCounterHBDbg = evrCounterHB;
 
 eventMarkerWatchdog #(.SYSCLK_FREQUENCY(SYSCLK_FREQUENCY),
                       .DEBUG(DEBUG))

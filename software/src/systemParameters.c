@@ -67,7 +67,7 @@ systemParametersSetDefaults(void)
     systemParametersDefault.pllMultiplier = 81;
     systemParametersDefault.isSinglePass = 0;
     systemParameters.singlePassEvent = 0;
-    systemParametersDefault.adcHeartbeatMarker = 152 * 82 * 2000;
+    systemParametersDefault.adcHeartbeatMarker = 152 * 81 * 1000 * 10;
     systemParametersDefault.evrPerFaMarker = 152 * 82;
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
     // position calc order = A = 3, B = 1, C = 2, D = 0

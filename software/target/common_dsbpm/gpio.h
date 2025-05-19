@@ -23,6 +23,7 @@
 #define GPIO_IDX_SOFT_TRIGGER             9 // Acquisition software trigger (W)
 #define GPIO_IDX_DISPLAY_CSR             10 // Display CSR (R/W)
 #define GPIO_IDX_DISPLAY_DATA            11 // Display I/O (R/W)
+#define GPIO_IDX_ADC_SYNC_CSR            12 // ADC synchronization
 #define GPIO_IDX_INTERLOCK_CSR           13 // Interlock (R/W)
 #define GPIO_IDX_EVENT_LOG_CSR           15 // Event logger control/seconds
 #define GPIO_IDX_EVENT_LOG_TICKS         16 // Event logger ticks

@@ -12,6 +12,12 @@
 #include "util.h"
 #include "memcpy2.h"
 
+#define MAX_RECORDERS                   16
+
+#if CFG_NUM_RECORDERS > MAX_RECORDERS
+# error "CFG_NUM_RECORDERS is greater than 16"
+#endif
+
 /*
  * Read/write CSR bits
  */
@@ -70,6 +76,7 @@ struct recorderData {
     unsigned int    regBase;
     unsigned int    csrModeBits;
     unsigned int    bytesPerSample;
+    unsigned int    cyclesPerWord;
     unsigned int    bytesPerAtom;
     unsigned int    triggerMask;
     unsigned int    pretrigCount;
@@ -138,6 +145,7 @@ wfrInit(unsigned int bpm)
 {
     int i, r;
     int bytesPerSample, bytesPerAtom, pretrigCount, acqCount, maxPretrig, acqSampleCapacity;
+    int cyclesPerWord;
     struct recorderData *rp;
     static UINTPTR iBufBase[CFG_DSBPM_COUNT];
 
@@ -154,7 +162,8 @@ wfrInit(unsigned int bpm)
         switch(i) {
         case 0:
             r = GPIO_IDX_ADC_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
-            bytesPerSample = 16; /* 4 I/Q 16-bit ADCs */
+            bytesPerSample = 16; // 4 I/Q 16-bit ADCs
+            cyclesPerWord = 2; // 2 ADC cycles per AXI word
             bytesPerAtom = 2; // 16-bit atoms
             acqSampleCapacity = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_ADC_SAMPLE_CAPACITY;
@@ -165,6 +174,7 @@ wfrInit(unsigned int bpm)
         case 1:
             r = GPIO_IDX_TBT_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_TBT_SAMPLE_CAPACITY;
@@ -175,6 +185,7 @@ wfrInit(unsigned int bpm)
         case 2:
             r = GPIO_IDX_FA_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (A, B, C, D) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_FA_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_FA_SAMPLE_CAPACITY;
@@ -186,6 +197,7 @@ wfrInit(unsigned int bpm)
             r = i == 3 ? GPIO_IDX_PL_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM :
                 GPIO_IDX_PH_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit pilot tone magnitudes values */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_PT_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_PT_SAMPLE_CAPACITY;
@@ -196,6 +208,7 @@ wfrInit(unsigned int bpm)
         case 5:
             r = GPIO_IDX_TBT_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY;
@@ -206,6 +219,7 @@ wfrInit(unsigned int bpm)
         case 6:
             r = GPIO_IDX_FA_POS_RECORDER_BASE + bpm*GPIO_IDX_RECORDER_PER_DSBPM;
             bytesPerSample = 16; /* 4 32-bit values (X, Y, Sum, Q) */
+            cyclesPerWord = 1;
             bytesPerAtom = 4; // 32-bit atoms
             acqSampleCapacity = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
             maxPretrig = CFG_RECORDER_FA_POS_SAMPLE_CAPACITY;
@@ -226,6 +240,7 @@ wfrInit(unsigned int bpm)
         rp->acqCount = acqCount;
         rp->maxPretrigger = maxPretrig;
         rp->bytesPerSample = bytesPerSample;
+        rp->cyclesPerWord = cyclesPerWord;
         rp->bytesPerAtom = bytesPerAtom;
         rp->commState = CS_IDLE;
         rp->dsbpmNumber = bpm;
@@ -236,8 +251,8 @@ wfrInit(unsigned int bpm)
         wrWrite(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER, iBufBase[bpm] >> 32);
         rp->csrModeBits = 0;
         wrWrite(rp, WR_REG_OFFSET_CSR, rp->csrModeBits);
-        rp->acqSampleCapacity = acqSampleCapacity;
-        rp->acqByteCapacity = bytesPerSample * acqSampleCapacity;
+        rp->acqSampleCapacity = acqSampleCapacity * cyclesPerWord;
+        rp->acqByteCapacity = bytesPerSample * acqSampleCapacity * cyclesPerWord;
         iBufBase[bpm] += rp->acqByteCapacity;
     }
 }
@@ -382,7 +397,7 @@ headerPacket(struct recorderData *rp)
             ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
     rp->startByteOffset = ((nextAddress - rp->acqBuf) +
                            rp->acqByteCapacity -
-                           (rp->acqCount * rp->bytesPerSample)) %
+                           (rp->acqCount * rp->bytesPerSample * rp->cyclesPerWord)) %
                                                         rp->acqByteCapacity;
     p = pbuf_alloc(PBUF_TRANSPORT, sizeof(*hp), PBUF_RAM);
     if (p) {
@@ -393,7 +408,7 @@ headerPacket(struct recorderData *rp)
         hp->waveformNumber = rp->waveformNumber;
         hp->seconds = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_SECONDS);
         hp->fraction = WR_READ(rp, WR_REG_OFFSET_TIMESTAMP_FRACTION);
-        hp->byteCount = rp->bytesLeft = count * rp->bytesPerSample;
+        hp->byteCount = rp->bytesLeft = count * rp->bytesPerSample * rp->cyclesPerWord;
         hp->bytesPerSample = rp->bytesPerSample;
         hp->bytesPerAtom = rp->bytesPerAtom;
         rp->commState = CS_HEADER;
@@ -401,11 +416,11 @@ headerPacket(struct recorderData *rp)
         rp->sysUsAtPreviousPacket = MICROSECONDS_SINCE_BOOT();
         if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
             printf("acqCount:%d(%X)  start byte offset:%d(%X)  bytesLeft:%d\n"
-                   "    bytesPerSample:%d  bytesPerAtom:%d\n",
+                   "    bytesPerSample:%d  bytesPerAtom:%d cyclesPerWord:%d\n",
                                     rp->acqCount, rp->acqCount,
                                     rp->startByteOffset, rp->startByteOffset,
                                     rp->bytesLeft, rp->bytesPerSample,
-                                    rp->bytesPerAtom);
+                                    rp->bytesPerAtom, rp->cyclesPerWord);
     }
     else {
         if (debugFlags & DEBUGFLAG_WAVEFORM_HEAD)
@@ -431,8 +446,11 @@ wfrStatus(unsigned int bpm)
 
     for (i = CFG_NUM_RECORDERS - 1 ; i >= 0 ; i--) {
         epicsUInt32 csr = WR_READ(&recorderData[bpm][i], WR_REG_OFFSET_CSR);
-        s = (s << 1) | ((csr & WR_CSR_ARM) != 0);
+        s = (s << 1) |
+            (((csr & WR_CSR_AXI_FIFO_OVERRUN) != 0) << MAX_RECORDERS) |
+            ((csr & WR_CSR_ARM) != 0);
     }
+
     return s;
 }
 
@@ -458,7 +476,7 @@ recorderDiagnosticCheck(struct recorderData *rp)
             ((uint64_t) WR_READ(rp, WR_REG_OFFSET_ADDRESS_MSB_POINTER)) << 32);
     unsigned int bIndex = ((nextAddress - rp->acqBuf) +
                            rp->acqByteCapacity -
-                           (count * rp->bytesPerSample)) % rp->acqByteCapacity;
+                           (count * rp->bytesPerSample * rp->cyclesPerWord)) % rp->acqByteCapacity;
 
     showRec(rp);
     for (i = 0 ; i < HISTSIZE ; i++) histogram[i] = 0;
@@ -652,14 +670,14 @@ waveformRecorderCommand(int waveformCommand, unsigned int index,
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_PRETRIGGER_COUNT:
         if (val >= 0) {
             if (val > rp->maxPretrigger) val = rp->maxPretrigger;
-            rp->pretrigCount = val;
+            rp->pretrigCount = (val + rp->cyclesPerWord - 1) / rp->cyclesPerWord;
         }
         break;
 
     case DSBPM_PROTOCOL_CMD_RECORDERS_LO_ACQUISITION_COUNT:
         if (val > 0) {
             if (val > rp->acqSampleCapacity) val = rp->acqSampleCapacity;
-            rp->acqCount = val;
+            rp->acqCount = (val + rp->cyclesPerWord - 1) / rp->cyclesPerWord;
         }
         break;
 
