@@ -53,6 +53,8 @@ module preliminaryProcessing #(
     output wire  [ADC_WIDTH-1:0] adc0OutPh, adc1OutPh, adc2OutPh, adc3OutPh,
     input                        adcExceedsThreshold, adcUseThisSample,
     output wire                  adcLoSynced,
+    output reg                   adcFaSynced = 0,
+    output reg                   adcSaSynced = 0,
 
     input                        evrClk,
     input                        evrFaMarker, evrSaMarker,
@@ -148,8 +150,8 @@ end
 (* ASYNC_REG="TRUE" *) reg adcHbEvent_m = 0, adcSpEvent_m = 0;
 reg adcUseRMS = 0;
 reg adcIsSinglePassMode = 0;
-reg adcFaEvent = 0, adcFaEvent_d1 = 0, adcFaSync = 0;
-reg adcSaEvent = 0, adcSaEvent_d1 = 0, adcSaSync = 0;
+reg adcFaEvent = 0, adcFaEvent_d1 = 0;
+reg adcSaEvent = 0, adcSaEvent_d1 = 0;
 reg adcHbEvent = 0, adcHbEvent_d1 = 0;
 reg adcSpEvent = 0;
 reg adcFaDecimateFlag = 0, adcSaDecimateFlag = 0;
@@ -164,12 +166,12 @@ always @(posedge adcClk) begin
     adcFaEvent_m  <= evrFaMarker;
     adcFaEvent    <= adcFaEvent_m;
     adcFaEvent_d1 <= adcFaEvent;
-    if (adcFaEvent && !adcFaEvent_d1 && !adcFaSync) adcFaSync <= 1;
+    if (adcFaEvent && !adcFaEvent_d1 && !adcFaSynced) adcFaSynced <= 1;
 
     adcSaEvent_m  <= evrSaMarker;
     adcSaEvent    <= adcSaEvent_m;
     adcSaEvent_d1 <= adcSaEvent;
-    if (adcSaEvent && !adcSaEvent_d1 && !adcSaSync) adcSaSync <= 1;
+    if (adcSaEvent && !adcSaEvent_d1 && !adcSaSynced) adcSaSynced <= 1;
 
     adcHbEvent_m  <= evrHbMarker;
     adcHbEvent    <= adcHbEvent_m;
@@ -182,15 +184,15 @@ always @(posedge adcClk) begin
     // Generate decimation requests
     if (adcMtLoadAndLatch) begin
         adcMtLoadAndLatchToggle <= !adcMtLoadAndLatchToggle;
-        if (adcFaSync) begin
-            adcFaSync <= 0;
+        if (adcFaSynced) begin
+            adcFaSynced <= 0;
             adcFaDecimateFlag <= 1;
         end
         else begin
             adcFaDecimateFlag <= 0;
         end
-        if (adcSaSync) begin
-            adcSaSync <= 0;
+        if (adcSaSynced) begin
+            adcSaSynced <= 0;
             adcSaDecimateFlag <= 1;
         end
         else begin
@@ -1152,7 +1154,7 @@ assign probe[16] = faTrimStrobe;
 assign probe[18:17] = cordicADC;
 assign probe[19] = cordicTVALID;
 assign probe[21:20] = cordicStream;
-assign probe[22] = adcFaSync;
+assign probe[22] = adcFaSynced;
 assign probe[23] = adcFaDecimateFlag;
 assign probe[24] = sysFaDecimateFlag;
 assign probe[25] = sysMtMatch_p;
@@ -1167,7 +1169,7 @@ assign probe[33] = saDecimatedToggle;
 assign probe[34] = saValid;
 assign probe[35] = faToggle;
 assign probe[36] = evrSaMarker;
-assign probe[37] = adcSaSync;
+assign probe[37] = adcSaSynced;
 assign probe[38] = adcSaDecimateFlag;
 assign probe[39] = sysSaDecimateFlag;
 assign probe[40] = cordicSaDecimateFlag;

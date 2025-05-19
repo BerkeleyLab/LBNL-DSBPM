@@ -290,6 +290,7 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrSROC(evrSROCClk),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
+wire isHBvalid = evrSyncStatus[1];
 wire isPPSvalid = evrSyncStatus[2];
 
 OBUF #(
@@ -1677,6 +1678,8 @@ wire adcSingleTrig [0:CFG_DSBPM_COUNT-1];
 wire sysSingleTrig [0:CFG_DSBPM_COUNT-1];
 wire [32-MAG_WIDTH-1:0] magPAD = 0;
 wire                 adcLoSynced[0:CFG_DSBPM_COUNT-1];
+wire                 adcFaSynced[0:CFG_DSBPM_COUNT-1];
+wire                 adcSaSynced[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLoadAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLatchAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcMtLoadAndLatch[0:CFG_DSBPM_COUNT-1];
@@ -1919,6 +1922,8 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
     .sysSingleTrig(sysSingleTrig[dsbpm]),
     .adcSingleTrig(adcSingleTrig[dsbpm]),
     .adcLoSynced(adcLoSynced[dsbpm]),
+    .adcFaSynced(adcFaSynced[dsbpm]),
+    .adcSaSynced(adcSaSynced[dsbpm]),
 
     .tbtToggle(prelimProcTbtToggle[dsbpm]),
     .rfTbtMagValid(prelimProcRfTbtMagValid[dsbpm]),
@@ -1974,6 +1979,13 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
     .cicFaMag2Dbg(prelimProcRfCicFaMag2[dsbpm]),
     .cicFaMag3Dbg(prelimProcRfCicFaMag3[dsbpm])
 );
+
+assign GPIO_IN[GPIO_IDX_CLOCK_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
+         16'b0,
+         1'b0, 1'b0, 1'b0, 1'b0,
+         1'b0, 1'b0, isHBvalid, isPPSvalid,
+         evrRxSynchronized, evrSROCsynced, evrSaSynced, evrFaSynced,
+         1'b0, adcSaSynced[dsbpm], adcFaSynced[dsbpm], adcLoSynced[dsbpm] };
 
 end // for
 endgenerate // generate
