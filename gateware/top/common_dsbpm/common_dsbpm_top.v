@@ -665,17 +665,19 @@ always @(posedge sysClk) begin
     end
 end
 
-forwardData #(.DATA_WIDTH(2))
-  forwardTriggersToADC(.inClk(sysClk),
-             .inData({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
-             .outClk(adcClk),
-             .outData({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
+forwardMultiCDC #(
+    .DATA_WIDTH(2))
+  forwardTriggersMultiCDCToADC(
+    .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
+    .clk(adcClk),
+    .dataOut({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
 
-forwardData #(.DATA_WIDTH(2))
-  forwardTriggersToDDR(.inClk(sysClk),
-             .inData({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
-             .outClk(ddr4_ui_clk),
-             .outData({ddrLossOffBeamTrigger[dsbpm], ddrSoftTrigger[dsbpm]}));
+forwardMultiCDC #(
+    .DATA_WIDTH(2))
+  forwardTriggersMultiCDCToToDDR(
+    .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
+    .clk(ddr4_ui_clk),
+    .dataOut({ddrLossOffBeamTrigger[dsbpm], ddrSoftTrigger[dsbpm]}));
 
 wire [7:0] sysRecorderTriggerBus = { sysTriggerBus[7:4],
                                   1'b0,
