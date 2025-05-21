@@ -23,6 +23,7 @@
 #define GPIO_IDX_SOFT_TRIGGER             9 // Acquisition software trigger (W)
 #define GPIO_IDX_DISPLAY_CSR             10 // Display CSR (R/W)
 #define GPIO_IDX_DISPLAY_DATA            11 // Display I/O (R/W)
+#define GPIO_IDX_ADC_SYNC_CSR            12 // ADC synchronization
 #define GPIO_IDX_INTERLOCK_CSR           13 // Interlock (R/W)
 #define GPIO_IDX_EVENT_LOG_CSR           15 // Event logger control/seconds
 #define GPIO_IDX_EVENT_LOG_TICKS         16 // Event logger ticks
@@ -91,8 +92,9 @@
 #define GPIO_IDX_PH_GAIN_FACTOR_1        84 // ADC 1 high freq pilot tone gain
 #define GPIO_IDX_PH_GAIN_FACTOR_2        85 // ADC 2 high freq pilot tone gain
 #define GPIO_IDX_PH_GAIN_FACTOR_3        86 // ADC 3 high freq pilot tone gain
+#define GPIO_IDX_CLOCK_STATUS            87 // BPM Sync/Clock status
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_PH_GAIN_FACTOR_3-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_CLOCK_STATUS-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
 // For compatibility

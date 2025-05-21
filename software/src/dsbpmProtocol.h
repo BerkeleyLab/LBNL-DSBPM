@@ -22,9 +22,9 @@
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
 #define DSBPM_PROTOCOL_MAGIC                    0xD06F9891
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91986FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9A92
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9B92
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x929A6FD0
+                                                0x929B6FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9993
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
                                                 0x93996FD0
@@ -83,6 +83,7 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 afeAtt[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 dacCurrent[DSBPM_PROTOCOL_DAC_COUNT];
     epicsUInt32 dacCtl[DSBPM_PROTOCOL_DAC_COUNT];
+    epicsUInt32 clockStatus[DSBPM_PROTOCOL_DSP_COUNT];
 };
 
 /*

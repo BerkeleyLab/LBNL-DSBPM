@@ -230,7 +230,6 @@ wire evrHeartbeat = evrTriggerBus[0];
 wire evrPulsePerSecond = evrTriggerBus[1];
 wire evrSinglePass = evrTriggerBus[2];
 wire evrSpare = evrTriggerBus[3];
-wire evrSROCsynced;
 assign GPIO_LEDS[0] = evrHeartbeat;
 assign GPIO_LEDS[1] = evrPulsePerSecond;
 
@@ -276,6 +275,7 @@ assign CLK104_SYNC_IN = 1'b0;
 
 // Check EVR markers
 wire [31:0] evrSyncStatus;
+wire evrSROCsynced;
 wire evrSROCClk;
 evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .DEBUG("false"))
@@ -290,6 +290,7 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrSROC(evrSROCClk),
           .evrSROCstrobe());
 assign GPIO_IN[GPIO_IDX_EVR_SYNC_CSR] = evrSyncStatus;
+wire isHBvalid = evrSyncStatus[1];
 wire isPPSvalid = evrSyncStatus[2];
 
 OBUF #(
@@ -298,6 +299,26 @@ OBUF #(
    .O(EVR_SROC),
    .I(evrSROCClk)
 );
+
+// Debug counter synched with SROC
+wire [31:0] adcSyncStatus;
+wire adcSROCsynced;
+wire adcSROCClk;
+wire [31:0] adcCounterHB;
+evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
+          .DEBUG("false"))
+  adcSROC(.sysClk(sysClk),
+          .csrStrobe(GPIO_STROBES[GPIO_IDX_ADC_SYNC_CSR]),
+          .GPIO_OUT(GPIO_OUT),
+          .csr(adcSyncStatus),
+          .evrClk(adcClk),
+          .evrHeartbeatMarker(evrHeartbeat),
+          .evrPulsePerSecondMarker(evrPulsePerSecond),
+          .evrSROCsynced(adcSROCsynced),
+          .evrSROC(adcSROCClk),
+          .evrSROCstrobe(),
+          .evrCounterHBDbg(adcCounterHB));
+assign GPIO_IN[GPIO_IDX_ADC_SYNC_CSR] = adcSyncStatus;
 
 /////////////////////////////////////////////////////////////////////////////
 // Generate tile synchronization user_sysref_adc
@@ -385,45 +406,56 @@ endgenerate
 //
 // Forward the EVR trigger bus and time stamp to the ADC clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] adcTriggerBus;
 wire [63:0] adcTimestamp;
-wire [71:0] evrForward, adcForward;
-assign evrForward = { evrTriggerBus, evrTimestamp };
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToADC(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(adcClk),
-             .outData(adcForward));
-assign adcTimestamp = adcForward[63:0];
-assign adcTriggerBus = adcForward[71:64];
+             .outData(adcTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] adcTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToADC (
+    .dataIn(evrTriggerBus),
+    .clk(adcClk),
+    .dataOut(adcTriggerBus));
 
 //
 // Forward the EVR trigger bus and time stamp to the system clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] sysTriggerBus;
 wire [63:0] sysTimestamp;
-wire [71:0] sysForward;
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToSys(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(sysClk),
-             .outData(sysForward));
-assign sysTimestamp = sysForward[63:0];
-assign sysTriggerBus = sysForward[71:64];
+             .outData(sysTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] sysTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToSys (
+    .dataIn(evrTriggerBus),
+    .clk(sysClk),
+    .dataOut(sysTriggerBus));
 
 //
 // Forward the EVR trigger bus and time stamp to the DDR clock domain.
 //
-(* mark_debug = "true" *) wire [7:0] ddrTriggerBus;
 wire [63:0] ddrTimestamp;
-wire [71:0] ddrForward;
-forwardData #(.DATA_WIDTH(72))
+forwardData #(.DATA_WIDTH(64))
   forwardTimestampToDDR(.inClk(evrClk),
-             .inData(evrForward),
+             .inData(evrTimestamp),
              .outClk(ddr4_ui_clk),
-             .outData(ddrForward));
-assign ddrTimestamp = ddrForward[63:0];
-assign ddrTriggerBus = ddrForward[71:64];
+             .outData(ddrTimestamp));
+
+(* mark_debug = "true" *) wire [7:0] ddrTriggerBus;
+forwardMultiCDC #(
+    .DATA_WIDTH(8))
+  forwardMultiCDCToDDR (
+    .dataIn(evrTriggerBus),
+    .clk(ddr4_ui_clk),
+    .dataOut(ddrTriggerBus));
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
@@ -497,6 +529,10 @@ localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
 
 // I and Q interleaved
 localparam AXIS_DAC_SAMPLE_WIDTH = CFG_DAC_AXI_SAMPLES_PER_CLOCK * DAC_SAMPLE_WIDTH;
+
+// FIFO sizes
+localparam ADC_FIFO_CAPACITY = 2048;
+localparam DDC_FIFO_CAPACITY = 256;
 
 //////////////////////////////////////////////////////////////////////////////
 // Waveform recorders
@@ -671,7 +707,9 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
     .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH)) // twice as large as input (DATA_WIDTH)
+    .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH), // twice as large as input (DATA_WIDTH)
+    .FIFO_CAPACITY(ADC_FIFO_CAPACITY),
+    .CHIPSCOPE_DBG((dsbpm == 0)? "TRUE" : "FALSE"))
   adcWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -696,6 +734,10 @@ genericWaveformRecorder #(
     .valid(1'b1),
     .triggers(adcRecorderTriggerBus),
     .timestamp(adcTimestamp),
+
+    .diagExtMode(1'b1),
+    .diagExtData(adcCounterHB),
+
     .axi_AWADDR(wr_adc_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_adc_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_adc_axi_AWVALID[dsbpm]),
@@ -730,7 +772,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_TBT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   tbtWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -755,6 +798,7 @@ genericWaveformRecorder #(
     .valid(prelimProcRfTbtMagValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_tbt_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_tbt_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_tbt_axi_AWVALID[dsbpm]),
@@ -785,7 +829,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_FA_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   faWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -810,6 +855,7 @@ genericWaveformRecorder #(
     .valid(prelimProcRfFaMagValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_fa_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_fa_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_fa_axi_AWVALID[dsbpm]),
@@ -840,7 +886,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   plWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -865,6 +912,7 @@ genericWaveformRecorder #(
     .valid(prelimProcPtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_pl_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_pl_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_pl_axi_AWVALID[dsbpm]),
@@ -895,7 +943,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   phWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -920,6 +969,7 @@ genericWaveformRecorder #(
     .valid(prelimProcPtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_ph_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_ph_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_ph_axi_AWVALID[dsbpm]),
@@ -954,7 +1004,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   tbtPosWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -975,6 +1026,7 @@ genericWaveformRecorder #(
     .valid(positionCalcTbtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_tbt_pos_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_tbt_pos_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_tbt_pos_axi_AWVALID[dsbpm]),
@@ -1006,7 +1058,8 @@ genericWaveformRecorder #(
     .ACQ_CAPACITY(CFG_RECORDER_FA_POS_SAMPLE_CAPACITY),
     .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH))
+    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
   faPosWaveformRecorder(
     .sysClk(sysClk),
     .writeData(GPIO_OUT),
@@ -1027,6 +1080,7 @@ genericWaveformRecorder #(
     .valid(positionCalcFaValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
+    .diagExtMode(1'b0),
     .axi_AWADDR(wr_fa_pos_axi_AWADDR[dsbpm]),
     .axi_AWLEN(wr_fa_pos_axi_AWLEN[dsbpm]),
     .axi_AWVALID(wr_fa_pos_axi_AWVALID[dsbpm]),
@@ -1744,13 +1798,13 @@ assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
     {32-1{1'b0}},
     prelimProcOverflow[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag0[dsbpm] };
+    magPAD, prelimProcRfFaMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag1[dsbpm] };
+    magPAD, prelimProcRfFaMag1[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag2[dsbpm] };
+    magPAD, prelimProcRfFaMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfMag3[dsbpm] };
+    magPAD, prelimProcRfFaMag3[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
     magPAD, prelimProcPlMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
@@ -1922,6 +1976,13 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
     .cicFaMag3Dbg(prelimProcRfCicFaMag3[dsbpm])
 );
 
+assign GPIO_IN[GPIO_IDX_CLOCK_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
+         16'b0,
+         1'b0, 1'b0, 1'b0, 1'b0,
+         1'b0, 1'b0, isHBvalid, isPPSvalid,
+         evrRxSynchronized, evrSROCsynced, evrSaSynced, evrFaSynced,
+         1'b0, 1'b0, 1'b0, adcLoSynced[dsbpm] };
+
 end // for
 endgenerate // generate
 
@@ -2072,7 +2133,7 @@ wire spiCLK, spiLE, spiSDI;
 afeSPI #(
   .CLK_RATE(SYSCLK_RATE),
   .CSB_WIDTH(1),
-  .BIT_RATE(1000000),
+  .BIT_RATE(100000),
   .DEBUG("false")
 ) afeSPI (
     .clk(sysClk),
