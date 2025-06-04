@@ -733,6 +733,16 @@ genericWaveformRecorder #(
         prelimProcADC1[dsbpm],
         prelimProcADCQ0[dsbpm],
         prelimProcADC0[dsbpm]}),
+    .testData({
+        {prelimProcADCQ3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
+        {prelimProcADC3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
+        {prelimProcADCQ2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
+        {prelimProcADC2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
+        {prelimProcADCQ1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
+        {prelimProcADC1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
+        {prelimProcADCQ0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]},
+        {prelimProcADC0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]}
+        }),
     .valid(1'b1),
     .triggers(adcRecorderTriggerBus),
     .timestamp(adcTimestamp),
@@ -797,6 +807,7 @@ genericWaveformRecorder #(
                                      prelimProcRfTbtMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
                                      prelimProcRfTbtMag0[dsbpm]}),
+    .testData(0),
     .valid(prelimProcRfTbtMagValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -854,6 +865,7 @@ genericWaveformRecorder #(
                                      prelimProcRfFaMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
                                      prelimProcRfFaMag0[dsbpm]}),
+    .testData(0),
     .valid(prelimProcRfFaMagValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -911,6 +923,7 @@ genericWaveformRecorder #(
                                      prelimProcPlMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
                                      prelimProcPlMag0[dsbpm]}),
+    .testData(0),
     .valid(prelimProcPtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -968,6 +981,7 @@ genericWaveformRecorder #(
                                      prelimProcPhMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
                                      prelimProcPhMag0[dsbpm]}),
+    .testData(0),
     .valid(prelimProcPtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -1025,6 +1039,7 @@ genericWaveformRecorder #(
         positionCalcTbtQ[dsbpm],
         positionCalcTbtY[dsbpm],
         positionCalcTbtX[dsbpm]}),
+    .testData(0),
     .valid(positionCalcTbtValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -1079,6 +1094,7 @@ genericWaveformRecorder #(
         positionCalcFaQ[dsbpm],
         positionCalcFaY[dsbpm],
         positionCalcFaX[dsbpm]}),
+    .testData(0),
     .valid(positionCalcFaValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
@@ -1676,6 +1692,8 @@ assign evrSaSynced = sysSAstatus[31];
 //
 // Preliminary processing (compute magnitude of ADC signals)
 //
+wire adcUseThisSample[0:CFG_DSBPM_COUNT-1];
+wire adcExceedsThreshold[0:CFG_DSBPM_COUNT-1];
 wire adcSingleTrig [0:CFG_DSBPM_COUNT-1];
 wire sysSingleTrig [0:CFG_DSBPM_COUNT-1];
 wire [32-MAG_WIDTH-1:0] magPAD = 0;
@@ -1758,8 +1776,6 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_cha
 
 wire [(BD_ADC_CHANNEL_COUNT*ADC_SAMPLE_WIDTH)-1:0] adcsProcTDATA;
 wire                                            adcsProcTVALID;
-wire adcUseThisSample;
-wire adcExceedsThreshold;
 
 adcProcessing #(
     // because we are using DDC, the ADC samples are 16-bits, even though
@@ -1793,8 +1809,8 @@ adcProcessing #(
     .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
     .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
 
-    .adcUseThisSample(adcUseThisSample),
-    .adcExceedsThreshold(adcExceedsThreshold));
+    .adcUseThisSample(adcUseThisSample[dsbpm]),
+    .adcExceedsThreshold(adcExceedsThreshold[dsbpm]));
 
 assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
     {32-1{1'b0}},
@@ -1910,8 +1926,8 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
     .adc2OutMag(prelimProcADC2Mag[dsbpm]),
     .adc3OutMag(prelimProcADC3Mag[dsbpm]),
 
-    .adcExceedsThreshold(adcExceedsThreshold),
-    .adcUseThisSample(adcUseThisSample),
+    .adcExceedsThreshold(adcExceedsThreshold[dsbpm]),
+    .adcUseThisSample(adcUseThisSample[dsbpm]),
 
     .evrClk(evrClk),
     .evrFaMarker(evrFaMarker),
