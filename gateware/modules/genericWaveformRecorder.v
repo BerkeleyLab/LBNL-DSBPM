@@ -29,6 +29,7 @@ module genericWaveformRecorder #(
     // clk synchronous signals
     input                        clk,
     input       [DATA_WIDTH-1:0] data,
+    input       [DATA_WIDTH-1:0] testData,
     input                        valid,
     input                  [7:0] triggers,
     input  [TIMESTAMP_WIDTH-1:0] timestamp,
@@ -114,7 +115,8 @@ wire sysAddrLSBStrobe = regStrobes[3];
 wire sysAddrMSBStrobe = regStrobes[4];
 reg [WRITE_COUNT_WIDTH-1:0] sysPretrigCount_r, sysAcqCount_r;
 reg [7:0] sysCsrTriggerEnables = 0;
-reg       sysCsrDiagMode = 0;
+reg      sysCsrTestMode = 0;
+reg      sysCsrDiagMode = 0;
 wire     sysFull, sysOverrun;
 reg      sysCsrArmed = 0;
 wire     sysAcqArmed;
@@ -122,8 +124,8 @@ wire     sysAcqPretrigLeftDone;
 wire [1:0] sysCsrBRESP;
 wire [2:0] sysState;
 assign csr = { sysCsrTriggerEnables,
-               8'b0,
-               6'b0, sysAcqPretrigLeftDone, sysCsrDiagMode,
+               7'b0, sysAcqPretrigLeftDone,
+               6'b0, sysCsrTestMode, sysCsrDiagMode,
               sysFull, sysCsrBRESP, sysOverrun, sysState, sysAcqArmed };
 reg [2*BUS_WIDTH-1:0] sysAcqBase;
 
@@ -139,6 +141,7 @@ always @(posedge sysClk) begin
     if (sysCsrStrobe) begin
         sysCsrToggle <= ~sysCsrToggle;
         sysCsrTriggerEnables <= writeData[31:24];
+        sysCsrTestMode <= writeData[9];
         sysCsrDiagMode <= writeData[8];
         sysCsrArmed <= writeData[0];
     end
@@ -150,13 +153,14 @@ end
 //
 wire [WRITE_COUNT_WIDTH-1:0] csrPretrigCount, csrAcqCount;
 wire [7:0] csrTriggerEnables;
-wire       csrToggle, csrArmed, csrDiagMode;
+wire       csrToggle, csrArmed, csrTestMode, csrDiagMode;
 wire [2*BUS_WIDTH-1:0] acqBase;
-forwardData #(.DATA_WIDTH(1+1+1+8+BUS_WIDTH+BUS_WIDTH+WRITE_COUNT_WIDTH+WRITE_COUNT_WIDTH))
+forwardData #(.DATA_WIDTH(1+1+1+1+8+BUS_WIDTH+BUS_WIDTH+WRITE_COUNT_WIDTH+WRITE_COUNT_WIDTH))
   forwardCSRtoAcq (
     .inClk(sysClk),
     .inData({   sysCsrToggle,
                 sysCsrArmed,
+                sysCsrTestMode,
                 sysCsrDiagMode,
                 sysCsrTriggerEnables,
                 sysAcqBase[0+:BUS_WIDTH], // LSB
@@ -166,6 +170,7 @@ forwardData #(.DATA_WIDTH(1+1+1+8+BUS_WIDTH+BUS_WIDTH+WRITE_COUNT_WIDTH+WRITE_CO
     .outClk(clk),
     .outData({  csrToggle,
                 csrArmed,
+                csrTestMode,
                 csrDiagMode,
                 csrTriggerEnables,
                 acqBase[0+:BUS_WIDTH], // LSB
@@ -214,6 +219,7 @@ reg [BEATCOUNT_WIDTH-1:0] beatCount;
 assign axi_AWLEN = { {(8-BEATCOUNT_WIDTH){1'b0}}, beatCount };
 assign axi_WLAST = (state == S_DATA) && (beatCount == 0);
 
+wire [DATA_WIDTH-1:0] dataIn = csrTestMode ? testData : data;
 
 //
 // Provide some elasticity between incoming data and AXI
@@ -229,8 +235,8 @@ generate
 if (DATA_WIDTH == AXI_DATA_WIDTH) begin
 
 assign dataValid = valid;
-assign fifoIn = csrDiagMode ? {data[DATA_WIDTH-1:BUS_WIDTH], diagData} :
-    data;
+assign fifoIn = csrDiagMode ? {dataIn[DATA_WIDTH-1:BUS_WIDTH], diagData} :
+    dataIn;
 
 assign axi_WDATA = csrDiagMode ? { fifoOut[AXI_DATA_WIDTH-1:2*BUS_WIDTH],
                             {(BUS_WIDTH-BEATCOUNT_WIDTH){1'b0}}, beatCount,
@@ -242,16 +248,16 @@ if (2*DATA_WIDTH == AXI_DATA_WIDTH) begin
 always @(posedge clk) begin
     if (valid) begin
         dataPhase <= !dataPhase;
-        dataHold <= data;
+        dataHold <= dataIn;
     end
 end
 
 reg [BUS_WIDTH-1:0] diagDataHold = 0;
 assign dataValid = valid && dataPhase;
 assign fifoIn = csrDiagMode ? {
-        data[DATA_WIDTH-1:BUS_WIDTH], diagData,
+        dataIn[DATA_WIDTH-1:BUS_WIDTH], diagData,
         dataHold[DATA_WIDTH-1:BUS_WIDTH], diagDataHold} :
-        {data, dataHold};
+        {dataIn, dataHold};
 
 always @(posedge clk) begin
     if (valid) begin
