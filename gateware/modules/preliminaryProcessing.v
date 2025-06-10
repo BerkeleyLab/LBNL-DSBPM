@@ -83,7 +83,7 @@ module preliminaryProcessing #(
     output wire  [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
     output wire                  ptToggle,
     output reg                   ptValid,
-    output reg                   overflowFlag,
+    output reg                   sysOverflowFlag,
 
     // Debug outputs
     output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg,
@@ -152,7 +152,7 @@ reg adcFaEvent = 0, adcFaEvent_d1 = 0, adcFaSync = 0;
 reg adcSaEvent = 0, adcSaEvent_d1 = 0, adcSaSync = 0;
 reg adcHbEvent = 0, adcHbEvent_d1 = 0;
 reg adcSpEvent = 0;
-reg adcFaDecimateFlag = 0, adcSaDecimateFlag = 0;
+reg adcFaDecimateReq = 0, adcSaDecimateReq = 0;
 reg adcUsingEvrTrigger = 0;
 reg [1:0] adcHbDivider = 2; reg adcSyncMarker = 0;
 always @(posedge adcClk) begin
@@ -184,17 +184,17 @@ always @(posedge adcClk) begin
         adcMtLoadAndLatchToggle <= !adcMtLoadAndLatchToggle;
         if (adcFaSync) begin
             adcFaSync <= 0;
-            adcFaDecimateFlag <= 1;
+            adcFaDecimateReq <= 1;
         end
         else begin
-            adcFaDecimateFlag <= 0;
+            adcFaDecimateReq <= 0;
         end
         if (adcSaSync) begin
             adcSaSync <= 0;
-            adcSaDecimateFlag <= 1;
+            adcSaDecimateReq <= 1;
         end
         else begin
-            adcSaDecimateFlag <= 0;
+            adcSaDecimateReq <= 0;
         end
     end
 
@@ -590,34 +590,6 @@ sdAccumulate #(.PRODUCT_WIDTH(PRODUCT_WIDTH),
     .sums(phSums),
     .overflowFlag(phSumOverflow));
 
-//                                                                          //
-//                              ADC CLOCK DOMAIN                            //
-//////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////
-//                             SYSTEM CLOCK DOMAIN                          //
-//                                                                          //
-
-// Watch for overflows
-// Widen for easy detection by IOC
-(* ASYNC_REG="TRUE" *) reg sysAdcOverflowFlag_m = 0, sysAdcOverflowFlag = 0;
-(* ASYNC_REG="TRUE" *) reg sysSingleTrig_m;
-reg [$clog2(SYSCLK_RATE/2)-1:0] ovTimer;
-always @(posedge clk) begin
-    sysAdcOverflowFlag_m <= adcOverflowFlag;
-    sysAdcOverflowFlag   <= sysAdcOverflowFlag_m;
-    if (sysAdcOverflowFlag || cordicOverflowFlag) begin
-        ovTimer <= ~0;
-        overflowFlag <= 1;
-    end
-    else begin
-        ovTimer <= ovTimer - 1;
-        if (ovTimer == 0) overflowFlag <= 0;
-    end
-    sysSingleTrig_m <= adcHoldoff;
-    sysSingleTrig   <= sysSingleTrig_m;
-end
-
 //
 // Multiplex all channels through the single normalize/CORDIC block.
 // Prioritize turn-by-turn, then low then high pilot tones, then rf.
@@ -629,71 +601,50 @@ localparam STREAM_TBT = 2'd0,
            STREAM_PH  = 2'd3;
 
 // Get ADC 'accumulator ready' toggles into system clock domain
-(* ASYNC_REG="TRUE" *) reg sysTbtToggle_m, sysMtToggle_m;
-(* ASYNC_REG="TRUE" *) reg sysTbtToggle, sysMtToggle_p;
-reg sysMtToggle;
-reg sysTbtMatch, sysMtMatch_p, sysRfMatch, sysPlMatch, sysPhMatch;
-reg sysFaDecimateFlag, sysSaDecimateFlag;
+reg adcMtToggle_d, adcMtMatch_d;
+reg adcTbtMatch, adcRfMatch, adcPlMatch, adcPhMatch;
+reg adcFaDecimateFlag, adcSaDecimateFlag;
 
-wire sysTbtValid = sysTbtMatch != sysTbtToggle;
-wire sysPlValid = sysPlMatch != sysMtToggle;
-wire sysPhValid = sysPhMatch != sysMtToggle;
-wire sysRfValid = sysRfMatch != sysMtToggle;
+// Generate delayed valid so data is valid when sumVALID is asserted.
+wire adcTbtValid = adcTbtMatch != adcTbtToggle;
+wire adcPlValid = adcPlMatch != adcMtToggle_d;
+wire adcPhValid = adcPhMatch != adcMtToggle_d;
+wire adcRfValid = adcRfMatch != adcMtToggle_d;
 
 wire cordicREADY;
 
-wire sumVALID = ((sysTbtValid)
-              || (sysPlValid)
-              || (sysPhValid)
-              || (sysRfValid));
+wire sumVALID = ((adcTbtValid)
+              || (adcPlValid)
+              || (adcPhValid)
+              || (adcRfValid));
 
 wire [STREAM_SELECT_WIDTH-1:0] sumSelect =
-                       (sysTbtValid) ? STREAM_TBT :
-                       (sysPlValid)  ? STREAM_PL  :
-                       (sysPhValid)  ? STREAM_PH  : STREAM_RF;
+                       (adcTbtValid) ? STREAM_TBT :
+                       (adcPlValid)  ? STREAM_PL  :
+                       (adcPhValid)  ? STREAM_PH  : STREAM_RF;
 
 wire [(8*MAG_WIDTH)-1:0] sums = (sumSelect == STREAM_TBT) ? tbtSums :
                                 (sumSelect == STREAM_PL)  ? plSums  :
                                 (sumSelect == STREAM_PH)  ? phSums  : rfSums;
 
-
-// Don't bother with any fancy clock domain crossing logic for the sum
-// shift values since changes to these are rare and will at worst cause
-// one (TBT, RF or Pilot Tone) value to be computed improperly.
+// Convert toggle flags to valid for all data rates
 
 assign tbtSumsDbg = tbtSums;
-assign tbtSumsValidDbg = sysTbtValid;
+assign tbtSumsValidDbg = adcTbtValid;
 
-reg [3:0] faCICshift = 0;
-wire [2:0] cicStageCount = CIC_STAGES;
-wire [9:0] cicFaDecimate = CIC_FA_DECIMATE;
-assign sumShiftCsr = { cicStageCount,
-                       cicFaDecimate,
-                       {DATA_WIDTH-3-10-4-3*4{1'b0}},
-                       adcOverflowsStretched,
-                       faCICshift, adcMtSumShift, adcTbtSumShift };
-always @(posedge clk) begin
-    if (sumShiftCsrStrobe) begin
-        {faCICshift,adcMtSumShift,adcTbtSumShift} <= gpioData[0+:3*4];
-    end
-    sysTbtToggle_m <= adcTbtToggle;
-    sysTbtToggle   <= sysTbtToggle_m;
-    sysMtToggle_m <= adcMtToggle;
-    sysMtToggle_p <= sysMtToggle_m;
-    sysMtToggle   <= sysMtToggle_p;
-    // Sample decimation flags one cycle early so they're
-    // valid when sumVALID is asserted.
-    if (sysMtMatch_p != sysMtToggle_p) begin
-        sysMtMatch_p <= sysMtToggle_p;
-        sysFaDecimateFlag <= adcFaDecimateFlag;
-        sysSaDecimateFlag <= adcSaDecimateFlag;
+always @(posedge adcClk) begin
+    adcMtToggle_d <= adcMtToggle;
+    if (adcMtMatch != adcMtToggle) begin
+        adcMtMatch <= adcMtToggle;
+        adcFaDecimateFlag <= adcFaDecimateReq;
+        adcSaDecimateFlag <= adcSaDecimateReq;
     end
     if (cordicREADY) begin
         // Ensure that sumVALID and sumSelect ordering matches this.
-        if (sysTbtValid) sysTbtMatch <= !sysTbtMatch;
-        else if (sysPlValid) sysPlMatch <= !sysPlMatch;
-        else if (sysPhValid) sysPhMatch <= !sysPhMatch;
-        else if (sysRfValid) sysRfMatch <= !sysRfMatch;
+        if (adcTbtValid) adcTbtMatch <= !adcTbtMatch;
+        else if (adcPlValid) adcPlMatch <= !adcPlMatch;
+        else if (adcPhValid) adcPhMatch <= !adcPhMatch;
+        else if (adcRfValid) adcRfMatch <= !adcRfMatch;
     end
 end
 
@@ -709,19 +660,70 @@ wire [STREAM_SELECT_WIDTH-1:0] cordicStream=cordicTUSER[2+:STREAM_SELECT_WIDTH];
 wire cordicFaDecimateFlag = cordicTUSER[2+STREAM_SELECT_WIDTH];
 wire cordicSaDecimateFlag = cordicTUSER[3+STREAM_SELECT_WIDTH];
 wire cordicTVALID;
-wire cordicOverflowFlag;
+wire adcCordicOverflowFlag;
 wire  [MAG_WIDTH-1:0] cordicMagnitude;
 fourCordic #(.IO_WIDTH(MAG_WIDTH),
              .S_TUSER_WIDTH(2+STREAM_SELECT_WIDTH))
-  fourCordic (.clk(clk),
+  fourCordic (.clk(adcClk),
               .S_TDATA(sums),
-              .S_TUSER({sysSaDecimateFlag, sysFaDecimateFlag, sumSelect}),
+              .S_TUSER({adcSaDecimateFlag, adcFaDecimateFlag, sumSelect}),
               .S_TVALID(sumVALID),
               .S_TREADY(cordicREADY),
               .M_TDATA(cordicMagnitude),
               .M_TUSER(cordicTUSER),
               .M_TVALID(cordicTVALID),
-              .overflowFlag(cordicOverflowFlag));
+              .overflowFlag(adcCordicOverflowFlag));
+
+//                                                                          //
+//                              ADC CLOCK DOMAIN                            //
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+//                             SYSTEM CLOCK DOMAIN                          //
+//                                                                          //
+
+// Watch for overflows
+// Widen for easy detection by IOC
+(* ASYNC_REG="TRUE" *) reg sysAdcOverflowFlag_m = 0, sysAdcOverflowFlag = 0;
+(* ASYNC_REG="TRUE" *) reg sysCordicOverflowFlag_m = 0, sysCordicOverflowFlag = 0;
+(* ASYNC_REG="TRUE" *) reg sysSingleTrig_m;
+reg [$clog2(SYSCLK_RATE/2)-1:0] sysOvTimer;
+always @(posedge clk) begin
+    sysAdcOverflowFlag_m <= adcOverflowFlag;
+    sysAdcOverflowFlag   <= sysAdcOverflowFlag_m;
+
+    sysCordicOverflowFlag_m <= adcCordicOverflowFlag;
+    sysCordicOverflowFlag   <= sysCordicOverflowFlag_m;
+
+    if (sysAdcOverflowFlag || sysCordicOverflowFlag) begin
+        sysOvTimer <= ~0;
+        sysOverflowFlag <= 1;
+    end
+    else begin
+        sysOvTimer <= sysOvTimer - 1;
+        if (sysOvTimer == 0) sysOverflowFlag <= 0;
+    end
+    sysSingleTrig_m <= adcHoldoff;
+    sysSingleTrig   <= sysSingleTrig_m;
+end
+
+// Don't bother with any fancy clock domain crossing logic for the sum
+// shift values since changes to these are rare and will at worst cause
+// one (TBT, RF or Pilot Tone) value to be computed improperly.
+
+reg [3:0] faCICshift = 0;
+wire [2:0] cicStageCount = CIC_STAGES;
+wire [9:0] cicFaDecimate = CIC_FA_DECIMATE;
+assign sumShiftCsr = { cicStageCount,
+                       cicFaDecimate,
+                       {DATA_WIDTH-3-10-4-3*4{1'b0}},
+                       adcOverflowsStretched,
+                       faCICshift, adcMtSumShift, adcTbtSumShift };
+always @(posedge clk) begin
+    if (sumShiftCsrStrobe) begin
+        {faCICshift,adcMtSumShift,adcTbtSumShift} <= gpioData[0+:3*4];
+    end
+end
 
 // TBT values don't undergo any filtering
 reg [(NADC*MAG_WIDTH)-1:0] tbtUncalMags;
@@ -1153,8 +1155,8 @@ assign probe[18:17] = cordicADC;
 assign probe[19] = cordicTVALID;
 assign probe[21:20] = cordicStream;
 assign probe[22] = adcFaSync;
-assign probe[23] = adcFaDecimateFlag;
-assign probe[24] = sysFaDecimateFlag;
+assign probe[23] = adcFaDecimateReq;
+assign probe[24] = adcFaDecimateFlag;
 assign probe[25] = sysMtMatch_p;
 assign probe[26] = sysMtToggle_p;
 assign probe[27] = evrFaMarker;
@@ -1168,8 +1170,8 @@ assign probe[34] = saValid;
 assign probe[35] = faToggle;
 assign probe[36] = evrSaMarker;
 assign probe[37] = adcSaSync;
-assign probe[38] = adcSaDecimateFlag;
-assign probe[39] = sysSaDecimateFlag;
+assign probe[38] = adcSaDecimateReq;
+assign probe[39] = adcSaDecimateFlag;
 assign probe[40] = cordicSaDecimateFlag;
 assign probe[41] = cordicFaDecimateFlag;
 
