@@ -68,6 +68,12 @@ set_property DRIVE 4 [get_ports {AFE_SPI_LE[1]}]
 # ADCIO_08
 set_property PACKAGE_PIN AT6        [get_ports EVR_SROC]
 set_property IOSTANDARD LVCMOS18    [get_ports EVR_SROC]
+# ADCIO_09
+set_property PACKAGE_PIN AT7        [get_ports EVR_HB]
+set_property IOSTANDARD LVCMOS18    [get_ports EVR_HB]
+# ADCIO_10
+set_property PACKAGE_PIN AU5        [get_ports EVR_HB_2]
+set_property IOSTANDARD LVCMOS18    [get_ports EVR_HB_2]
 
 # User push buttons
 set_property PACKAGE_PIN L22 [get_ports GPIO_SW_W]

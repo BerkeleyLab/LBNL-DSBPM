@@ -75,6 +75,8 @@ module common_dsbpm_top #(
     output wire EVR_FB_CLK,
     output wire CLK104_SYNC_IN,
     output wire EVR_SROC,
+    output wire EVR_HB,
+    output wire EVR_HB_2,
 
     input             GPIO_SW_W,
     input             GPIO_SW_E,
@@ -298,6 +300,20 @@ OBUF #(
 ) OBUF_EVR_SROC (
    .O(EVR_SROC),
    .I(evrSROCClk)
+);
+
+OBUF #(
+   .SLEW("FAST")
+) OBUF_EVR_HB (
+   .O(EVR_HB),
+   .I(evrHeartbeat)
+);
+
+OBUF #(
+   .SLEW("FAST")
+) OBUF_EVR_HB_2 (
+   .O(EVR_HB_2),
+   .I(evrHeartbeat2)
 );
 
 // Debug counter synched with SROC
