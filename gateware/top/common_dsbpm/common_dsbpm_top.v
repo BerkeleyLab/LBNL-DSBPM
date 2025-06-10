@@ -229,7 +229,7 @@ wire [7:0] evrTriggerBus;
 wire evrHeartbeat = evrTriggerBus[0];
 wire evrPulsePerSecond = evrTriggerBus[1];
 wire evrSinglePass = evrTriggerBus[2];
-wire evrSpare = evrTriggerBus[3];
+wire evrHeartbeat2 = evrTriggerBus[3];
 assign GPIO_LEDS[0] = evrHeartbeat;
 assign GPIO_LEDS[1] = evrPulsePerSecond;
 
@@ -2136,7 +2136,7 @@ genericDACStreamer #(
     .sysAddressStrobe(GPIO_STROBES[GPIO_IDX_DACTABLE_ADDRESS + dsbpm*GPIO_IDX_PER_DSBPM]),
     .sysGpioStrobe(GPIO_STROBES[GPIO_IDX_DACTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .evrHbMarker(evrHeartbeat),
+    .evrHbMarker(evrHeartbeat2),
 
     .axis_CLK(dacClk),
     .axis_TDATA(dacsTDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
