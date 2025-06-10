@@ -140,12 +140,22 @@ evrInit(void)
     }
 
     /*
+     * Trigger 3 is the heartbeat event marker 2 used
+     * to synchronize the Pilot Gen reference generation.
+     * Make the output nice and wide so we can also use it as a
+     * visual 'event receiver active' front panel indicator.
+     */
+    evrSetTriggerDelay(3, 1);
+    evrSetTriggerWidth(3, 125000000 / 4);
+    evrSetEventAction(EVENT_HEARTBEAT, EVR_RAM_TRIGGER_3);
+
+    /*
      * Remaining triggers are available as ADC recorder event triggers.
      * Make the outputs nice and wide since for the bunch current monitor
      * the 'injection event' trigger must overlap the 'acquisition event'
      * trigger to indicate that this is a true injection event.
      */
-    for (t = 3 ; t < 8 ; t++) {
+    for (t = 4 ; t < 8 ; t++) {
         evrSetTriggerDelay(t, 1);
         evrSetTriggerWidth(t, 100);
     }
