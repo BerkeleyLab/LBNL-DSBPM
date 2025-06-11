@@ -62,6 +62,7 @@ evrInit(void)
     int t;
     uint32_t then;
     int firstEvent0 = 1;
+    int action = 0;
 
     /*
      * Generate and remove reset
@@ -147,7 +148,11 @@ evrInit(void)
      */
     evrSetTriggerDelay(3, 1);
     evrSetTriggerWidth(3, 125000000 / 4);
-    evrSetEventAction(EVENT_HEARTBEAT, EVR_RAM_TRIGGER_3);
+
+    action = evrGetEventAction(EVENT_HEARTBEAT);
+    action |= EVR_RAM_TRIGGER_3;
+
+    evrSetEventAction(EVENT_HEARTBEAT, action);
 
     /*
      * Remaining triggers are available as ADC recorder event triggers.
