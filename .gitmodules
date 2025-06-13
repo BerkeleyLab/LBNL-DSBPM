@@ -1,3 +1,6 @@
 [submodule "gateware/submodules/bedrock"]
 	path = gateware/submodules/bedrock
 	url = https://github.com/BerkeleyLab/Bedrock.git
+[submodule "gateware/submodules/cell-comm"]
+	path = gateware/submodules/cell-comm
+	url = ../../alsu-instrumentation/cell-comm.git
