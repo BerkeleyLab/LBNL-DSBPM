@@ -13,6 +13,8 @@ GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 BEDROCK_DIR        = $(SUBMODULES_DIR)/bedrock
 EVR_DIR            = $(MODULES_DIR)/evr
 
+CELL_COMM_DIR      = $(SUBMODULES_DIR)/cell-comm
+
 GW_TOP_DIR         = $(GATEWARE_DIR)/top
 GW_TOP_COMMON_DIR  = $(GW_TOP_DIR)/common_dsbpm
 GW_SYN_DIR         = $(GATEWARE_DIR)/syn
@@ -35,3 +37,4 @@ SW_DSBPM_VCXO_117_DIR = $(SW_APP_DIR)/dsbpm_vcxo_117
 SW_DSBPM_VCXO_117_SCRIPTS_DIR = $(SW_DSBPM_VCXO_117_DIR)/scripts
 
 include $(BEDROCK_DIR)/dir_list.mk
+include $(CELL_COMM_DIR)/dir_list.mk
