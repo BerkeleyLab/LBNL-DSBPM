@@ -62,28 +62,34 @@ module preliminaryProcessing #(
     output reg                   sysSingleTrig,
     output wire                  adcSingleTrig,
 
-    output wire                  tbtToggle,
+    output wire                  rfTbtToggle,
     output reg                   rfTbtMagValid,
     output wire  [MAG_WIDTH-1:0] rfTbtMag0, rfTbtMag1, rfTbtMag2, rfTbtMag3,
 
-    output wire                  faToggle,
+    output wire                  rfFaToggle,
     output reg                   rfFaMagValid,
     output wire  [MAG_WIDTH-1:0] rfFaMag0, rfFaMag1, rfFaMag2, rfFaMag3,
+
+    output wire                  ptFaToggle,
+    output reg                   ptFaValid,
+    output wire  [MAG_WIDTH-1:0] plFaMag0, plFaMag1, plFaMag2, plFaMag3,
+    output wire  [MAG_WIDTH-1:0] phFaMag0, phFaMag1, phFaMag2, phFaMag3,
 
     output wire                  adcTbtLoadAccumulator,
     output wire                  adcTbtLatchAccumulator,
     output wire                  adcMtLoadAndLatch,
 
-    output reg                   saToggle,
-    output reg                   saValid,
+    output reg                   rfSaToggle,
+    output reg                   rfSaValid,
     output reg            [63:0] sysSaTimestamp,
 
-    output reg   [MAG_WIDTH-1:0] rfMag0, rfMag1, rfMag2, rfMag3,
-    output wire  [MAG_WIDTH-1:0] plMag0, plMag1, plMag2, plMag3,
-    output wire  [MAG_WIDTH-1:0] phMag0, phMag1, phMag2, phMag3,
-    output wire                  ptToggle,
-    output reg                   ptValid,
+    output reg   [MAG_WIDTH-1:0] rfSaMag0, rfSaMag1, rfSaMag2, rfSaMag3,
     output reg                   overflowFlag,
+
+    output reg                   ptSaToggle,
+    output reg                   ptSaValid,
+    output reg   [MAG_WIDTH-1:0] plSaMag0, plSaMag1, plSaMag2, plSaMag3,
+    output reg   [MAG_WIDTH-1:0] phSaMag0, phSaMag1, phSaMag2, phSaMag3,
 
     // Debug outputs
     output wire  [8*PRODUCT_WIDTH-1:0] rfProductsDbg,
@@ -825,7 +831,7 @@ trimGPIO #(.NUM_GAINS(NADC),
     .strobe(ptUncalSrobe),
     .magnitudes({plUncalMag3, plUncalMag2, plUncalMag1, plUncalMag0}),
     .trimmedToggle(),
-    .trimmed({plMag3, plMag2, plMag1, plMag0}));
+    .trimmed({plFaMag3, plFaMag2, plFaMag1, plFaMag0}));
 
 // Calibration gain for PH magnitudes
 trimGPIO #(.NUM_GAINS(NADC),
@@ -840,8 +846,8 @@ trimGPIO #(.NUM_GAINS(NADC),
 
     .strobe(ptUncalSrobe),
     .magnitudes({phUncalMag3, phUncalMag2, phUncalMag1, phUncalMag0}),
-    .trimmedToggle(ptToggle),
-    .trimmed({phMag3, phMag2, phMag1, phMag0}));
+    .trimmedToggle(ptFaToggle),
+    .trimmed({phFaMag3, phFaMag2, phFaMag1, phFaMag0}));
 
 // CIC RF FA DECIMATION
 wire rfUncalDecimatedToggle;
@@ -926,9 +932,9 @@ autotrim #(.GPIO_WIDTH(DATA_WIDTH),
       .gainStrobes(autotrimGainStrobes),
       .statusReg(autotrimCsr),
       .thresholdReg(autotrimThreshold),
-      .ptToggle(ptToggle),
-      .plMags({plMag3, plMag2, plMag1, plMag0}),
-      .phMags({phMag3, phMag2, phMag1, phMag0}),
+      .ptToggle(ptFaToggle),
+      .plMags({plFaMag3, plFaMag2, plFaMag1, plFaMag0}),
+      .phMags({phFaMag3, phFaMag2, phFaMag1, phFaMag0}),
       .gainToggle(gainDoneToggle),
       .gains({gain3, gain2, gain1, gain0}));
 
@@ -939,12 +945,12 @@ assign gainRBK3 = { {(DATA_WIDTH-GAIN_WIDTH){1'b0}}, gain3 };
 
 // Apply trim factors
 // Hold off trimming FA until auto trim has completed
-reg ptToggle_d = 0, awaitGainsAndRf = 0;
+reg ptFaToggle_d = 0, awaitGainsAndRf = 0;
 reg rfDecimatedMatch = 0, gainDoneMatch = 0;
 reg faTrimStrobe = 0;
 always @(posedge clk) begin
-    ptToggle_d <= ptToggle;
-    if (ptToggle_d != ptToggle) begin
+    ptFaToggle_d <= ptFaToggle;
+    if (ptFaToggle_d != ptFaToggle) begin
         // Set up to watch for new gain and RF values
         gainDoneMatch <= gainDoneToggle;
         rfDecimatedMatch <= rfDecimatedToggle;
@@ -969,7 +975,7 @@ trim #(.NUM_GAINS(NADC),
     .strobe(faTrimStrobe),
     .magnitudes({cicFaMag3, cicFaMag2, cicFaMag1, cicFaMag0}),
     .gains({gain3, gain2, gain1, gain0}),
-    .trimmedToggle(faToggle),
+    .trimmedToggle(rfFaToggle),
     .trimmed({rfFaMag3, rfFaMag2, rfFaMag1, rfFaMag0}));
 
 trim #(.NUM_GAINS(NADC),
@@ -980,58 +986,82 @@ trim #(.NUM_GAINS(NADC),
     .strobe(tbtTrimStrobe),
     .magnitudes(tbtMags),
     .gains({gain3, gain2, gain1, gain0}),
-    .trimmedToggle(tbtToggle),
+    .trimmedToggle(rfTbtToggle),
     .trimmed({rfTbtMag3, rfTbtMag2, rfTbtMag1, rfTbtMag0}));
 
 // TbT/FA valid generation
-reg tbtToggle_d = 0;
-reg faToggle_d = 0;
+reg rfTbtToggle_d = 0;
+reg rfFaToggle_d = 0;
 always @(posedge clk) begin
-    tbtToggle_d <= tbtToggle;
-    faToggle_d <= faToggle;
+    rfTbtToggle_d <= rfTbtToggle;
+    rfFaToggle_d <= rfFaToggle;
 
-    if (tbtToggle != tbtToggle_d) begin
+    if (rfTbtToggle != rfTbtToggle_d) begin
         rfTbtMagValid <= 1'b1;
     end
     else begin
         rfTbtMagValid <= 1'b0;
     end
 
-    if (faToggle != faToggle_d) begin
+    if (rfFaToggle != rfFaToggle_d) begin
         rfFaMagValid <= 1'b1;
     end
     else begin
         rfFaMagValid <= 1'b0;
     end
 
-    if (ptToggle != ptToggle_d) begin
-        ptValid <= 1'b1;
+    if (ptFaToggle != ptFaToggle_d) begin
+        ptFaValid <= 1'b1;
     end
     else begin
-        ptValid <= 1'b0;
+        ptFaValid <= 1'b0;
     end
 end
 
 // CIC SA DECIMATION
-wire [MAG_WIDTH-1:0] rfSaMag0, rfSaMag1, rfSaMag2, rfSaMag3;
+wire [MAG_WIDTH-1:0] rfSaDecimatedMag0, rfSaDecimatedMag1, rfSaDecimatedMag2, rfSaDecimatedMag3;
 wire saDecimatedToggle;
-reg faMatch = 0;
 saDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_SA_DECIMATE),
              .STAGES(CIC_STAGES),
              .CHANNEL_COUNT(4))
   saDecimate (.clk(clk),
               .inputData({rfFaMag3, rfFaMag2, rfFaMag1, rfFaMag0}),
-              .inputToggle(faToggle),
+              .inputToggle(rfFaToggle),
               .decimateFlag(saDecimateFlag),
               .outputToggle(saDecimatedToggle),
-              .outputData({rfSaMag3, rfSaMag2, rfSaMag1, rfSaMag0}));
+              .outputData({rfSaDecimatedMag3, rfSaDecimatedMag2, rfSaDecimatedMag1, rfSaDecimatedMag0}));
+
+wire [MAG_WIDTH-1:0] plSaDecimatedMag0, plSaDecimatedMag1, plSaDecimatedMag2, plSaDecimatedMag3;
+saDecimate #(.DATA_WIDTH(MAG_WIDTH),
+             .DECIMATION_FACTOR(CIC_SA_DECIMATE),
+             .STAGES(CIC_STAGES),
+             .CHANNEL_COUNT(4))
+  plSaDecimate (.clk(clk),
+              .inputData({plFaMag3, plFaMag2, plFaMag1, plFaMag0}),
+              .inputToggle(ptFaToggle),
+              .decimateFlag(saDecimateFlag),
+              .outputToggle(),
+              .outputData({plSaDecimatedMag3, plSaDecimatedMag2, plSaDecimatedMag1, plSaDecimatedMag0}));
+
+wire [MAG_WIDTH-1:0] phSaDecimatedMag0, phSaDecimatedMag1, phSaDecimatedMag2, phSaDecimatedMag3;
+wire ptSaDecimatedToggle;
+saDecimate #(.DATA_WIDTH(MAG_WIDTH),
+             .DECIMATION_FACTOR(CIC_SA_DECIMATE),
+             .STAGES(CIC_STAGES),
+             .CHANNEL_COUNT(4))
+  phSaDecimate (.clk(clk),
+              .inputData({phFaMag3, phFaMag2, phFaMag1, phFaMag0}),
+              .inputToggle(ptFaToggle),
+              .decimateFlag(saDecimateFlag),
+              .outputToggle(ptSaDecimatedToggle),
+              .outputData({phSaDecimatedMag3, phSaDecimatedMag2, phSaDecimatedMag1, phSaDecimatedMag0}));
 
 // In single-pass mode set SA values from turn-by-turn results and generate
 // SA update on every single pass trigger, or if no single pass trigger
 // occurs, then the most recent pilot tone update, or if no pilot tone
 // update has ocurrred then every third heartbeat.
-reg tbtMatch = 0, ptMatch = 0;
+reg rfTbtMatch = 0, ptFaMatch = 0;
 reg saSend = 0;
 (* ASYNC_REG="TRUE" *) reg sysHbEvent_m, sysHoldoff_m = 0;
 reg sysHbEvent, sysHbEvent_d, sysHoldoff = 0, sysHoldoff_d = 0;
@@ -1056,11 +1086,11 @@ always @(posedge clk) begin
             sysSinglePassTimestamp <= sysTimestamp;
         end
         if (saSend) begin
-            rfMag0 <= rfTbtMag0;
-            rfMag1 <= rfTbtMag1;
-            rfMag2 <= rfTbtMag2;
-            rfMag3 <= rfTbtMag3;
-            saToggle <= !saToggle;
+            rfSaMag0 <= rfTbtMag0;
+            rfSaMag1 <= rfTbtMag1;
+            rfSaMag2 <= rfTbtMag2;
+            rfSaMag3 <= rfTbtMag3;
+            rfSaToggle <= !rfSaToggle;
             saSend <= 0;
             ptWatchdog <= 0;
             hbWatchdog <= 3;
@@ -1069,13 +1099,13 @@ always @(posedge clk) begin
             if (sysHbEvent && !sysHbEvent_d && (hbWatchdog != 0)) begin
                 hbWatchdog <= hbWatchdog - 1;
             end
-            if (tbtMatch != tbtToggle) begin
-                tbtMatch <= tbtToggle;
+            if (rfTbtMatch != rfTbtToggle) begin
+                rfTbtMatch <= rfTbtToggle;
                 sysSaTimestamp <= sysSinglePassTimestamp;
                 saSend <= 1;
             end
-            else if (ptMatch != ptToggle) begin
-                ptMatch <= ptToggle;
+            else if (ptFaMatch != ptFaToggle) begin
+                ptFaMatch <= ptFaToggle;
                 ptWatchdog <= SYSCLK_RATE - 1;
             end
             else begin
@@ -1094,11 +1124,11 @@ always @(posedge clk) begin
         end
     end
     else begin
-        rfMag0 <= rfSaMag0;
-        rfMag1 <= rfSaMag1;
-        rfMag2 <= rfSaMag2;
-        rfMag3 <= rfSaMag3;
-        saToggle <= saDecimatedToggle;
+        rfSaMag0 <= rfSaDecimatedMag0;
+        rfSaMag1 <= rfSaDecimatedMag1;
+        rfSaMag2 <= rfSaDecimatedMag2;
+        rfSaMag3 <= rfSaDecimatedMag3;
+        rfSaToggle <= saDecimatedToggle;
         /*
          * No clock crossing worries here since evrSaTimestamp
          * will have been latched before the CORDIC/trim computations.
@@ -1108,16 +1138,42 @@ always @(posedge clk) begin
 end
 
 // SA valid generation
-reg saToggle_m;
+reg rfSaToggle_d;
 always @(posedge clk) begin
-    saToggle_m <= saToggle;
+    rfSaToggle_d <= rfSaToggle;
 
-    if (saToggle != saToggle_m) begin
-        saValid <= 1'b1;
+    if (rfSaToggle != rfSaToggle_d) begin
+        rfSaValid <= 1'b1;
     end
     else begin
-        saValid <= 1'b0;
+        rfSaValid <= 1'b0;
     end
+end
+
+// align pilot tones data to RF na provide valid signal
+reg ptSaToggle_d;
+always @(posedge clk) begin
+    // Pilot tone low
+    ptSaToggle_d <= ptSaToggle;
+
+    if (ptSaToggle != ptSaToggle_d) begin
+        ptSaValid <= 1'b1;
+    end
+    else begin
+        ptSaValid <= 1'b0;
+    end
+
+    ptSaToggle <= ptSaDecimatedToggle;
+
+    plSaMag0 <= plSaDecimatedMag0;
+    plSaMag1 <= plSaDecimatedMag1;
+    plSaMag2 <= plSaDecimatedMag2;
+    plSaMag3 <= plSaDecimatedMag3;
+
+    phSaMag0 <= phSaDecimatedMag0;
+    phSaMag1 <= phSaDecimatedMag1;
+    phSaMag2 <= phSaDecimatedMag2;
+    phSaMag3 <= phSaDecimatedMag3;
 end
 
 generate
@@ -1137,8 +1193,8 @@ ila_td256_s4096_cap ila_td256_s4096_cap_inst (
     .probe0(probe)
 );
 
-assign probe[3] = ptToggle;
-assign probe[4] = ptToggle_d;
+assign probe[3] = ptFaToggle;
+assign probe[4] = ptFaToggle_d;
 assign probe[7] = ptDecimatedToggle;
 assign probe[8] = ptDecimatedMatch;
 assign probe[9] = awaitGainsAndRf;
@@ -1164,8 +1220,8 @@ assign probe[30] = adcFaEvent_d1;
 assign probe[31] = adcMtLoadAndLatchToggle;
 assign probe[32] = saDecimateFlag;
 assign probe[33] = saDecimatedToggle;
-assign probe[34] = saValid;
-assign probe[35] = faToggle;
+assign probe[34] = rfSaValid;
+assign probe[35] = rfFaToggle;
 assign probe[36] = evrSaMarker;
 assign probe[37] = adcSaSync;
 assign probe[38] = adcSaDecimateFlag;
@@ -1176,7 +1232,7 @@ assign probe[41] = cordicFaDecimateFlag;
 assign probe[64+MAG_WIDTH-1:64] = rfFaMag0;
 assign probe[96+MAG_WIDTH-1:96] = cicFaMag0;
 assign probe[128+MAG_WIDTH-1:128] = cordicMagnitude;
-assign probe[160+MAG_WIDTH-1:160] = rfSaMag0;
+assign probe[160+MAG_WIDTH-1:160] = rfSaDecimatedMag0;
 
 `endif
 

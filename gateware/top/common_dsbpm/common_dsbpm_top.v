@@ -932,15 +932,15 @@ genericWaveformRecorder #(
     .clk(sysClk),
     .data({
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlMag3[dsbpm],
+                                     prelimProcPlFaMag3[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlMag2[dsbpm],
+                                     prelimProcPlFaMag2[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlMag1[dsbpm],
+                                     prelimProcPlFaMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlMag0[dsbpm]}),
+                                     prelimProcPlFaMag0[dsbpm]}),
     .testData(0),
-    .valid(prelimProcPtValid[dsbpm]),
+    .valid(prelimProcPtFaValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
     .diagExtMode(1'b0),
@@ -990,15 +990,15 @@ genericWaveformRecorder #(
     .clk(sysClk),
     .data({
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhMag3[dsbpm],
+                                     prelimProcPhFaMag3[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhMag2[dsbpm],
+                                     prelimProcPhFaMag2[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhMag1[dsbpm],
+                                     prelimProcPhFaMag1[dsbpm],
         {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhMag0[dsbpm]}),
+                                     prelimProcPhFaMag0[dsbpm]}),
     .testData(0),
-    .valid(prelimProcPtValid[dsbpm]),
+    .valid(prelimProcPtFaValid[dsbpm]),
     .triggers(sysRecorderTriggerBus),
     .timestamp(sysTimestamp),
     .diagExtMode(1'b0),
@@ -1717,6 +1717,7 @@ wire                 adcLoSynced[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLoadAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcTbtLatchAccumulator[0:CFG_DSBPM_COUNT-1];
 wire                 adcMtLoadAndLatch[0:CFG_DSBPM_COUNT-1];
+
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC0[0:CFG_DSBPM_COUNT-1];
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC1[0:CFG_DSBPM_COUNT-1];
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC2[0:CFG_DSBPM_COUNT-1];
@@ -1729,6 +1730,7 @@ wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC0Mag[0:CFG_DSBPM_COUNT-1];
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC1Mag[0:CFG_DSBPM_COUNT-1];
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC2Mag[0:CFG_DSBPM_COUNT-1];
 wire [AXI_ADC_SAMPLE_WIDTH-1:0] prelimProcADC3Mag[0:CFG_DSBPM_COUNT-1];
+
 wire                 prelimProcADCValid[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcTbtToggle[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcRfTbtMagValid[0:CFG_DSBPM_COUNT-1];
@@ -1736,43 +1738,62 @@ wire [MAG_WIDTH-1:0] prelimProcRfTbtMag0[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfTbtMag1[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfTbtMag2[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfTbtMag3[0:CFG_DSBPM_COUNT-1];
-wire                 prelimProcFaToggle[0:CFG_DSBPM_COUNT-1];
+
+wire                 prelimProcRfFaToggle[0:CFG_DSBPM_COUNT-1];
 wire                 prelimProcRfFaMagValid[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfFaMag0[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfFaMag1[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfFaMag2[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfFaMag3[0:CFG_DSBPM_COUNT-1];
+
 wire                 prelimProcRfCicFaMagValid[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfCicFaMag0[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfCicFaMag1[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfCicFaMag2[0:CFG_DSBPM_COUNT-1];
 wire [MAG_WIDTH-1:0] prelimProcRfCicFaMag3[0:CFG_DSBPM_COUNT-1];
-wire                 prelimProcSaToggle[0:CFG_DSBPM_COUNT-1];
-wire                 prelimProcSaValid[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcRfMag0[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcRfMag1[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcRfMag2[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcRfMag3[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPlMag0[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPlMag1[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPlMag2[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPlMag3[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPhMag0[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPhMag1[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPhMag2[0:CFG_DSBPM_COUNT-1];
-wire [MAG_WIDTH-1:0] prelimProcPhMag3[0:CFG_DSBPM_COUNT-1];
+
+wire                 prelimProcRfSaToggle[0:CFG_DSBPM_COUNT-1];
+wire                 prelimProcRfSaValid[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcRfSaMag0[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcRfSaMag1[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcRfSaMag2[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcRfSaMag3[0:CFG_DSBPM_COUNT-1];
+
+wire                 prelimProcPtFaToggle[0:CFG_DSBPM_COUNT-1];
+wire                 prelimProcPtFaValid[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlFaMag0[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlFaMag1[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlFaMag2[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlFaMag3[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhFaMag0[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhFaMag1[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhFaMag2[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhFaMag3[0:CFG_DSBPM_COUNT-1];
+
+wire                 prelimProcPtSaToggle[0:CFG_DSBPM_COUNT-1];
+wire                 prelimProcPtSaValid[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlSaMag0[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlSaMag1[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlSaMag2[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPlSaMag3[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhSaMag0[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhSaMag1[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhSaMag2[0:CFG_DSBPM_COUNT-1];
+wire [MAG_WIDTH-1:0] prelimProcPhSaMag3[0:CFG_DSBPM_COUNT-1];
+
 wire [8*PRODUCT_WIDTH-1:0] rfProducts[0:CFG_DSBPM_COUNT-1];
 wire [8*PRODUCT_WIDTH-1:0] plProducts[0:CFG_DSBPM_COUNT-1];
 wire [8*PRODUCT_WIDTH-1:0] phProducts[0:CFG_DSBPM_COUNT-1];
+
 wire [LO_WIDTH-1:0] rfLOcos[0:CFG_DSBPM_COUNT-1];
 wire [LO_WIDTH-1:0] rfLOsin[0:CFG_DSBPM_COUNT-1];
 wire [LO_WIDTH-1:0] plLOcos[0:CFG_DSBPM_COUNT-1];
 wire [LO_WIDTH-1:0] plLOsin[0:CFG_DSBPM_COUNT-1];
 wire [LO_WIDTH-1:0] phLOcos[0:CFG_DSBPM_COUNT-1];
 wire [LO_WIDTH-1:0] phLOsin[0:CFG_DSBPM_COUNT-1];
-wire prelimProcPtToggle[0:CFG_DSBPM_COUNT-1];
-wire prelimProcPtValid[0:CFG_DSBPM_COUNT-1];
+
 wire prelimProcOverflow[0:CFG_DSBPM_COUNT-1];
+
 wire [8*MAG_WIDTH-1:0] tbtSums[0:CFG_DSBPM_COUNT-1];
 wire tbtSumsValid[0:CFG_DSBPM_COUNT-1];
 wire [4*MAG_WIDTH-1:0] tbtMags[0:CFG_DSBPM_COUNT-1];
@@ -1832,29 +1853,29 @@ assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
     {32-1{1'b0}},
     prelimProcOverflow[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfFaMag0[dsbpm] };
+    magPAD, prelimProcRfSaMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfFaMag1[dsbpm] };
+    magPAD, prelimProcRfSaMag1[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfFaMag2[dsbpm] };
+    magPAD, prelimProcRfSaMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfFaMag3[dsbpm] };
+    magPAD, prelimProcRfSaMag3[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlMag0[dsbpm] };
+    magPAD, prelimProcPlSaMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlMag1[dsbpm] };
+    magPAD, prelimProcPlSaMag1[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlMag2[dsbpm] };
+    magPAD, prelimProcPlSaMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlMag3[dsbpm] };
+    magPAD, prelimProcPlSaMag3[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhMag0[dsbpm] };
+    magPAD, prelimProcPhSaMag0[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhMag1[dsbpm] };
+    magPAD, prelimProcPhSaMag1[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhMag2[dsbpm] };
+    magPAD, prelimProcPhSaMag2[dsbpm] };
 assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhMag3[dsbpm] };
+    magPAD, prelimProcPhSaMag3[dsbpm] };
 preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
                         .SYSCLK_RATE(SYSCLK_RATE),
                         .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
@@ -1944,6 +1965,9 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
 
     .adcExceedsThreshold(adcExceedsThreshold[dsbpm]),
     .adcUseThisSample(adcUseThisSample[dsbpm]),
+    .adcTbtLoadAccumulator(adcTbtLoadAccumulator[dsbpm]),
+    .adcTbtLatchAccumulator(adcTbtLatchAccumulator[dsbpm]),
+    .adcMtLoadAndLatch(adcMtLoadAndLatch[dsbpm]),
 
     .evrClk(evrClk),
     .evrFaMarker(evrFaMarker),
@@ -1955,40 +1979,51 @@ preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
     .adcSingleTrig(adcSingleTrig[dsbpm]),
     .adcLoSynced(adcLoSynced[dsbpm]),
 
-    .tbtToggle(prelimProcTbtToggle[dsbpm]),
+    .rfTbtToggle(prelimProcTbtToggle[dsbpm]),
     .rfTbtMagValid(prelimProcRfTbtMagValid[dsbpm]),
     .rfTbtMag0(prelimProcRfTbtMag0[dsbpm]),
     .rfTbtMag1(prelimProcRfTbtMag1[dsbpm]),
     .rfTbtMag2(prelimProcRfTbtMag2[dsbpm]),
     .rfTbtMag3(prelimProcRfTbtMag3[dsbpm]),
-    .faToggle(prelimProcFaToggle[dsbpm]),
-    .adcTbtLoadAccumulator(adcTbtLoadAccumulator[dsbpm]),
-    .adcTbtLatchAccumulator(adcTbtLatchAccumulator[dsbpm]),
-    .adcMtLoadAndLatch(adcMtLoadAndLatch[dsbpm]),
+
+    .rfFaToggle(prelimProcRfFaToggle[dsbpm]),
     .rfFaMagValid(prelimProcRfFaMagValid[dsbpm]),
     .rfFaMag0(prelimProcRfFaMag0[dsbpm]),
     .rfFaMag1(prelimProcRfFaMag1[dsbpm]),
     .rfFaMag2(prelimProcRfFaMag2[dsbpm]),
     .rfFaMag3(prelimProcRfFaMag3[dsbpm]),
-    .saToggle(prelimProcSaToggle[dsbpm]),
-    .saValid(prelimProcSaValid[dsbpm]),
+
+    .rfSaToggle(prelimProcRfSaToggle[dsbpm]),
+    .rfSaValid(prelimProcRfSaValid[dsbpm]),
     .sysSaTimestamp({GPIO_IN[GPIO_IDX_SA_TIMESTAMP_SEC + dsbpm*GPIO_IDX_PER_DSBPM],
                      GPIO_IN[GPIO_IDX_SA_TIMESTAMP_FRACTION + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .rfMag0(prelimProcRfMag0[dsbpm]),
-    .rfMag1(prelimProcRfMag1[dsbpm]),
-    .rfMag2(prelimProcRfMag2[dsbpm]),
-    .rfMag3(prelimProcRfMag3[dsbpm]),
-    .plMag0(prelimProcPlMag0[dsbpm]),
-    .plMag1(prelimProcPlMag1[dsbpm]),
-    .plMag2(prelimProcPlMag2[dsbpm]),
-    .plMag3(prelimProcPlMag3[dsbpm]),
-    .phMag0(prelimProcPhMag0[dsbpm]),
-    .phMag1(prelimProcPhMag1[dsbpm]),
-    .phMag2(prelimProcPhMag2[dsbpm]),
-    .phMag3(prelimProcPhMag3[dsbpm]),
-    .ptToggle(prelimProcPtToggle[dsbpm]),
-    .ptValid(prelimProcPtValid[dsbpm]),
+    .rfSaMag0(prelimProcRfSaMag0[dsbpm]),
+    .rfSaMag1(prelimProcRfSaMag1[dsbpm]),
+    .rfSaMag2(prelimProcRfSaMag2[dsbpm]),
+    .rfSaMag3(prelimProcRfSaMag3[dsbpm]),
+
+    .ptFaToggle(prelimProcPtFaToggle[dsbpm]),
+    .ptFaValid(prelimProcPtFaValid[dsbpm]),
     .overflowFlag(prelimProcOverflow[dsbpm]),
+    .plFaMag0(prelimProcPlFaMag0[dsbpm]),
+    .plFaMag1(prelimProcPlFaMag1[dsbpm]),
+    .plFaMag2(prelimProcPlFaMag2[dsbpm]),
+    .plFaMag3(prelimProcPlFaMag3[dsbpm]),
+    .phFaMag0(prelimProcPhFaMag0[dsbpm]),
+    .phFaMag1(prelimProcPhFaMag1[dsbpm]),
+    .phFaMag2(prelimProcPhFaMag2[dsbpm]),
+    .phFaMag3(prelimProcPhFaMag3[dsbpm]),
+
+    .ptSaToggle(prelimProcPtSaToggle[dsbpm]),
+    .ptSaValid(prelimProcPtSaValid[dsbpm]),
+    .plSaMag0(prelimProcPlSaMag0[dsbpm]),
+    .plSaMag1(prelimProcPlSaMag1[dsbpm]),
+    .plSaMag2(prelimProcPlSaMag2[dsbpm]),
+    .plSaMag3(prelimProcPlSaMag3[dsbpm]),
+    .phSaMag0(prelimProcPhSaMag0[dsbpm]),
+    .phSaMag1(prelimProcPhSaMag1[dsbpm]),
+    .phSaMag2(prelimProcPhSaMag2[dsbpm]),
+    .phSaMag3(prelimProcPhSaMag3[dsbpm]),
 
     .rfProductsDbg(rfProducts[dsbpm]),
     .plProductsDbg(plProducts[dsbpm]),
@@ -2079,12 +2114,12 @@ positionCalc #(.MAG_WIDTH(MAG_WIDTH))
     .fa1(prelimProcRfFaMag1[dsbpm]),
     .fa2(prelimProcRfFaMag2[dsbpm]),
     .fa3(prelimProcRfFaMag3[dsbpm]),
-    .faInToggle(prelimProcFaToggle[dsbpm]),
-    .sa0(prelimProcRfMag0[dsbpm]),
-    .sa1(prelimProcRfMag1[dsbpm]),
-    .sa2(prelimProcRfMag2[dsbpm]),
-    .sa3(prelimProcRfMag3[dsbpm]),
-    .saInToggle(prelimProcSaToggle[dsbpm]),
+    .faInToggle(prelimProcRfFaToggle[dsbpm]),
+    .sa0(prelimProcRfSaMag0[dsbpm]),
+    .sa1(prelimProcRfSaMag1[dsbpm]),
+    .sa2(prelimProcRfSaMag2[dsbpm]),
+    .sa3(prelimProcRfSaMag3[dsbpm]),
+    .saInToggle(prelimProcRfSaToggle[dsbpm]),
     .csr(positionCalcCSR[dsbpm]),
     .xCalibration(positionCalcXcal[dsbpm]),
     .yCalibration(positionCalcYcal[dsbpm]),
