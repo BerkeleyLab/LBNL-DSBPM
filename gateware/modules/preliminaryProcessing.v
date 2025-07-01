@@ -86,12 +86,9 @@ module preliminaryProcessing #(
     output reg   [MAG_WIDTH-1:0] rfSaMag0, rfSaMag1, rfSaMag2, rfSaMag3,
     output reg                   overflowFlag,
 
-    output reg                   plSaToggle,
-    output reg                   plSaValid,
+    output reg                   ptSaToggle,
+    output reg                   ptSaValid,
     output reg   [MAG_WIDTH-1:0] plSaMag0, plSaMag1, plSaMag2, plSaMag3,
-
-    output reg                   phSaToggle,
-    output reg                   phSaValid,
     output reg   [MAG_WIDTH-1:0] phSaMag0, phSaMag1, phSaMag2, phSaMag3,
 
     // Debug outputs
@@ -1036,7 +1033,6 @@ saDecimate #(.DATA_WIDTH(MAG_WIDTH),
               .outputData({rfSaDecimatedMag3, rfSaDecimatedMag2, rfSaDecimatedMag1, rfSaDecimatedMag0}));
 
 wire [MAG_WIDTH-1:0] plSaDecimatedMag0, plSaDecimatedMag1, plSaDecimatedMag2, plSaDecimatedMag3;
-wire plSaDecimatedToggle;
 saDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_SA_DECIMATE),
              .STAGES(CIC_STAGES),
@@ -1045,11 +1041,11 @@ saDecimate #(.DATA_WIDTH(MAG_WIDTH),
               .inputData({plFaMag3, plFaMag2, plFaMag1, plFaMag0}),
               .inputToggle(ptFaToggle),
               .decimateFlag(saDecimateFlag),
-              .outputToggle(plSaDecimatedToggle),
+              .outputToggle(),
               .outputData({plSaDecimatedMag3, plSaDecimatedMag2, plSaDecimatedMag1, plSaDecimatedMag0}));
 
 wire [MAG_WIDTH-1:0] phSaDecimatedMag0, phSaDecimatedMag1, phSaDecimatedMag2, phSaDecimatedMag3;
-wire phSaDecimatedToggle;
+wire ptSaDecimatedToggle;
 saDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_SA_DECIMATE),
              .STAGES(CIC_STAGES),
@@ -1058,7 +1054,7 @@ saDecimate #(.DATA_WIDTH(MAG_WIDTH),
               .inputData({phFaMag3, phFaMag2, phFaMag1, phFaMag0}),
               .inputToggle(ptFaToggle),
               .decimateFlag(saDecimateFlag),
-              .outputToggle(phSaDecimatedToggle),
+              .outputToggle(ptSaDecimatedToggle),
               .outputData({phSaDecimatedMag3, phSaDecimatedMag2, phSaDecimatedMag1, phSaDecimatedMag0}));
 
 // In single-pass mode set SA values from turn-by-turn results and generate
@@ -1155,40 +1151,29 @@ always @(posedge clk) begin
 end
 
 // align pilot tones data to RF na provide valid signal
-reg plSaToggle_d;
-reg phSaToggle_d;
+reg ptSaToggle_d;
 always @(posedge clk) begin
     // Pilot tone low
-    plSaToggle_d <= plSaToggle;
+    ptSaToggle_d <= ptSaToggle;
 
-    if (plSaToggle != plSaToggle_d) begin
-        plSaValid <= 1'b1;
+    if (ptSaToggle != ptSaToggle_d) begin
+        ptSaValid <= 1'b1;
     end
     else begin
-        plSaValid <= 1'b0;
+        ptSaValid <= 1'b0;
     end
+
+    ptSaToggle <= ptSaDecimatedToggle;
 
     plSaMag0 <= plSaDecimatedMag0;
     plSaMag1 <= plSaDecimatedMag1;
     plSaMag2 <= plSaDecimatedMag2;
     plSaMag3 <= plSaDecimatedMag3;
-    plSaToggle <= plSaDecimatedToggle;
-
-    // Pilot tone high
-    phSaToggle_d <= phSaToggle;
-
-    if (phSaToggle != phSaToggle_d) begin
-        phSaValid <= 1'b1;
-    end
-    else begin
-        phSaValid <= 1'b0;
-    end
 
     phSaMag0 <= phSaDecimatedMag0;
     phSaMag1 <= phSaDecimatedMag1;
     phSaMag2 <= phSaDecimatedMag2;
     phSaMag3 <= phSaDecimatedMag3;
-    phSaToggle <= phSaDecimatedToggle;
 end
 
 generate
