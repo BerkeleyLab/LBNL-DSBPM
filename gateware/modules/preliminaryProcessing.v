@@ -1016,7 +1016,6 @@ end
 // CIC SA DECIMATION
 wire [MAG_WIDTH-1:0] rfSaDecimatedMag0, rfSaDecimatedMag1, rfSaDecimatedMag2, rfSaDecimatedMag3;
 wire saDecimatedToggle;
-reg faMatch = 0;
 saDecimate #(.DATA_WIDTH(MAG_WIDTH),
              .DECIMATION_FACTOR(CIC_SA_DECIMATE),
              .STAGES(CIC_STAGES),
