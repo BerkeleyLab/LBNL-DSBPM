@@ -108,3 +108,46 @@ serialNumberDFE(void)
 {
     return GPIO_READ(GPIO_IDX_USER_GPIO_CSR) & 0xFF;
 }
+
+#define TARGET_VARIANT_NAME_STR             __TARGET_VARIANT_NAME__
+#define TARGET_SAMPLES_PER_TURN_NAME_STR    __TARGET_SAMPLES_PER_TURN_NAME__
+#define TARGET_VCXO_TYPE_NAME_STR           __TARGET_VCXO_TYPE_NAME__
+#define TARGET_NAME_STR                     __TARGET_NAME__
+
+static const char *variant = TARGET_VARIANT_NAME_STR;
+static const char *samples_per_turn = TARGET_SAMPLES_PER_TURN_NAME_STR;
+static const char *vcxo_type = TARGET_VCXO_TYPE_NAME_STR;
+static const char *target_name = TARGET_NAME_STR;
+
+const char *
+getVariantInfo()
+{
+    return variant;
+}
+
+const char *
+getSamplesPerTurnInfo()
+{
+    return samples_per_turn;
+}
+
+const char *
+getVCXOTypeInfo()
+{
+    return vcxo_type;
+}
+
+const char *
+getTargetNameInfo()
+{
+    return target_name;
+}
+
+void
+displayInfo()
+{
+    printf("Variant: %s\n", getVariantInfo());
+    printf("Samples per turn: %s\n", getSamplesPerTurnInfo());
+    printf("VCXO type: %s\n", getVCXOTypeInfo());
+    printf("Target name: %s\n", getTargetNameInfo());
+}

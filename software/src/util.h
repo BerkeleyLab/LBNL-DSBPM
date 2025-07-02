@@ -20,6 +20,26 @@
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 /*
+ * Meta information
+ */
+
+#ifndef __TARGET_VARIANT_NAME__
+#define __TARGET_VARIANT_NAME__ "standard"
+#endif
+
+#ifndef __TARGET_SAMPLES_PER_TURN_NAME__
+#define __TARGET_SAMPLES_PER_TURN_NAME__ "UNKNOWN"
+#endif
+
+#ifndef __TARGET_VCXO_TYPE_NAME__
+#define __TARGET_VCXO_TYPE_NAME__ "UNKNOWN"
+#endif
+
+#ifndef __TARGET_NAME__
+#define __TARGET_NAME__ "UNKNOWN"
+#endif
+
+/*
  * Diagnostics
  */
 #define DEBUGFLAG_EPICS             0x01
@@ -27,6 +47,7 @@
 #define DEBUGFLAG_EVR               0x04
 #define DEBUGFLAG_ACQUISITION       0x08
 #define DEBUGFLAG_IIC               0x10
+#define DEBUGFLAG_INFO_SHOW         0x20
 #define DEBUGFLAG_DRP               0x40
 #define DEBUGFLAG_CALIBRATION       0x80
 #define DEBUGFLAG_SHOW_TEST         0x100
@@ -61,5 +82,11 @@ int resetRecoverySwitchPressed(void);
 void showReg(unsigned int i);
 
 int serialNumberDFE(void);
+
+const char *getVariantInfo(void);
+const char *getSamplesPerTurnInfo(void);
+const char *getVCXOTypeInfo(void);
+const char *getTargetNameInfo(void);
+void displayInfo(void);
 
 #endif /* _UTIL_H_ */

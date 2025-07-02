@@ -75,6 +75,8 @@ module dsbpm_zcu208 #(
     output wire EVR_FB_CLK,
     output wire CLK104_SYNC_IN,
     output wire EVR_SROC,
+    output wire EVR_HB,
+    output wire EVR_HB_2,
 
     input             GPIO_SW_W,
     input             GPIO_SW_E,
@@ -196,6 +198,8 @@ common_dsbpm_top #(
     .EVR_FB_CLK(EVR_FB_CLK),
     .CLK104_SYNC_IN(CLK104_SYNC_IN),
     .EVR_SROC(EVR_SROC),
+    .EVR_HB(EVR_HB),
+    .EVR_HB_2(EVR_HB_2),
 
     .GPIO_SW_W(GPIO_SW_W),
     .GPIO_SW_E(GPIO_SW_E),
