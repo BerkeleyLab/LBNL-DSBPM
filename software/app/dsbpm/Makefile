@@ -172,7 +172,7 @@ endif
 ifneq ($(VARIANT),)
 	USER_FLAGS += -D__TARGET_VARIANT_NAME__="\"$(VARIANT)\""
 else
-	USER_FLAGS += -D__TARGET_VARIANT_NAME__="\"UNKNOWN\""
+	USER_FLAGS += -D__TARGET_VARIANT_NAME__="\"standard\""
 endif
 
 ifneq ($(SAMPLES_PER_TURN),)

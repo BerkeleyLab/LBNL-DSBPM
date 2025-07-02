@@ -19,12 +19,12 @@
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
-/* Stringify MACRO */
-#define STRINGIFY(s) _STRINGIFY(s)
-#define _STRINGIFY(s) #s
+/*
+ * Meta information
+ */
 
 #ifndef __TARGET_VARIANT_NAME__
-#define __TARGET_VARIANT_NAME__ "UNKNOWN"
+#define __TARGET_VARIANT_NAME__ "standard"
 #endif
 
 #ifndef __TARGET_SAMPLES_PER_TURN_NAME__
