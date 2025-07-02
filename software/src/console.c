@@ -170,6 +170,7 @@ cmdDEBUG(int argc, char **argv)
     }
     printf("Debug flags: 0x%x\n", debugFlags);
     if (debugFlags & DEBUGFLAG_SHOW_TEST) st7789vTestPattern();
+    if (debugFlags & DEBUGFLAG_INFO_SHOW) displayInfo();
     if (debugFlags & DEBUGFLAG_RFDC_MMCM_SHOW) mmcmShow();
     if (debugFlags & DEBUGFLAG_SHOW_DRP) eyescanCommand(0, NULL);
     if (debugFlags & DEBUGFLAG_RF_CLK_SHOW) rfClkShow();

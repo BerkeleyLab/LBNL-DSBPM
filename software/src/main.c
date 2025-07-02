@@ -89,6 +89,7 @@ main(void)
     printf("Firmware POSIX seconds: %u\n",
             (unsigned int) GPIO_READ(GPIO_IDX_FIRMWARE_BUILD_DATE));
     printf("Software POSIX seconds: %d\n", SOFTWARE_BUILD_DATE);
+    displayInfo();
 
     /* Set up file system */
     ffsCheck();
