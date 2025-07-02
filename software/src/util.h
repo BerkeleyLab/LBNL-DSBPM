@@ -24,19 +24,19 @@
 #define _STRINGIFY(s) #s
 
 #ifndef __TARGET_VARIANT_NAME__
-#define __TARGET_VARIANT_NAME__ 'UNKNOWN'
+#define __TARGET_VARIANT_NAME__ "UNKNOWN"
 #endif
 
 #ifndef __TARGET_SAMPLES_PER_TURN_NAME__
-#define __TARGET_SAMPLES_PER_TURN_NAME__ 'UNKNOWN'
+#define __TARGET_SAMPLES_PER_TURN_NAME__ "UNKNOWN"
 #endif
 
 #ifndef __TARGET_VCXO_TYPE_NAME__
-#define __TARGET_VCXO_TYPE_NAME__ 'UNKNOWN'
+#define __TARGET_VCXO_TYPE_NAME__ "UNKNOWN"
 #endif
 
 #ifndef __TARGET_NAME__
-#define __TARGET_NAME__ 'UNKNOWN'
+#define __TARGET_NAME__ "UNKNOWN"
 #endif
 
 /*
