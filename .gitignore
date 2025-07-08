@@ -73,6 +73,12 @@ work/
 !/gateware/platform/xilinx/*/*/positionCalcDivider/positionCalcDivider.xci
 /gateware/platform/xilinx/*/*/positionCalcMultiplier/*
 !/gateware/platform/xilinx/*/*/positionCalcMultiplier/positionCalcMultiplier.xci
+/gateware/platform/xilinx/*/*/cellCommMux/*
+!/gateware/platform/xilinx/*/*/cellCommMux/cellCommMux.xci
+/gateware/platform/xilinx/*/*/cellCommFIFO/*
+!/gateware/platform/xilinx/*/*/cellCommFIFO/cellCommFIFO.xci
+/gateware/platform/xilinx/*/*/cellCommSendFIFO/*
+!/gateware/platform/xilinx/*/*/cellCommSendFIFO/cellCommSendFIFO.xci
 
 # NCO tables
 *csv
