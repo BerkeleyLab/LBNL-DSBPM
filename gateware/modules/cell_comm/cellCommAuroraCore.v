@@ -67,9 +67,8 @@ module cellCommAuroraCore #(
     output wire                    cwAxisRxCRCvalid,
     output wire                    cwAxisRxCRCpass,
 
-
-    output reg   [DATA_WIDTH-1:0] ccwCRCfaults = 0,
-    output reg   [DATA_WIDTH-1:0] cwCRCfaults = 0);
+    output reg              [31:0] ccwCRCfaults = 0,
+    output reg              [31:0] cwCRCfaults = 0);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                 CCW link                                  //
@@ -141,6 +140,10 @@ assign ccwChannelUp = ccwMgtChannelUP;
 assign ccwAxisRxCRCpass = ccwAxisRxTuser[0];
 assign ccwAxisRxCRCvalid = ccwAxisRxTuser[1];
 
+always @(posedge ccwAxisUserClk) begin
+    if (ccwAxisRxCRCvalid && !ccwAxisRxCRCpass) ccwCRCfaults <= ccwCRCfaults + 1;
+end
+
 ///////////////////////////////////////////////////////////////////////////////
 //                                 CW link                                  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -210,5 +213,9 @@ assign cwAxisUserClk = cwAuUserClk;
 assign cwChannelUp = cwMgtChannelUP;
 assign cwAxisRxCRCpass = cwAxisRxTuser[0];
 assign cwAxisRxCRCvalid = cwAxisRxTuser[1];
+
+always @(posedge cwAxisUserClk) begin
+    if (cwAxisRxCRCvalid && !cwAxisRxCRCpass) cwCRCfaults <= cwCRCfaults + 1;
+end
 
 endmodule
