@@ -80,12 +80,14 @@ IP_CORES_SRCS_DIRS = $(IP_CORES_DIRS)
 IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
 IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
 
-BD += system
+BD += system system_without_ddr
 system_DIR = $(PLATFORM_TARGET)/system
 system_TOP = $(system_DIR)/synth/system.v
+system_without_ddr_DIR = $(PLATFORM_TARGET)/system_without_ddr
+system_without_ddr_TOP = $(system_without_ddr_DIR)/synth/system_without_ddr.v
 
-BD_TOP_LVL_SRCS += $(system_TOP)
-BD_DIRS += $(system_DIR)
+BD_TOP_LVL_SRCS += $(system_TOP) $(system_without_ddr_TOP)
+BD_DIRS += $(system_DIR) $(system_without_ddr_DIR)
 
 BD_SRCS_DIRS = $(BD_DIRS)
 BD_SRCS_DIRS += $(addsuffix /synth, $(BD_DIRS))
