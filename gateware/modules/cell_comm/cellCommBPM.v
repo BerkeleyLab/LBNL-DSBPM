@@ -7,8 +7,8 @@ module cellCommBPM #(
     parameter DATA_WIDTH     = 32) (
     input  wire                   sysClk,
     input  wire                   sysCsrStrobe,
-    input  wire  [DATA_WIDTH-1:0] sysGpioData,
-    output wire  [DATA_WIDTH-1:0] sysCsr,
+    input  wire            [31:0] sysGpioData,
+    output wire            [31:0] sysCsr,
 
     input  wire  [DATA_WIDTH-1:0] sysFA_X,
     input  wire  [DATA_WIDTH-1:0] sysFA_Y,
@@ -76,11 +76,11 @@ cellCommDataSwitch #(
     .DATA_WIDTH(DATA_WIDTH))
   sendToCCW(
     .sysClk(sysClk),
-    .sysFaToggle(sysFaToggle),
     .sysIsClipping(sysIsClipping),
     .sysFA_X(sysFA_X),
     .sysFA_Y(sysFA_Y),
     .sysFA_S(sysFA_S),
+    .sysFaToggle(sysFaToggle),
     .sysFOFBvalid(sysFOFBvalid),
     .sysFOFBindex(sysFOFBindex),
     .rxClk(cwAxisUserClk),
@@ -101,11 +101,11 @@ cellCommDataSwitch #(
     .DATA_WIDTH(DATA_WIDTH))
   sendToCW(
     .sysClk(sysClk),
-    .sysFaToggle(sysFaToggle),
     .sysIsClipping(sysIsClipping),
     .sysFA_X(sysFA_X),
     .sysFA_Y(sysFA_Y),
     .sysFA_S(sysFA_S),
+    .sysFaToggle(sysFaToggle),
     .sysFOFBvalid(sysFOFBvalid),
     .sysFOFBindex(sysFOFBindex),
     .rxClk(ccwAxisUserClk),

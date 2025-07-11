@@ -10,12 +10,12 @@ module cellCommDataSwitch #(
     parameter DATA_WIDTH    = 32,
     parameter FOFB_IDX_WIDTH = 9) (
     input  wire                      sysClk,
-    input  wire                      sysFaToggle,
     input  wire                      sysIsClipping,
 
     input  wire     [DATA_WIDTH-1:0] sysFA_X,
     input  wire     [DATA_WIDTH-1:0] sysFA_Y,
     input  wire     [DATA_WIDTH-1:0] sysFA_S,
+    input  wire                      sysFaToggle,
     input  wire                      sysFOFBvalid,
     input  wire [FOFB_IDX_WIDTH-1:0] sysFOFBindex,
 
