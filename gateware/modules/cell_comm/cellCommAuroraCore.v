@@ -5,38 +5,31 @@ module cellCommAuroraCore #(
     parameter CCW_MGT_DEBUG        = "false",
     parameter CCW_CONVERSION_DEBUG = "false",
     parameter CW_MGT_DEBUG         = "false",
-    parameter CW_CONVERSION_DEBUG  = "false",
-    parameter FOFB_IDX_WIDTH       = 9,
-    parameter DATA_WIDTH           = 32) (
-    input  wire                   sysClk,
-    input  wire  [DATA_WIDTH-1:0] sysGpioData,
+    parameter CW_CONVERSION_DEBUG  = "false") (
+    input  wire                    sysClk,
+    input  wire             [31:0] sysGpioData,
 
-    input  wire                   sysCCWCsrStrobe,
-    output wire  [DATA_WIDTH-1:0] sysCCWCsr,
+    input  wire                    sysCCWCsrStrobe,
+    output wire             [31:0] sysCCWCsr,
 
-    input  wire                   sysCWCsrStrobe,
-    output wire  [DATA_WIDTH-1:0] sysCWCsr,
+    input  wire                    sysCWCsrStrobe,
+    output wire             [31:0] sysCWCsr,
 
-    input  wire                   GT_REFCLK,
+    input  wire                    GT_REFCLK,
 
-    output wire                   CCW_TX_N,
-    output wire                   CCW_TX_P,
-    input  wire                   CCW_RX_N,
-    input  wire                   CCW_RX_P,
+    output wire                    CCW_TX_N,
+    output wire                    CCW_TX_P,
+    input  wire                    CCW_RX_N,
+    input  wire                    CCW_RX_P,
 
-    output wire                   CCW_LED0,
-    output wire                   CCW_LED1,
-
-    output wire                   CW_TX_N,
-    output wire                   CW_TX_P,
-    input  wire                   CW_RX_N,
-    input  wire                   CW_RX_P,
-
-    output wire                   CW_LED0,
-    output wire                   CW_LED1,
+    output wire                    CW_TX_N,
+    output wire                    CW_TX_P,
+    input  wire                    CW_RX_N,
+    input  wire                    CW_RX_P,
 
     // CCW AXIS
     output wire                    ccwAxisUserClk,
+    output wire                    ccwAxisUserReset,
 
     output wire                    ccwChannelUp,
 
@@ -53,6 +46,7 @@ module cellCommAuroraCore #(
 
     // CW AXIS
     output wire                    cwAxisUserClk,
+    output wire                    cwAxisUserReset,
 
     output wire                    cwChannelUp,
 
@@ -80,6 +74,7 @@ module cellCommAuroraCore #(
 
 wire ccwAuMGTclk;
 wire ccwAuUserClk;
+wire ccwAuUserReset;
 wire ccwMmcmLocked;
 
 wire ccwMgtHardErr;
@@ -93,7 +88,7 @@ wire ccwMgtMmcmNotLocked;
 wire [7:0] ccwAxisRxTuser;
 
 auroraLink #(
-    .MGT_DEBUG(CCW_MGT_DEBUG)
+    .MGT_DEBUG(CCW_MGT_DEBUG),
     .CONVERSION_DEBUG(CCW_CONVERSION_DEBUG),
     .USE_INTERNAL_MMCM("true")
 ) auroraCellCommCCW (
@@ -101,7 +96,6 @@ auroraLink #(
     .GPIO_OUT(sysGpioData),
     .mgtCSR(sysCCWCsr),
     .mgtCSRstrobe(sysCCWCsrStrobe),
-    .auResetOut(),
 
     .refClk(GT_REFCLK),
     .MGT_TX_P(CCW_TX_P),
@@ -112,6 +106,7 @@ auroraLink #(
     // Clocks in case of USE_INTERNAL_MMCM = "true"
     .auMGTclkOut(ccwAuMGTclk),
     .auUserClkOut(ccwAuUserClk),
+    .auUserResetOut(ccwAuUserReset),
     .mmcmLockedOut(ccwMmcmLocked),
 
     .axiRxTdata(ccwAxisRxTdata),
@@ -136,6 +131,7 @@ auroraLink #(
 );
 
 assign ccwAxisUserClk = ccwAuUserClk;
+assign ccwAxisUserReset = ccwAuUserReset;
 assign ccwChannelUp = ccwMgtChannelUP;
 assign ccwAxisRxCRCpass = ccwAxisRxTuser[0];
 assign ccwAxisRxCRCvalid = ccwAxisRxTuser[1];
@@ -152,9 +148,11 @@ end
 // CW Aurora block
 //
 
-wire cwAuMGTclk;
-wire cwAuUserClk;
-wire cwMmcmLocked;
+wire cwAuMGTclk = ccwAuMGTclk;
+wire cwAuUserClk = ccwAuUserClk;
+wire cwMmcmLocked = ccwMmcmLocked;
+
+wire cwAuUserReset;
 
 wire cwMgtHardErr;
 wire cwMgtSoftErr;
@@ -167,7 +165,7 @@ wire cwMgtMmcmNotLocked;
 wire [7:0] cwAxisRxTuser;
 
 auroraLink #(
-    .MGT_DEBUG(CW_MGT_DEBUG)
+    .MGT_DEBUG(CW_MGT_DEBUG),
     .CONVERSION_DEBUG(CW_CONVERSION_DEBUG),
     .USE_INTERNAL_MMCM("false")
 ) auroraCellCommCW (
@@ -187,6 +185,8 @@ auroraLink #(
     .auMGTclkIn(cwAuMGTclk),
     .auUserClkIn(cwAuUserClk),
     .mmcmLockedIn(cwMmcmLocked),
+
+    .auUserResetOut(cwAuUserReset),
 
     .axiRxTdata(cwAxisRxTdata),
     .axiRxTkeep(),
@@ -210,6 +210,7 @@ auroraLink #(
 );
 
 assign cwAxisUserClk = cwAuUserClk;
+assign cwAxisUserReset = cwAuUserReset;
 assign cwChannelUp = cwMgtChannelUP;
 assign cwAxisRxCRCpass = cwAxisRxTuser[0];
 assign cwAxisRxCRCvalid = cwAxisRxTuser[1];
