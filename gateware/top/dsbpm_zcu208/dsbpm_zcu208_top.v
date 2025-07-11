@@ -1,4 +1,6 @@
 module dsbpm_zcu208 #(
+    parameter TEST_BYPASS_RECORDERS     = "TRUE",
+    parameter TEST_BYPASS_PRELIM_PROC   = "TRUE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
@@ -93,6 +95,8 @@ module dsbpm_zcu208 #(
 );
 
 common_dsbpm_top #(
+    .TEST_BYPASS_RECORDERS(TEST_BYPASS_RECORDERS),
+    .TEST_BYPASS_PRELIM_PROC(TEST_BYPASS_PRELIM_PROC),
     .DDR_ILA_CHIPSCOPE_DBG(DDR_ILA_CHIPSCOPE_DBG),
     .DAC_ILA_CHIPSCOPE_DBG(DAC_ILA_CHIPSCOPE_DBG),
     .ADC_WIDTH(ADC_WIDTH),
