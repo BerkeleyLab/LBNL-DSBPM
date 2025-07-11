@@ -1660,6 +1660,7 @@ system
     .ddr_aximm_dbg_wvalid(ddr_aximm_dbg_WVALID)
     );
 
+end
 else begin
 
 system_without_ddr
