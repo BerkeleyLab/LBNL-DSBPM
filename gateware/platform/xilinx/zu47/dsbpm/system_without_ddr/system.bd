@@ -3,7 +3,7 @@
     "design_info": {
       "boundary_crc": "0x3D5F2BE4AEE96898",
       "device": "xczu47dr-ffvg1517-1-e",
-      "name": "system_without_ddr",
+      "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
       "synth_flow_mode": "None",
       "tool_version": "2022.1",
@@ -1478,7 +1478,7 @@
         "direction": "O",
         "parameters": {
           "CLK_DOMAIN": {
-            "value": "system_zynq_ultra_ps_e_0_0_pl_clk0",
+            "value": "system_without_ddr_zynq_ultra_ps_e_0_0_pl_clk0",
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
@@ -1566,7 +1566,7 @@
         "direction": "O",
         "parameters": {
           "CLK_DOMAIN": {
-            "value": "system_usp_rf_data_converter_0_0_clk_adc0",
+            "value": "system_without_ddr_usp_rf_data_converter_0_0_clk_adc0",
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
@@ -1653,7 +1653,7 @@
         "direction": "O",
         "parameters": {
           "CLK_DOMAIN": {
-            "value": "system_usp_rf_data_converter_0_0_clk_dac0",
+            "value": "system_without_ddr_usp_rf_data_converter_0_0_clk_dac0",
             "value_src": "default_prop"
           },
           "FREQ_HZ": {
@@ -1708,8 +1708,8 @@
     "components": {
       "Zero": {
         "vlnv": "xilinx.com:ip:xlconstant:1.1",
-        "xci_name": "system_Zero_0",
-        "xci_path": "ip/system_Zero_0/system_Zero_0.xci",
+        "xci_name": "system_without_ddr_Zero_0",
+        "xci_path": "ip/system_without_ddr_Zero_0_1/system_without_ddr_Zero_0.xci",
         "inst_hier_path": "Zero",
         "parameters": {
           "CONST_VAL": {
@@ -1719,8 +1719,8 @@
       },
       "axi_lite_generic_reg_0": {
         "vlnv": "lbl.gov:user:axi_lite_generic_reg:2.0",
-        "xci_name": "system_axi_lite_generic_reg_0_0",
-        "xci_path": "ip/system_axi_lite_generic_reg_0_0/system_axi_lite_generic_reg_0_0.xci",
+        "xci_name": "system_without_ddr_axi_lite_generic_reg_0_0",
+        "xci_path": "ip/system_without_ddr_axi_lite_generic_reg_0_0_1/system_without_ddr_axi_lite_generic_reg_0_0.xci",
         "inst_hier_path": "axi_lite_generic_reg_0",
         "parameters": {
           "C_S00_AXI_ADDR_WIDTH": {
@@ -1737,8 +1737,8 @@
       },
       "evr_axi_0": {
         "vlnv": "lbl.gov:user:evr_axi:3.1",
-        "xci_name": "system_evr_axi_0_0",
-        "xci_path": "ip/system_evr_axi_0_0/system_evr_axi_0_0.xci",
+        "xci_name": "system_without_ddr_evr_axi_0_0",
+        "xci_path": "ip/system_without_ddr_evr_axi_0_0_1/system_without_ddr_evr_axi_0_0.xci",
         "inst_hier_path": "evr_axi_0",
         "parameters": {
           "C_S00_AXI_ADDR_WIDTH": {
@@ -1755,8 +1755,8 @@
       },
       "rfadc_mmcm": {
         "vlnv": "xilinx.com:ip:clk_wiz:6.0",
-        "xci_name": "system_rfadc_mmcm_0",
-        "xci_path": "ip/system_rfadc_mmcm_0/system_rfadc_mmcm_0.xci",
+        "xci_name": "system_without_ddr_rfadc_mmcm_0",
+        "xci_path": "ip/system_without_ddr_rfadc_mmcm_0_1/system_without_ddr_rfadc_mmcm_0.xci",
         "inst_hier_path": "rfadc_mmcm",
         "parameters": {
           "CLKIN1_JITTER_PS": {
@@ -1868,14 +1868,14 @@
       },
       "rst_ps8_0_96M": {
         "vlnv": "xilinx.com:ip:proc_sys_reset:5.0",
-        "xci_name": "system_rst_ps8_0_96M_0",
-        "xci_path": "ip/system_rst_ps8_0_96M_0/system_rst_ps8_0_96M_0.xci",
+        "xci_name": "system_without_ddr_rst_ps8_0_96M_0",
+        "xci_path": "ip/system_without_ddr_rst_ps8_0_96M_0_1/system_without_ddr_rst_ps8_0_96M_0.xci",
         "inst_hier_path": "rst_ps8_0_96M"
       },
       "usp_rf_data_converter_0": {
         "vlnv": "xilinx.com:ip:usp_rf_data_converter:2.6",
-        "xci_name": "system_usp_rf_data_converter_0_0",
-        "xci_path": "ip/system_usp_rf_data_converter_0_0/system_usp_rf_data_converter_0_0.xci",
+        "xci_name": "system_without_ddr_usp_rf_data_converter_0_0",
+        "xci_path": "ip/system_without_ddr_usp_rf_data_converter_0_0_1/system_without_ddr_usp_rf_data_converter_0_0.xci",
         "inst_hier_path": "usp_rf_data_converter_0",
         "parameters": {
           "ADC0_Clock_Source": {
@@ -2383,8 +2383,8 @@
       },
       "zynq_ultra_ps_e_0": {
         "vlnv": "xilinx.com:ip:zynq_ultra_ps_e:3.4",
-        "xci_name": "system_zynq_ultra_ps_e_0_0",
-        "xci_path": "ip/system_zynq_ultra_ps_e_0_0/system_zynq_ultra_ps_e_0_0.xci",
+        "xci_name": "system_without_ddr_zynq_ultra_ps_e_0_0",
+        "xci_path": "ip/system_without_ddr_zynq_ultra_ps_e_0_0_1/system_without_ddr_zynq_ultra_ps_e_0_0.xci",
         "inst_hier_path": "zynq_ultra_ps_e_0",
         "parameters": {
           "CAN0_BOARD_INTERFACE": {
@@ -5455,9 +5455,9 @@
       },
       "ps8_0_axi_periph": {
         "vlnv": "xilinx.com:ip:axi_interconnect:2.1",
-        "xci_path": "ip/system_without_ddr_axi_interconnect_0_0/system_without_ddr_axi_interconnect_0_0.xci",
+        "xci_path": "ip/system_without_ddr_ps8_0_axi_periph_0_1/system_without_ddr_ps8_0_axi_periph_0.xci",
         "inst_hier_path": "ps8_0_axi_periph",
-        "xci_name": "system_without_ddr_axi_interconnect_0_0",
+        "xci_name": "system_without_ddr_ps8_0_axi_periph_0",
         "parameters": {
           "NUM_MI": {
             "value": "4"
@@ -5721,8 +5721,8 @@
             "components": {
               "auto_ds": {
                 "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
-                "xci_name": "system_without_ddr_auto_ds_4",
-                "xci_path": "ip/system_without_ddr_auto_ds_4/system_without_ddr_auto_ds_4.xci",
+                "xci_name": "system_without_ddr_auto_ds_0",
+                "xci_path": "ip/system_without_ddr_auto_ds_0_1/system_without_ddr_auto_ds_0.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m00_couplers/auto_ds",
                 "parameters": {
                   "MI_DATA_WIDTH": {
@@ -5744,8 +5744,8 @@
               },
               "auto_pc": {
                 "vlnv": "xilinx.com:ip:axi_protocol_converter:2.1",
-                "xci_name": "system_without_ddr_auto_pc_3",
-                "xci_path": "ip/system_without_ddr_auto_pc_3/system_without_ddr_auto_pc_3.xci",
+                "xci_name": "system_without_ddr_auto_pc_0",
+                "xci_path": "ip/system_without_ddr_auto_pc_0_1/system_without_ddr_auto_pc_0.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m00_couplers/auto_pc",
                 "parameters": {
                   "MI_PROTOCOL": {
@@ -5853,8 +5853,8 @@
             "components": {
               "auto_ds": {
                 "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
-                "xci_name": "system_without_ddr_auto_ds_5",
-                "xci_path": "ip/system_without_ddr_auto_ds_5/system_without_ddr_auto_ds_5.xci",
+                "xci_name": "system_without_ddr_auto_ds_1",
+                "xci_path": "ip/system_without_ddr_auto_ds_1_1/system_without_ddr_auto_ds_1.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m01_couplers/auto_ds",
                 "parameters": {
                   "MI_DATA_WIDTH": {
@@ -5876,8 +5876,8 @@
               },
               "auto_pc": {
                 "vlnv": "xilinx.com:ip:axi_protocol_converter:2.1",
-                "xci_name": "system_without_ddr_auto_pc_4",
-                "xci_path": "ip/system_without_ddr_auto_pc_4/system_without_ddr_auto_pc_4.xci",
+                "xci_name": "system_without_ddr_auto_pc_1",
+                "xci_path": "ip/system_without_ddr_auto_pc_1_1/system_without_ddr_auto_pc_1.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m01_couplers/auto_pc",
                 "parameters": {
                   "MI_PROTOCOL": {
@@ -5985,8 +5985,8 @@
             "components": {
               "auto_ds": {
                 "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
-                "xci_name": "system_without_ddr_auto_ds_6",
-                "xci_path": "ip/system_without_ddr_auto_ds_6/system_without_ddr_auto_ds_6.xci",
+                "xci_name": "system_without_ddr_auto_ds_2",
+                "xci_path": "ip/system_without_ddr_auto_ds_2_1/system_without_ddr_auto_ds_2.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m02_couplers/auto_ds",
                 "parameters": {
                   "MI_DATA_WIDTH": {
@@ -6086,8 +6086,8 @@
             "components": {
               "auto_ds": {
                 "vlnv": "xilinx.com:ip:axi_dwidth_converter:2.1",
-                "xci_name": "system_without_ddr_auto_ds_7",
-                "xci_path": "ip/system_without_ddr_auto_ds_7/system_without_ddr_auto_ds_7.xci",
+                "xci_name": "system_without_ddr_auto_ds_3",
+                "xci_path": "ip/system_without_ddr_auto_ds_3_1/system_without_ddr_auto_ds_3.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m03_couplers/auto_ds",
                 "parameters": {
                   "MI_DATA_WIDTH": {
@@ -6109,8 +6109,8 @@
               },
               "auto_pc": {
                 "vlnv": "xilinx.com:ip:axi_protocol_converter:2.1",
-                "xci_name": "system_without_ddr_auto_pc_5",
-                "xci_path": "ip/system_without_ddr_auto_pc_5/system_without_ddr_auto_pc_5.xci",
+                "xci_name": "system_without_ddr_auto_pc_2",
+                "xci_path": "ip/system_without_ddr_auto_pc_2_1/system_without_ddr_auto_pc_2.xci",
                 "inst_hier_path": "ps8_0_axi_periph/m03_couplers/auto_pc",
                 "parameters": {
                   "MI_PROTOCOL": {
