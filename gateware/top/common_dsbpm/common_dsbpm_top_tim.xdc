@@ -27,14 +27,12 @@ set_max_delay -datapath_only -from [get_clocks RFDAC0_CLK] -to [get_clocks clk_p
 set_max_delay -datapath_only -from [get_clocks FPGA_REFCLK_OUT_C_P] -to [get_clocks clk_pl_0] $clk_pl_0_period
 
 set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]] $clk_drp_period
-# ADC to Sys clock, status registers
+# ADC/DAC to Sys clock, status registers
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
-# DAC to Sys clock, status registers
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT1}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
-# Sys clock to DAC, DPRAM
-set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT1}]] $clk_adc_dac_period
-# EVR to DAC clock, EVR hearbeat marker
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT1}]] $clk_adc_dac_period
+# Sys clock to ADC/DAC, DPRAM
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]] $clk_adc_dac_period
+# EVR to ADC/DAC clock, EVR hearbeat marker
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]] $clk_adc_dac_period
 
 # Set max delay path between MGT reference clocks O2 and system clock,
 # only used at the frequency meter module
