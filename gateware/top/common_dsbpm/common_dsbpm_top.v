@@ -1663,7 +1663,7 @@ system
 end
 else begin
 
-system_without_ddr
+system
   system_i (
     .sysClk(sysClk),
     .sysReset_n(sysReset_n),
