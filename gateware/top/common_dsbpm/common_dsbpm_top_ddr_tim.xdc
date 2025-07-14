@@ -1,6 +1,9 @@
 # SI570 C0 clock. 300 MHz
 create_clock -period 3.334 [get_ports SYS_CLK_C0_P]
 
+# DDR clock
+set clk_ddr_ui_period                 [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]]]
+
 ## These signals once asserted, stays asserted for multiple clock cycles.
 
 ## False path constraint is added to improve the HOLD timing.
@@ -343,6 +346,16 @@ set_false_path -from [ \
         NAME =~ *ddr4_0*/*/rst_riu_sync_r_reg[0]/D \
     } \
 ]
+
+# Set max delay path between sys clock and DDR clock,
+# only used for monitoring and debug
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] $clk_ddr_ui_period
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
+
+# Set max delay path between EVR clock and DDR clock,
+# only used for monitoring and debug
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] $clk_ddr_ui_period
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] $clk_mgt_rx_period
 
 # Ignore warnings
 create_waiver -internal -user DDR4 -tags "1010162" -scope -type METHODOLOGY -id CLKC-55 -description "Clocking Primitives will be Auto-Placed" -objects [ \
