@@ -16,6 +16,8 @@ SAMPLES_PER_TURN ?= 81
 VCXO_TYPE ?= 160
 VARIANT ?=
 
+SYSTEM_BD_NAME ?= system
+
 VARIANT_MOD =
 
 ifneq ($(VARIANT),)
@@ -187,7 +189,7 @@ vpath *.o $(SW_SRC_DIR) $(ST7789V_DIR)
 # FIXME: We are considering BSP done if the directory exists. This
 # could lead to mismatches!
 $(TARGET_VARIANT):
-	$(XSCT) $(SW_SCRIPTS_DIR)/gen_vitis_platform.tcl $(TARGET_VARIANT) $(GW_DSBPM_TGT_DIR)/system.xsa
+	$(XSCT) $(SW_SCRIPTS_DIR)/gen_vitis_platform.tcl $(TARGET_VARIANT) $(GW_DSBPM_TGT_DIR)/$(SYSTEM_BD_NAME).xsa
 
 $(TARGET_VARIANT).elf: $(HDR_FILES) $(HDR_GEN_FILES) $(OBJ_FILES) $(LINKER_FILE) $(LINKER_FILE_DDR)
 	$(CC) $(CFLAGS) $(USER_FLAGS) $(INCLUDE_FLAGS) $(LIB_FLAGS) $(LD_FLAGS) -o $@ $(filter %.o, $^) $(LIBS)
