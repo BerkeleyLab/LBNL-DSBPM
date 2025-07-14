@@ -84,10 +84,11 @@ BD_SYSTEM_NAME ?= system
 
 ifeq ($(BD_SYSTEM_NAME),system)
 	system_DIR = $(PLATFORM_TARGET)/system
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
 else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
 	system_DIR = $(PLATFORM_TARGET)/system_without_ddr
 	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
-	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
 else
 $(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
 endif
