@@ -27,9 +27,13 @@ module common_dsbpm_top #(
     input  USER_MGT_SI570_CLK_P, USER_MGT_SI570_CLK_N,
     input  IDT_8A34001_Q7_CLK_P, IDT_8A34001_Q7_CLK_N,
     input  IDT_8A34001_Q11_CLK_P, IDT_8A34001_Q11_CLK_N,
-    input  SFP2_RX_P, SFP2_RX_N,
-    output SFP2_TX_P, SFP2_TX_N,
-    output SFP2_TX_ENABLE,
+
+    input  [2:0] SFP_RX_P,
+    input  [2:0] SFP_RX_N,
+    output [2:0] SFP_TX_P,
+    output [2:0] SFP_TX_N,
+
+    output [2:0] SFP_TX_ENABLE,
 
     input  FPGA_REFCLK_OUT_C_P, FPGA_REFCLK_OUT_C_N,
     input  SYSREF_FPGA_C_P, SYSREF_FPGA_C_N,
@@ -96,7 +100,9 @@ module common_dsbpm_top #(
 
 //////////////////////////////////////////////////////////////////////////////
 // Static outputs
-assign SFP2_TX_ENABLE = 1'b1;
+assign SFP_TX_ENABLE[2] = 1'b1;
+assign SFP_TX_ENABLE[1] = 1'b1;
+assign SFP_TX_ENABLE[0] = 1'b1;
 
 //////////////////////////////////////////////////////////////////////////////
 // General-purpose I/O block
@@ -217,10 +223,10 @@ evrGTYwrapper #(.DEBUG("false"))
     .drp(GPIO_IN[GPIO_IDX_EVR_GTY_DRP]),
     .refClk(USER_MGT_SI570_CLK),
     .evrTxClk(evrTxClk),
-    .RX_N(SFP2_RX_N),
-    .RX_P(SFP2_RX_P),
-    .TX_N(SFP2_TX_N),
-    .TX_P(SFP2_TX_P),
+    .RX_N(SFP_RX_N[2]),
+    .RX_P(SFP_RX_P[2]),
+    .TX_N(SFP_TX_N[2]),
+    .TX_P(SFP_TX_P[2]),
     .evrClk(evrClk),
     .evrRxSynchronized(evrRxSynchronized),
     .evrChars(evrChars),
@@ -2387,7 +2393,6 @@ rmsCalc rmsCalc(.clk(sysClk),
                 .wideYrms(wideYrms[dsbpm]),
                 .narrowXrms(narrowXrms[dsbpm]),
                 .narrowYrms(narrowYrms[dsbpm]));
-
 //
 // DAC streamer
 //
@@ -2438,6 +2443,103 @@ assign AFE_SPI_SDI[dsbpm] = ~spiSDI;
 
 end // for
 endgenerate // generate
+
+//
+// FOFB communication
+//
+
+wire [CFG_DSBPM_COUNT*32-1:0] sysBPMCsrFlatten;
+generate
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : gpio_cell_comm_bpm_gpio
+    assign GPIO_IN[GPIO_IDX_CELL_COMM_BPM_CSR+(dsbpm*GPIO_IDX_CELL_COMM_BPM_PER_DSBPM)] =
+        sysBPMCsrFlatten[32*dsbpm+:32];
+end
+endgenerate
+
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaXFlatten;
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaYFlatten;
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaSFlatten;
+wire [CFG_DSBPM_COUNT-1:0] positionCalcFaToggleFlatten;
+generate
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : gpio_cell_comm_bpm_position
+
+if (TEST_BYPASS_PRELIM_PROC == "FALSE") begin
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = positionCalcFaX[dsbpm];
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = positionCalcFaY[dsbpm];
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = positionCalcFaS[dsbpm];
+    assign positionCalcFaToggleFlatten[dsbpm] = positionCalcFaToggle[dsbpm];
+end
+else begin
+    reg [15:0] positionCalcFaFake = 0;
+    (* ASYNC_REG="TRUE" *) reg sysFaEvent_m = 0, sysFaEvent = 0;
+    reg sysFaEvent_d1, sysFAstrobe;
+
+    always @(posedge sysClk) begin
+        sysFaEvent_m  <= evrFaMarker;
+        sysFaEvent    <= sysFaEvent_m;
+        sysFaEvent_d1 <= sysFaEvent;
+        if (sysFaEvent && !sysFaEvent_d1) begin
+            sysFaStrobe <= 1;
+        end
+        else begin
+            sysFaStrobe <= 0;
+        end
+
+        if (sysFAstrobe) begin
+            positionCalcFaFake <= positionCalcFaFake + 1;
+        end
+    end
+
+    assign positionCalcFaXFlatten[32*i+:32] = {16'hcafe, positionCalcFaFake};
+    assign positionCalcFaYFlatten[32*i+:32] = {16'hbeef, positionCalcFaFake};
+    assign positionCalcFaSFlatten[32*i+:32] = {16'hbead, positionCalcFaFake};
+end
+
+end
+endgenerate
+
+cellComm #(
+    .NUM_BPMS(CFG_DSBPM_COUNT),
+    // A, B, C, D
+    .ADC_COUNT(4))
+  cellComm (
+    .sysClk(sysClk),
+    .sysGpioData(GPIO_OUT),
+
+    .sysCCWCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_CCW_CSR]),
+    .sysCCWCsr(GPIO_IN[GPIO_IDX_CELL_COMM_CCW_CSR]),
+
+    .sysCWCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_CW_CSR]),
+    .sysCWCsr(GPIO_IN[GPIO_IDX_CELL_COMM_CW_CSR]),
+
+    .sysBPMCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_BPM_CSR+:CFG_DSBPM_COUNT]),
+    .sysBPMCsr(sysBPMCsrFlatten),
+
+    .sysFA_X(positionCalcFaXFlatten),
+    .sysFA_Y(positionCalcFaYFlatten),
+    .sysFA_S(positionCalcFaSFlatten),
+    .sysFaToggle(positionCalcFaToggleFlatten),
+    // FIXME: Add ADC clip status
+    .sysClippedAdc(0),
+
+    .GT_REFCLK(IDT_8A34001_Q11_CLK),
+
+    .CCW_TX_N(SFP_TX_N[0]),
+    .CCW_TX_P(SFP_TX_P[0]),
+    .CCW_RX_N(SFP_RX_N[0]),
+    .CCW_RX_P(SFP_RX_P[0]),
+
+    .CW_TX_N(SFP_TX_N[1]),
+    .CW_TX_P(SFP_TX_P[1]),
+    .CW_RX_N(SFP_RX_N[1]),
+    .CW_RX_P(SFP_RX_P[1]),
+
+    .ccwCRCfaults(GPIO_IN[GPIO_IDX_BPM_CCW_CRC_FAULTS]),
+    .cwCRCfaults(GPIO_IN[GPIO_IDX_BPM_CW_CRC_FAULTS]));
+
+//
+// Debug probes
+//
 
 generate
 if (DAC_ILA_CHIPSCOPE_DBG != "TRUE" && DAC_ILA_CHIPSCOPE_DBG != "FALSE") begin

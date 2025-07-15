@@ -1,10 +1,26 @@
 # SFPs - MGT 129 - zSFP 2
-set_property PACKAGE_PIN N38        [get_ports SFP2_RX_P]
-set_property PACKAGE_PIN N39        [get_ports SFP2_RX_N]
-set_property PACKAGE_PIN P35        [get_ports SFP2_TX_P]
-set_property PACKAGE_PIN P36        [get_ports SFP2_TX_N]
-set_property PACKAGE_PIN AP18       [get_ports SFP2_TX_ENABLE]
-set_property IOSTANDARD LVCMOS12    [get_ports SFP2_TX_ENABLE]
+set_property PACKAGE_PIN N38        [get_ports {SFP_RX_P[2]}]
+set_property PACKAGE_PIN N39        [get_ports {SFP_RX_N[2]}]
+set_property PACKAGE_PIN P35        [get_ports {SFP_TX_P[2]}]
+set_property PACKAGE_PIN P36        [get_ports {SFP_TX_N[2]}]
+set_property PACKAGE_PIN AP18       [get_ports {SFP_TX_ENABLE[2]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[2]}]
+
+# SFPs - MGT 128 - zSFP 0
+set_property PACKAGE_PIN AA38       [get_ports {SFP_RX_P[0]}]
+set_property PACKAGE_PIN AA39       [get_ports {SFP_RX_N[0]}]
+set_property PACKAGE_PIN Y35        [get_ports {SFP_TX_P[0]}]
+set_property PACKAGE_PIN Y36        [get_ports {SFP_TX_N[0]}]
+set_property PACKAGE_PIN AT20       [get_ports {SFP_TX_ENABLE[0]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[0]}]
+
+# SFPs - MGT 128 - zSFP 1
+set_property PACKAGE_PIN W38        [get_ports {SFP_RX_P[1]}]
+set_property PACKAGE_PIN W39        [get_ports {SFP_RX_N[1]}]
+set_property PACKAGE_PIN V35        [get_ports {SFP_TX_P[1]}]
+set_property PACKAGE_PIN V36        [get_ports {SFP_TX_N[1]}]
+set_property PACKAGE_PIN AR18       [get_ports {SFP_TX_ENABLE[1]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[1]}]
 
 # USER_MGT_SI570
 set_property PACKAGE_PIN M32        [get_ports USER_MGT_SI570_CLK_N]
