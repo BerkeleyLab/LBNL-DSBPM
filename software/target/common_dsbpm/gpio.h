@@ -105,6 +105,16 @@
 
 #define CFG_PT_GEN_ROW_CAPACITY          32768 // 2^15 per DAC sample (I and Q)
 
+// FOFB communication
+#define GPIO_IDX_CELL_COMM_CCW_CSR       256
+#define GPIO_IDX_CELL_COMM_CC_CSR        257
+
+#define CFG_NUM_CC_BPMS                  2
+#define GPIO_IDX_PER_CC_BPM              1
+
+#define GPIO_IDX_CELL_COMM_BPM_CSR       258
+#define GPIO_IDX_CELL_COMM_BPM_PER_DSBPM (GPIO_IDX_CELL_COMM_BPM_CSR-GPIO_IDX_CELL_COMM_BPM_CSR+1)
+
 // Waveform recorders
 // Capacities must be powers of two
 #define CFG_NUM_RECORDERS                7 // ADC, TbT, FA, PL, PH, TbT Pos, FA Pos
