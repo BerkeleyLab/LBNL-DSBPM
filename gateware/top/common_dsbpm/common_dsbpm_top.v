@@ -1819,6 +1819,37 @@ system
     .vout7_v_p(RFMC_DAC_07_P)
     );
 
+    assign DDR4_C0_ACT_N = 1'b1;
+    assign DDR4_C0_ADR = 0;
+    assign DDR4_C0_BA = 0;
+    assign DDR4_C0_BG = 0;
+
+    OBUFDS ddr4_c0_ck_obufds (
+        .O(DDR4_C0_CK_T),
+        .OB(DDR4_C0_CK_C),
+        .I(1'b0)
+    );
+
+    assign DDR4_C0_CKE = 1'b0;
+    assign DDR4_C0_CS_N = {2{1'b1}};
+
+    assign DDR4_C0_DM_DBI_N = {4{1'bz}};
+    assign DDR4_C0_DQ = {32{1'bz}};
+
+    for(i = 0; i < 4; i = i + 1) begin
+
+        OBUFTDS ddr4_c0_dqs_obuftds (
+            .O(DDR4_C0_DQS_T[i]),
+            .OB(DDR4_C0_DQS_C[i]),
+            .I(1'b0),
+            .T(1'b1) // High-Z
+        );
+
+    end
+
+    assign DDR4_C0_ODT = 1'b0;
+    assign DDR4_C0_RESET_N = 1'b1;
+
 end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
 endgenerate
 
