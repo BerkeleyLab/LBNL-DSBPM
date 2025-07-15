@@ -36,9 +36,6 @@ module cellComm #(
     input  wire                              CCW_RX_N,
     input  wire                              CCW_RX_P,
 
-    output wire                              CCW_LED0,
-    output wire                              CCW_LED1,
-
     output wire                              CW_TX_N,
     output wire                              CW_TX_P,
     input  wire                              CW_RX_N,
