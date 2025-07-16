@@ -173,7 +173,6 @@ auroraLink #(
     .GPIO_OUT(sysGpioData),
     .mgtCSR(sysCWCsr),
     .mgtCSRstrobe(sysCWCsrStrobe),
-    .auResetOut(),
 
     .refClk(GT_REFCLK),
     .MGT_TX_P(CW_TX_P),
