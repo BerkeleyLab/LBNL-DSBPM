@@ -46,6 +46,11 @@ bpm_comm_SRCS += \
 			   $(TARGET_PLATFORM_DIR)/cellCommMux/synth/cellCommMux.v \
 			   $(TARGET_PLATFORM_DIR)/cellCommSendFIFO/synth/cellCommSendFIFO.vhd
 
+vpath %.v $(BPM_COMM_DIR)
+
+VFLAGS_DEP += $(addprefix -y, $(BPM_COMM_DIR))
+VFLAGS_DEP += $(addprefix -I, $(BPM_COMM_DIR))
+
 # clean generate IP cores files, but the source ones (.xci or .bd)
 clean::
 	$(foreach ipcore, $(bpm_comm_IP_CORES), test -f $($(ipcore)_DIR)/$(ipcore).xci && find $($(ipcore)_DIR) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
