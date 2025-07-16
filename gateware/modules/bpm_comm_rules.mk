@@ -19,13 +19,13 @@ TARGET_PLATFORM_DIR = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(FPGA_APP
 bpm_comm_IP_CORES = cellCommFIFO cellCommMux cellCommSendFIFO
 
 cellCommFIFO_DIR = $(TARGET_PLATFORM_DIR)/cellCommFIFO
-cellCommFIFO_TOP = $(cellCommFIFO_DIR)/synth/cellCommFIFO.v
+cellCommFIFO_TOP = $(cellCommFIFO_DIR)/synth/cellCommFIFO.vhd
 cellCommFIFO_VFLAGS_COMMAND_FILE = cellCommFIFO_iverilog_cfile.txt
 cellCommMux_DIR = $(TARGET_PLATFORM_DIR)/cellCommMux
 cellCommMux_TOP = $(cellCommMux_DIR)/synth/cellCommMux.v
 cellCommMux_VFLAGS_COMMAND_FILE = cellCommMux_iverilog_cfile.txt
 cellCommSendFIFO_DIR = $(TARGET_PLATFORM_DIR)/cellCommSendFIFO
-cellCommSendFIFO_TOP = $(cellCommSendFIFO_DIR)/synth/cellCommSendFIFO.v
+cellCommSendFIFO_TOP = $(cellCommSendFIFO_DIR)/synth/cellCommSendFIFO.vhd
 cellCommSendFIFO_VFLAGS_COMMAND_FILE = cellCommSendFIFO_iverilog_cfile.txt
 
 bpm_comm_IP_CORES_TOP_LVL_SRCS = $(cellCommFIFO_TOP) $(cellCommMux_TOP) $(cellCommSendFIFO_TOP)
@@ -42,9 +42,9 @@ VFLAGS_COMMAND_FILE += \
 					   $(cellCommMux_VFLAGS_COMMAND_FILE) \
 					   $(cellCommSendFIFO_VFLAGS_COMMAND_FILE)
 bpm_comm_SRCS += \
-			   $(TARGET_PLATFORM_DIR)/cellCommFIFO/synth/cellCommFIFO.v \
+			   $(TARGET_PLATFORM_DIR)/cellCommFIFO/synth/cellCommFIFO.vhd \
 			   $(TARGET_PLATFORM_DIR)/cellCommMux/synth/cellCommMux.v \
-			   $(TARGET_PLATFORM_DIR)/cellCommSendFIFO/synth/cellCommSendFIFO.v
+			   $(TARGET_PLATFORM_DIR)/cellCommSendFIFO/synth/cellCommSendFIFO.vhd
 
 # clean generate IP cores files, but the source ones (.xci or .bd)
 clean::
