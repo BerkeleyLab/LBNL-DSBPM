@@ -41,8 +41,8 @@ module cellComm #(
     input  wire                              CW_RX_N,
     input  wire                              CW_RX_P,
 
-    output reg                        [31:0] ccwCRCfaults = 0,
-    output reg                        [31:0] cwCRCfaults = 0);
+    output wire                       [31:0] ccwCRCfaults,
+    output wire                       [31:0] cwCRCfaults);
 
 // CW AXIS
 wire         cwAxisUserClk;
