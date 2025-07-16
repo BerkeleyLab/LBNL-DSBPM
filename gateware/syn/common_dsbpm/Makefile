@@ -51,6 +51,7 @@ SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
 SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc
 
 # ip_cores generation scripts/names
+include $(CELL_COMM_DIR)/top_rules.mk
 include $(MODULES_DIR)/bpm_comm_rules.mk
 
 # custom ip_cores that requires packaging
@@ -236,6 +237,7 @@ clean::
 	$(foreach bd, $(BD), test -f $($(bd)_DIR)/$(bd).bd && find $($(bd)_DIR) -mindepth 1 -not \( -name \*$(bd).xci -o -name \*$(bd).bd \) -delete $(CMD_SEP))
 
 # Cleaning rules
+include $(CELL_COMM_DIR)/bottom_rules.mk
 include $(BUILD_DIR)/bottom_rules.mk
 
 CLEAN += *.bit
