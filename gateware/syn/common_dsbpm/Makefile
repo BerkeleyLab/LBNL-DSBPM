@@ -78,6 +78,15 @@ IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(positionCalcDivide
 IP_CORES_DIRS += $(evrGTY_DIR) $(rmsBandSelect_DIR) $(positionCalcDivider_DIR) $(positionCalcMultiplier_DIR) $(adcCordic_DIR) $(adcToSysFIFO_DIR) $(ila_td256_s4096_cap_DIR)
 IP_CORES_XDCS += $(evrGTY_TOP:%.v=%.xdc)
 
+# Include only the ones that cannot be included as purely Verilog sources
+IP_CORES_XCIS += \
+	rmsBandSelect.xci \
+	positionCalcDivider.xci \
+	positionCalcMultiplier.xci \
+	adcCordic.xci \
+	adcToSysFIFO.xci \
+	ila_td256_s4096_cap.xci
+
 IP_CORES_SRCS_DIRS = $(IP_CORES_DIRS)
 IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
 IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
@@ -178,7 +187,7 @@ vpath %.sh $(GW_SCRIPTS_DIR)
 # List top level depedencies here. Eveything named .bit will be used as
 # a top-level target in top_rules.mk. .v and .sv files will be used as
 # prerequisites as well as a system_top.xdc file
-$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) rmsBandSelect.xci positionCalcDivider.xci positionCalcMultiplier.xci adcCordic.xci adcToSysFIFO.xci ila_td256_s4096_cap.xci
+$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) $(IP_CORES_XCIS)
 $(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(IP_CORES_TOP_LVL_SRCS) $(BD_TOP_LVL_SRCS) cordicg_b22.v
 
 $(EXTRA_VFLAGS_DEP): % : %.in
