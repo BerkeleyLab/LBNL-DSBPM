@@ -51,6 +51,7 @@ SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
 SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc
 
 # ip_cores generation scripts/names
+include $(MODULES_DIR)/bpm_comm_rules.mk
 
 # custom ip_cores that requires packaging
 include $(MODULES_DIR)/evr_axi_rules.mk
