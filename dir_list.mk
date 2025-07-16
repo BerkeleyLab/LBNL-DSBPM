@@ -7,6 +7,7 @@ SOFTWARE_DIR       = $(TOP)software
 
 SUBMODULES_DIR     = $(GATEWARE_DIR)/submodules
 MODULES_DIR        = $(GATEWARE_DIR)/modules
+BPM_COMM_DIR       = $(GATEWARE_DIR)/modules/bpm_comm
 PLATFORM_DIR       = $(GATEWARE_DIR)/platform
 GW_SCRIPTS_DIR     = $(GATEWARE_DIR)/scripts
 
