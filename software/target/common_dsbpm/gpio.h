@@ -107,12 +107,14 @@
 
 // FOFB communication
 #define GPIO_IDX_CELL_COMM_CCW_CSR       256
-#define GPIO_IDX_CELL_COMM_CC_CSR        257
+#define GPIO_IDX_CELL_COMM_CW_CSR        257
+#define GPIO_IDX_CELL_COMM_CCW_CRC_FAULTS 258
+#define GPIO_IDX_CELL_COMM_CW_CRC_FAULTS 259
 
 #define CFG_NUM_CC_BPMS                  2
 #define GPIO_IDX_PER_CC_BPM              1
 
-#define GPIO_IDX_CELL_COMM_BPM_CSR       258
+#define GPIO_IDX_CELL_COMM_BPM_CSR       260
 #define GPIO_IDX_CELL_COMM_BPM_PER_DSBPM (GPIO_IDX_CELL_COMM_BPM_CSR-GPIO_IDX_CELL_COMM_BPM_CSR+1)
 
 // Waveform recorders

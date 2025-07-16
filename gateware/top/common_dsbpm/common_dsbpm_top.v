@@ -2479,10 +2479,10 @@ else begin
         sysFaEvent    <= sysFaEvent_m;
         sysFaEvent_d1 <= sysFaEvent;
         if (sysFaEvent && !sysFaEvent_d1) begin
-            sysFaStrobe <= 1;
+            sysFAstrobe <= 1;
         end
         else begin
-            sysFaStrobe <= 0;
+            sysFAstrobe <= 0;
         end
 
         if (sysFAstrobe) begin
@@ -2490,9 +2490,9 @@ else begin
         end
     end
 
-    assign positionCalcFaXFlatten[32*i+:32] = {16'hcafe, positionCalcFaFake};
-    assign positionCalcFaYFlatten[32*i+:32] = {16'hbeef, positionCalcFaFake};
-    assign positionCalcFaSFlatten[32*i+:32] = {16'hbead, positionCalcFaFake};
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = {16'hcafe, positionCalcFaFake};
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = {16'hbeef, positionCalcFaFake};
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = {16'hbead, positionCalcFaFake};
 end
 
 end
@@ -2511,6 +2511,9 @@ cellComm #(
 
     .sysCWCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_CW_CSR]),
     .sysCWCsr(GPIO_IN[GPIO_IDX_CELL_COMM_CW_CSR]),
+
+    .ccwCRCfaults(GPIO_IN[GPIO_IDX_CELL_COMM_CCW_CRC_FAULTS]),
+    .cwCRCfaults(GPIO_IN[GPIO_IDX_CELL_COMM_CW_CRC_FAULTS]),
 
     .sysBPMCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_BPM_CSR+:CFG_DSBPM_COUNT]),
     .sysBPMCsr(sysBPMCsrFlatten),
@@ -2532,10 +2535,8 @@ cellComm #(
     .CW_TX_N(SFP_TX_N[1]),
     .CW_TX_P(SFP_TX_P[1]),
     .CW_RX_N(SFP_RX_N[1]),
-    .CW_RX_P(SFP_RX_P[1]),
-
-    .ccwCRCfaults(GPIO_IN[GPIO_IDX_BPM_CCW_CRC_FAULTS]),
-    .cwCRCfaults(GPIO_IN[GPIO_IDX_BPM_CW_CRC_FAULTS]));
+    .CW_RX_P(SFP_RX_P[1])
+);
 
 //
 // Debug probes
