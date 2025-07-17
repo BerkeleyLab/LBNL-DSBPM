@@ -37,6 +37,8 @@ IP_CORES_DIRS += \
 				 $(cellCommFIFO_DIR) \
 				 $(cellCommMux_DIR) \
 				 $(cellCommSendFIFO_DIR)
+IP_CORES_XCIS += $(addsuffix .xci, $(bpm_comm_IP_CORES))
+
 VFLAGS_COMMAND_FILE += \
 					   $(cellCommFIFO_VFLAGS_COMMAND_FILE) \
 					   $(cellCommMux_VFLAGS_COMMAND_FILE) \
