@@ -10,43 +10,21 @@ bpm_comm_SRCS = $(addprefix $(bpm_comm_DIR)/, $(__bpm_comm_SRCS))
 # Mapping ipcore generation for bpm_comm
 
 ifneq ($(VARIANT),)
-    FPGA_APPLICATION_VARIANT = $(FPGA_APPLICATION)_$(VARIANT)
+    bpm_comm_FPGA_APPLICATION_VARIANT = $(FPGA_APPLICATION)_$(VARIANT)
 else
-    FPGA_APPLICATION_VARIANT = $(FPGA_APPLICATION)
+    bpm_comm_FPGA_APPLICATION_VARIANT = $(FPGA_APPLICATION)
 endif
 
-bpm_comm_TARGET_PLATFORM_DIR = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(FPGA_APPLICATION_VARIANT)
-bpm_comm_IP_CORES = cellCommFIFO cellCommMux cellCommSendFIFO
-
-cellCommFIFO_DIR = $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommFIFO
-cellCommFIFO_TOP = $(cellCommFIFO_DIR)/synth/cellCommFIFO.vhd
-cellCommFIFO_VFLAGS_COMMAND_FILE = cellCommFIFO_iverilog_cfile.txt
-cellCommMux_DIR = $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommMux
-cellCommMux_TOP = $(cellCommMux_DIR)/synth/cellCommMux.v
-cellCommMux_VFLAGS_COMMAND_FILE = cellCommMux_iverilog_cfile.txt
-cellCommSendFIFO_DIR = $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommSendFIFO
-cellCommSendFIFO_TOP = $(cellCommSendFIFO_DIR)/synth/cellCommSendFIFO.vhd
-cellCommSendFIFO_VFLAGS_COMMAND_FILE = cellCommSendFIFO_iverilog_cfile.txt
-
-bpm_comm_IP_CORES_TOP_LVL_SRCS = $(cellCommFIFO_TOP) $(cellCommMux_TOP) $(cellCommSendFIFO_TOP)
+bpm_comm_TARGET_PLATFORM_DIR = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(bpm_comm_FPGA_APPLICATION_VARIANT)/
+bpm_comm_IP_CORES = \
+	cellCommFIFO \
+	cellCommMux \
+	cellCommSendFIFO
+bpm_comm_IP_CORES_DIRS = $(addprefix $(bpm_comm_TARGET_PLATFORM_DIR), $(bpm_comm_IP_CORES))
 
 # For top-level makefile
-IP_CORES += $(bpm_comm_IP_CORES)
-IP_CORES_TOP_LVL_SRCS += $(bpm_comm_IP_CORES_TOP_LVL_SRCS)
-IP_CORES_DIRS += \
-				 $(cellCommFIFO_DIR) \
-				 $(cellCommMux_DIR) \
-				 $(cellCommSendFIFO_DIR)
 IP_CORES_XCIS += $(addsuffix .xci, $(bpm_comm_IP_CORES))
-
-VFLAGS_COMMAND_FILE += \
-					   $(cellCommFIFO_VFLAGS_COMMAND_FILE) \
-					   $(cellCommMux_VFLAGS_COMMAND_FILE) \
-					   $(cellCommSendFIFO_VFLAGS_COMMAND_FILE)
-bpm_comm_SRCS += \
-			   $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommFIFO/synth/cellCommFIFO.vhd \
-			   $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommMux/synth/cellCommMux.v \
-			   $(bpm_comm_TARGET_PLATFORM_DIR)/cellCommSendFIFO/synth/cellCommSendFIFO.vhd
+IP_CORES_DIRS += $(bpm_comm_IP_CORES_DIRS)
 
 vpath %.v $(BPM_COMM_DIR)
 
@@ -55,4 +33,4 @@ VFLAGS_DEP += $(addprefix -I, $(BPM_COMM_DIR))
 
 # clean generate IP cores files, but the source ones (.xci or .bd)
 clean::
-	$(foreach ipcore, $(bpm_comm_IP_CORES), test -f $($(ipcore)_DIR)/$(ipcore).xci && find $($(ipcore)_DIR) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
+	$(foreach ipcore, $(bpm_comm_IP_CORES), test -f $(bpm_comm_TARGET_PLATFORM_DIR)$(ipcore)/$(ipcore).xci && find $(bpm_comm_TARGET_PLATFORM_DIR)$(ipcore) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
