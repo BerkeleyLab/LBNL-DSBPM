@@ -2,6 +2,7 @@
 // Wrapper around CW/CCW aurora cores and BPM data switches
 //
 module cellComm #(
+    parameter FPGA_FAMILY          = "ultrascaleplus",
     parameter NUM_BPMS             = 2,
     parameter ADC_COUNT            = 4,
     parameter FOFB_IDX_WIDTH       = 9,
@@ -79,6 +80,7 @@ wire         ccwAxisRxCRCvalid;
 wire         ccwAxisRxCRCpass;
 
 cellCommAuroraCore #(
+    .FPGA_FAMILY                (FPGA_FAMILY),
     .CCW_MGT_DEBUG              (CCW_MGT_DEBUG),
     .CCW_CONVERSION_DEBUG       (CCW_CONVERSION_DEBUG),
     .CW_MGT_DEBUG               (CW_MGT_DEBUG),

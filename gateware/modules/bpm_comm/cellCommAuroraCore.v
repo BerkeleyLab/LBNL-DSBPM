@@ -2,6 +2,7 @@
 // Send FA data to neighbours
 //
 module cellCommAuroraCore #(
+    parameter FPGA_FAMILY          = "ultrascaleplus",
     parameter CCW_MGT_DEBUG        = "false",
     parameter CCW_CONVERSION_DEBUG = "false",
     parameter CW_MGT_DEBUG         = "false",
@@ -88,6 +89,7 @@ wire ccwMgtMmcmNotLocked;
 wire [7:0] ccwAxisRxTuser;
 
 auroraLink #(
+    .FPGA_FAMILY(FPGA_FAMILY),
     .MGT_DEBUG(CCW_MGT_DEBUG),
     .CONVERSION_DEBUG(CCW_CONVERSION_DEBUG),
     .USE_INTERNAL_MMCM("true")
@@ -165,6 +167,7 @@ wire cwMgtMmcmNotLocked;
 wire [7:0] cwAxisRxTuser;
 
 auroraLink #(
+    .FPGA_FAMILY(FPGA_FAMILY),
     .MGT_DEBUG(CW_MGT_DEBUG),
     .CONVERSION_DEBUG(CW_CONVERSION_DEBUG),
     .USE_INTERNAL_MMCM("false")
