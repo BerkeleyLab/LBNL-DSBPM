@@ -1,4 +1,5 @@
 module dsbpm_lbl208 #(
+    parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "TRUE",
     parameter TEST_BYPASS_PRELIM_PROC   = "TRUE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
@@ -99,6 +100,7 @@ module dsbpm_lbl208 #(
 );
 
 common_dsbpm_top #(
+    .FPGA_FAMILY(FPGA_FAMILY),
     .TEST_BYPASS_RECORDERS(TEST_BYPASS_RECORDERS),
     .TEST_BYPASS_PRELIM_PROC(TEST_BYPASS_PRELIM_PROC),
     .DDR_ILA_CHIPSCOPE_DBG(DDR_ILA_CHIPSCOPE_DBG),

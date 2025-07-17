@@ -1,4 +1,5 @@
 module common_dsbpm_top #(
+    parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
@@ -2499,6 +2500,7 @@ end
 endgenerate
 
 cellComm #(
+    .FPGA_FAMILY(FPGA_FAMILY),
     .NUM_BPMS(CFG_DSBPM_COUNT),
     // A, B, C, D
     .ADC_COUNT(4))
