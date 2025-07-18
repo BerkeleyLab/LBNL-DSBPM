@@ -2,6 +2,13 @@
 // Send FA data to neighbours
 //
 module cellCommAuroraCore #(
+    parameter MMCM_MULT            = 28,
+    parameter MMCM_DIVIDE          = 1,
+    parameter MMCM_CLK_PERIOD      = 20.480,
+    parameter MMCM_OUT0_DIVIDE     = 28,
+    parameter MMCM_OUT1_DIVIDE     = 14,
+    parameter MMCM_OUT2_DIVIDE     = 20,
+    parameter MMCM_OUT3_DIVIDE     = 8,
     parameter FPGA_FAMILY          = "ultrascaleplus",
     parameter CCW_MGT_DEBUG        = "false",
     parameter CCW_CONVERSION_DEBUG = "false",
@@ -89,6 +96,13 @@ wire ccwMgtMmcmNotLocked;
 wire [7:0] ccwAxisRxTuser;
 
 auroraLink #(
+    .MMCM_MULT(MMCM_MULT),
+    .MMCM_DIVIDE(MMCM_DIVIDE),
+    .MMCM_CLK_PERIOD(MMCM_CLK_PERIOD),
+    .MMCM_OUT0_DIVIDE(MMCM_OUT0_DIVIDE),
+    .MMCM_OUT1_DIVIDE(MMCM_OUT1_DIVIDE),
+    .MMCM_OUT2_DIVIDE(MMCM_OUT2_DIVIDE),
+    .MMCM_OUT3_DIVIDE(MMCM_OUT3_DIVIDE),
     .FPGA_FAMILY(FPGA_FAMILY),
     .MGT_DEBUG(CCW_MGT_DEBUG),
     .CONVERSION_DEBUG(CCW_CONVERSION_DEBUG),
