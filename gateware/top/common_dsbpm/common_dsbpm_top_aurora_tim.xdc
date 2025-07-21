@@ -23,7 +23,7 @@ set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_obj
 # Aurora MMCM Clocks and System clock
 
 set_max_delay -datapath_only -from [get_clocks sync_clk_i] -to [get_clocks clk_pl_0] $clk_pl_0_period
-set_max_delay -datapath_only -from [get_clocks clk_pl_0 -to [get_clocks sync_clk_i] $clk_aurora_sync_period
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks sync_clk_i] $clk_aurora_sync_period
 
 set_max_delay -datapath_only -from [get_clocks user_clk_i] -to [get_clocks clk_pl_0] $clk_pl_0_period
-set_max_delay -datapath_only -from [get_clocks clk_pl_0 -to [get_clocks user_clk_i] $clk_aurora_user_period
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks user_clk_i] $clk_aurora_user_period
