@@ -150,33 +150,8 @@ VFLAGS_DEP += -I$(TOP_LVL_DIR)
 VFLAGS_DEP += $(addprefix -I, $(IP_CORES_SRCS_DIRS))
 VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
 
-# Files to be treated as library files. This is needed if the filename
-# does not match the module name, which is the case for Xilinx ip cores.
-# As we don't exactly know the names of the sources, create a file with
-# the switches that will be consumed by iverilog later
-evrGTY_VFLAGS_COMMAND_FILE = evrGTY_iverilog_cfile.txt
-rmsBandSelect_VFLAGS_COMMAND_FILE = rmsBandSelect_iverilog_cfile.txt
-positionCalcDivider_VFLAGS_COMMAND_FILE = positionCalcDivider_iverilog_cfile.txt
-positionCalcMultiplier_VFLAGS_COMMAND_FILE = positionCalcMultiplier_iverilog_cfile.txt
-adcCordic_VFLAGS_COMMAND_FILE = adcCordic_iverilog_cfile.txt
-adcToSysFIFO_VFLAGS_COMMAND_FILE = adcToSysFIFO_iverilog_cfile.txt
-ila_td256_s4096_cap_VFLAGS_COMMAND_FILE = ila_td256_s4096_cap_iverilog_cfile.txt
-
-VFLAGS_COMMAND_FILE += \
-					  $(evrGTY_VFLAGS_COMMAND_FILE)
-# $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-# $(positionCalcDivider_VFLAGS_COMMAND_FILE)
-# $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
-# $(adcCordic_VFLAGS_COMMAND_FILE)
-# $(adcToSysFIFO_VFLAGS_COMMAND_FILE)
-# using ILA with verilog gives an error:
-# input buffer overflow, can't enlarge buffer because scanner uses REJECT,
-# but we don't need it for iverilog as we only use it when not simulating
-# $(ila_td256_s4096_cap_VFLAGS_COMMAND_FILE)
-
 # additional vflags, our files that have more than 1 top-level module
 EXTRA_VFLAGS_DEP += extra_iverilog_cfile.txt
-
 VFLAGS_DEP += $(addprefix -c, $(VFLAGS_COMMAND_FILE) $(EXTRA_VFLAGS_DEP))
 
 VFLAGS_DEP += -DSIMULATE
@@ -262,15 +237,6 @@ CLEAN += $(TOP_LVL_DIR)/gitHash.vh
 CLEAN += cordicg_b22.v
 CLEAN += $(IP_CORES_CUSTOM)
 CLEAN += $(VFLAGS_COMMAND_FILE)
-# Not adding it to VFLAGS_COMMAND_FILE because iverilog gives an error:
-# input buffer overflow, can't enlarge buffer because scanner uses REJECT,
-# but we don't need it for iverilog as we only use it when not simulating
-CLEAN += $(ila_td256_s4096_cap_VFLAGS_COMMAND_FILE)
-CLEAN += $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-CLEAN += $(positionCalcDivider_VFLAGS_COMMAND_FILE)
-CLEAN += $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
-CLEAN += $(adcCordic_VFLAGS_COMMAND_FILE)
-CLEAN += $(adcToSysFIFO_VFLAGS_COMMAND_FILE)
 CLEAN += *.log *.jou *.str
 CLEAN += *.xsa
 CLEAN += psu_init*
