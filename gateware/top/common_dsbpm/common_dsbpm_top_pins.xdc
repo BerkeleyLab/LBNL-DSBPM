@@ -6,19 +6,23 @@ set_property PACKAGE_PIN P36        [get_ports {SFP_TX_N[2]}]
 set_property PACKAGE_PIN AP18       [get_ports {SFP_TX_ENABLE[2]}]
 set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[2]}]
 
-# SFPs - MGT 128 - zSFP 0
-set_property PACKAGE_PIN AA38       [get_ports {SFP_RX_P[0]}]
-set_property PACKAGE_PIN AA39       [get_ports {SFP_RX_N[0]}]
-set_property PACKAGE_PIN Y35        [get_ports {SFP_TX_P[0]}]
-set_property PACKAGE_PIN Y36        [get_ports {SFP_TX_N[0]}]
+# These are assigned indirectly via the GTYE4 LOC properties.
+# Doing them here causes conflits because we are trying to
+# re-assigning the GTYE4 LOC later
+#
+## SFPs - MGT 128 - zSFP 0
+#set_property PACKAGE_PIN AA38       [get_ports {SFP_RX_P[0]}]
+#set_property PACKAGE_PIN AA39       [get_ports {SFP_RX_N[0]}]
+#set_property PACKAGE_PIN Y35        [get_ports {SFP_TX_P[0]}]
+#set_property PACKAGE_PIN Y36        [get_ports {SFP_TX_N[0]}]
 set_property PACKAGE_PIN AT20       [get_ports {SFP_TX_ENABLE[0]}]
 set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[0]}]
-
-# SFPs - MGT 128 - zSFP 1
-set_property PACKAGE_PIN W38        [get_ports {SFP_RX_P[1]}]
-set_property PACKAGE_PIN W39        [get_ports {SFP_RX_N[1]}]
-set_property PACKAGE_PIN V35        [get_ports {SFP_TX_P[1]}]
-set_property PACKAGE_PIN V36        [get_ports {SFP_TX_N[1]}]
+#
+## SFPs - MGT 128 - zSFP 1
+#set_property PACKAGE_PIN W38        [get_ports {SFP_RX_P[1]}]
+#set_property PACKAGE_PIN W39        [get_ports {SFP_RX_N[1]}]
+#set_property PACKAGE_PIN V35        [get_ports {SFP_TX_P[1]}]
+#set_property PACKAGE_PIN V36        [get_ports {SFP_TX_N[1]}]
 set_property PACKAGE_PIN AR18       [get_ports {SFP_TX_ENABLE[1]}]
 set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[1]}]
 
