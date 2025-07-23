@@ -6,4 +6,6 @@ FPGA_PLATFORM := zu48
 TARGET := dsbpm_zcu208
 FPGA_APPLICATION := dsbpm
 
+BD_SYSTEM_NAME ?= system
+
 include ../common_dsbpm/Makefile
