@@ -10,6 +10,7 @@
 #include <xparameters.h>
 #include <xuartps_hw.h>
 #include "afe.h"
+#include "cellComm.h"
 #include "display.h"
 #include "evr.h"
 #include "eyescan.h"
@@ -180,6 +181,7 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
     if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfDCsync();
+    if (debugFlags & DEBUGFLAG_CELL_COMM) cellCommStatus();
     if (sFlag) {
         systemParameters.startupDebugFlags = debugFlags;
         systemParametersFetchEEPROM();
