@@ -233,6 +233,8 @@ cellCommStatusSingle(struct cellCommInfo *cellp)
         if ((r & CELLCOMM_MGT_CSR_CPLL_LOCK) != CELLCOMM_MGT_CSR_CPLL_LOCK) {
             printf("  CPLL NOT locked");
         }
+
+        printf("\n");
     }
 
     return (r & CELLCOMM_MGT_CSR_CHANNEL_UP) != 0;
