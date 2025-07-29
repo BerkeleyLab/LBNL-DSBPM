@@ -3,9 +3,8 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
+#include <xparameters.h>
 #include "dsbpmProtocol.h"
 #include "cellComm.h"
 #include "gpio.h"
