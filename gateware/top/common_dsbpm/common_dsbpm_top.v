@@ -484,7 +484,7 @@ forwardMultiCDC #(
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-localparam FREQ_COUNTERS_NUM = 13;
+localparam FREQ_COUNTERS_NUM = 14;
 localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
 reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
@@ -504,7 +504,8 @@ freq_multi_count #(
         .rw($clog2(SYSCLK_RATE*4/3)), // reference counter width
         .uw(30)) // unknown counter width
   frequencyCounters (
-    .unk_clk({user_sysref_dac, user_sysref_adc,
+    .unk_clk({ccwTxOutClk,
+              user_sysref_dac, user_sysref_adc,
               dacClk, rfdc_dac0_clk,
               mgt128Refclk1Monitor,
               mgt129Refclk1Monitor,
@@ -2499,6 +2500,8 @@ end
 end
 endgenerate
 
+wire ccwTxOutClk;
+wire ccwTxOutClkClr;
 cellComm #(
     .FPGA_FAMILY(FPGA_FAMILY),
     .NUM_BPMS(CFG_DSBPM_COUNT),
@@ -2533,6 +2536,9 @@ cellComm #(
     .CCW_TX_P(SFP_TX_P[0]),
     .CCW_RX_N(SFP_RX_N[0]),
     .CCW_RX_P(SFP_RX_P[0]),
+
+    .ccwTxOutClk(ccwTxOutClk),
+    .ccwTxOutClkClr(ccwTxOutClkClr),
 
     .CW_TX_N(SFP_TX_N[1]),
     .CW_TX_P(SFP_TX_P[1]),
