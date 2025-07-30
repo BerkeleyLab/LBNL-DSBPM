@@ -88,7 +88,7 @@ wire ccwMmcmLocked;
 wire ccwMgtHardErr;
 wire ccwMgtSoftErr;
 wire ccwMgtLaneUp;
-wire ccwMgtChannelUP;
+wire ccwMgtChannelUp;
 wire ccwMgtTxResetDone;
 wire ccwMgtRxResetDone;
 wire ccwMgtMmcmNotLocked;
@@ -140,7 +140,7 @@ auroraLink #(
     .mgtHardErr(ccwMgtHardErr),
     .mgtSoftErr(ccwMgtSoftErr),
     .mgtLaneUp(ccwMgtLaneUp),
-    .mgtChannelUP(ccwMgtChannelUP),
+    .mgtChannelUp(ccwMgtChannelUp),
     .mgtTxResetDone(ccwMgtTxResetDone),
     .mgtRxResetDone(ccwMgtRxResetDone),
     .mgtMmcmNotLocked(ccwMgtMmcmNotLocked)
@@ -148,7 +148,7 @@ auroraLink #(
 
 assign ccwAxisUserClk = ccwAuUserClk;
 assign ccwAxisUserReset = ccwAuUserReset;
-assign ccwChannelUp = ccwMgtChannelUP;
+assign ccwChannelUp = ccwMgtChannelUp;
 assign ccwAxisRxCRCpass = ccwAxisRxTuser[0];
 assign ccwAxisRxCRCvalid = ccwAxisRxTuser[1];
 
@@ -173,7 +173,7 @@ wire cwAuUserReset;
 wire cwMgtHardErr;
 wire cwMgtSoftErr;
 wire cwMgtLaneUp;
-wire cwMgtChannelUP;
+wire cwMgtChannelUp;
 wire cwMgtTxResetDone;
 wire cwMgtRxResetDone;
 wire cwMgtMmcmNotLocked;
@@ -219,7 +219,7 @@ auroraLink #(
     .mgtHardErr(cwMgtHardErr),
     .mgtSoftErr(cwMgtSoftErr),
     .mgtLaneUp(cwMgtLaneUp),
-    .mgtChannelUP(cwMgtChannelUP),
+    .mgtChannelUp(cwMgtChannelUp),
     .mgtTxResetDone(cwMgtTxResetDone),
     .mgtRxResetDone(cwMgtRxResetDone),
     .mgtMmcmNotLocked(cwMgtMmcmNotLocked)
@@ -227,7 +227,7 @@ auroraLink #(
 
 assign cwAxisUserClk = cwAuUserClk;
 assign cwAxisUserReset = cwAuUserReset;
-assign cwChannelUp = cwMgtChannelUP;
+assign cwChannelUp = cwMgtChannelUp;
 assign cwAxisRxCRCpass = cwAxisRxTuser[0];
 assign cwAxisRxCRCvalid = cwAxisRxTuser[1];
 
