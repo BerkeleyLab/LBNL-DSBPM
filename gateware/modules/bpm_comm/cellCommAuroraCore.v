@@ -52,6 +52,9 @@ module cellCommAuroraCore #(
     output wire                    ccwAxisRxCRCvalid,
     output wire                    ccwAxisRxCRCpass,
 
+    output wire                    ccwTxOutClk,
+    output wire                    ccwTxOutClkClr,
+
     // CW AXIS
     output wire                    cwAxisUserClk,
     output wire                    cwAxisUserReset,
@@ -143,7 +146,10 @@ auroraLink #(
     .mgtChannelUp(ccwMgtChannelUp),
     .mgtTxResetDone(ccwMgtTxResetDone),
     .mgtRxResetDone(ccwMgtRxResetDone),
-    .mgtMmcmNotLocked(ccwMgtMmcmNotLocked)
+    .mgtMmcmNotLocked(ccwMgtMmcmNotLocked),
+
+    .txOutClk(ccwTxOutClk),
+    .txOutClkClr(ccwTxOutClkClr)
 );
 
 assign ccwAxisUserClk = ccwAuUserClk;

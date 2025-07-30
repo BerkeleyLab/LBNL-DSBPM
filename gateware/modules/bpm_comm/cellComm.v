@@ -37,6 +37,9 @@ module cellComm #(
     input  wire                              CCW_RX_N,
     input  wire                              CCW_RX_P,
 
+    output wire                              ccwTxOutClk,
+    output wire                              ccwTxOutClkClr,
+
     output wire                              CW_TX_N,
     output wire                              CW_TX_P,
     input  wire                              CW_RX_N,
@@ -123,6 +126,9 @@ cellCommAuroraCore #(
     .ccwAxisRxTdata             (ccwAxisRxTdata),
     .ccwAxisRxCRCvalid          (ccwAxisRxCRCvalid),
     .ccwAxisRxCRCpass           (ccwAxisRxCRCpass),
+
+    .ccwTxOutClk                (ccwTxOutClk),
+    .ccwTxOutClkClr             (ccwTxOutClkClr),
 
     // CW AXIS
     .cwAxisUserClk              (cwAxisUserClk),
