@@ -214,7 +214,8 @@ cmdFMON(int argc, char **argv)
                                    "RFDC DAC0",
                                    "DAC AXI",
                                    "User SYSREF ADC",
-                                   "User SYSREF DAC" };
+                                   "User SYSREF DAC",
+                                   "CCW TX Out"};
 
     if (!usingPPS) {
         printf("Warning -- Pulse-per-second event not seen at power-up.\n");
