@@ -23,6 +23,8 @@ module cellCommAuroraCore #(
     input  wire                    sysCWCsrStrobe,
     output wire             [31:0] sysCWCsr,
 
+    input  wire                    initClk,
+
     input  wire                    GT_REFCLK,
 
     output wire                    CCW_TX_N,
@@ -116,6 +118,8 @@ auroraLink #(
     .mgtCSR(sysCCWCsr),
     .mgtCSRstrobe(sysCCWCsrStrobe),
 
+    .initClk(initClk),
+
     .refClk(GT_REFCLK),
     .MGT_TX_P(CCW_TX_P),
     .MGT_TX_N(CCW_TX_N),
@@ -196,6 +200,8 @@ auroraLink #(
     .GPIO_OUT(sysGpioData),
     .mgtCSR(sysCWCsr),
     .mgtCSRstrobe(sysCWCsrStrobe),
+
+    .initClk(initClk),
 
     .refClk(GT_REFCLK),
     .MGT_TX_P(CW_TX_P),

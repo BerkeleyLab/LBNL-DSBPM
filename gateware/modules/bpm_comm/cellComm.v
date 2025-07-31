@@ -30,6 +30,8 @@ module cellComm #(
     input  wire               [NUM_BPMS-1:0] sysFaToggle,
     input  wire     [NUM_BPMS*ADC_COUNT-1:0] sysClippedAdc,
 
+    input  wire                              initClk,
+
     input  wire                              GT_REFCLK,
 
     output wire                              CCW_TX_N,
@@ -97,6 +99,8 @@ cellCommAuroraCore #(
 
     .sysCWCsrStrobe             (sysCWCsrStrobe),
     .sysCWCsr                   (sysCWCsr),
+
+    .initClk                    (initClk),
 
     .GT_REFCLK                  (GT_REFCLK),
 
