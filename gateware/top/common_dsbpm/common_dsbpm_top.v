@@ -185,6 +185,15 @@ BUFG_GT userMgt128Refclk1Buf (.O(mgt128Refclk1Monitor),
                           .DIV(3'd0),
                           .I(IDT_8A34001_Q11_CLK_O2));
 
+wire mgt128Refclk1Div4;
+BUFG_GT userMgt128Refclk1Div4Buf (.O(mgt128Refclk1Div4),
+                          .CE(1'b1),
+                          .CEMASK(1'b0),
+                          .CLR(1'b0),
+                          .CLRMASK(1'b0),
+                          .DIV(3'd1),
+                          .I(IDT_8A34001_Q11_CLK_O2));
+
 //////////////////////////////////////////////////////////////////////////////
 // Front panel controls
 // Also provide on-board alternatives in case the front panel board is absent.
@@ -484,7 +493,7 @@ forwardMultiCDC #(
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-localparam FREQ_COUNTERS_NUM = 14;
+localparam FREQ_COUNTERS_NUM = 15;
 localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
 reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
@@ -494,6 +503,7 @@ always @(posedge sysClk) begin
     end
 end
 assign GPIO_IN[GPIO_IDX_FREQ_MONITOR_CSR] = { 2'b0, measuredFrequency };
+wire ccwTxOutClk;
 wire rfdc_adc0_clk;
 wire rfdc_dac0_clk;
 freq_multi_count #(
@@ -504,7 +514,8 @@ freq_multi_count #(
         .rw($clog2(SYSCLK_RATE*4/3)), // reference counter width
         .uw(30)) // unknown counter width
   frequencyCounters (
-    .unk_clk({ccwTxOutClk,
+    .unk_clk({
+              mgt128Refclk1Div4, ccwTxOutClk,
               user_sysref_dac, user_sysref_adc,
               dacClk, rfdc_dac0_clk,
               mgt128Refclk1Monitor,
@@ -2500,7 +2511,6 @@ end
 end
 endgenerate
 
-wire ccwTxOutClk;
 wire ccwTxOutClkClr;
 cellComm #(
     .FPGA_FAMILY(FPGA_FAMILY),
@@ -2530,6 +2540,7 @@ cellComm #(
     // FIXME: Add ADC clip status
     .sysClippedAdc(0),
 
+    .initClk(mgt128Refclk1Div4),
     .GT_REFCLK(IDT_8A34001_Q11_CLK),
 
     .CCW_TX_N(SFP_TX_N[0]),
