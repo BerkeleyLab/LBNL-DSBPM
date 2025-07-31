@@ -21,6 +21,11 @@ set clk_auroraCW_period             [get_property PERIOD [get_clocks -of_objects
 set clk_aurora_sync_period          [get_property PERIOD [get_clocks sync_clk_i]]
 set clk_aurora_user_period          [get_property PERIOD [get_clocks user_clk_i]]
 
+# Aurora Init Clock and System clock
+
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *userMgt128Refclk1Div4Buf/O}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *userMgt128Refclk1Div4Buf/O}]] $clk_pl_0_period
+
 # Aurora CCW TX Clock and System clock
 
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *cellComm/cellCommAuroraCore/auroraCellCommCCW*TXOUTCLK}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
