@@ -215,7 +215,8 @@ cmdFMON(int argc, char **argv)
                                    "DAC AXI",
                                    "User SYSREF ADC",
                                    "User SYSREF DAC",
-                                   "CCW TX Out"};
+                                   "CCW TX Out",
+                                   "Aurora Init" };
 
     if (!usingPPS) {
         printf("Warning -- Pulse-per-second event not seen at power-up.\n");
