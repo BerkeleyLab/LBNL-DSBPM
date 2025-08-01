@@ -115,6 +115,7 @@ main(void)
     eyescanInit();
     mgtInit();
     evrInit();
+    cellCommInit();
     rfClkInit();
     mmcmInit();
     sysrefInit(0);
@@ -148,7 +149,6 @@ main(void)
 
     /* Set up communications and acquisition */
     epicsInit();
-    cellCommInit();
     tftpInit();
     publisherInit();
     acqSyncInit();
