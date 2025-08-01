@@ -31,6 +31,17 @@
 #define CELLCOMM_MGT_CSR_SOFT_ERR            0x400
 #define CELLCOMM_MGT_CSR_HARD_ERR            0x800
 
+#define CELLCOMM_MGT_CSR_LOCKS_MASK         (CELLCOMM_MGT_CSR_CPLL_LOCK | \
+                                             CELLCOMM_MGT_CSR_TX_PLL_LOCK | \
+                                             CELLCOMM_MGT_CSR_MMCM_NOT_LOCK)
+#define CELLCOMM_MGT_CSR_LOCKS_GOOD         (CELLCOMM_MGT_CSR_CPLL_LOCK | \
+                                             CELLCOMM_MGT_CSR_TX_PLL_LOCK)
+
+#define CELLCOMM_MGT_CSR_RESETS_MASK        (CELLCOMM_MGT_CSR_RX_RESET_DONE | \
+                                             CELLCOMM_MGT_CSR_TX_RESET_DONE)
+#define CELLCOMM_MGT_CSR_RESETS_GOOD        (CELLCOMM_MGT_CSR_RX_RESET_DONE | \
+                                             CELLCOMM_MGT_CSR_TX_RESET_DONE)
+
 int cellCommInit();
 void cellCommCrank();
 int cellCommStatus();
