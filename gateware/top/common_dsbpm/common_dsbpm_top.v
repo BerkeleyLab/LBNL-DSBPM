@@ -2476,36 +2476,56 @@ wire [CFG_DSBPM_COUNT-1:0] positionCalcFaToggleFlatten;
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : gpio_cell_comm_bpm_position
 
-if (TEST_BYPASS_PRELIM_PROC == "FALSE") begin
-    assign positionCalcFaXFlatten[32*dsbpm+:32] = positionCalcFaX[dsbpm];
-    assign positionCalcFaYFlatten[32*dsbpm+:32] = positionCalcFaY[dsbpm];
-    assign positionCalcFaSFlatten[32*dsbpm+:32] = positionCalcFaS[dsbpm];
-    assign positionCalcFaToggleFlatten[dsbpm] = positionCalcFaToggle[dsbpm];
-end
-else begin
-    reg [15:0] positionCalcFaFake = 0;
-    (* ASYNC_REG="TRUE" *) reg sysFaEvent_m = 0, sysFaEvent = 0;
-    reg sysFaEvent_d1, sysFAstrobe;
+wire [3:0] dsbpmIdx = dsbpm;
+reg [11:0] positionCalcFaFake = 0;
+(* ASYNC_REG="TRUE" *) reg sysFaEvent_m = 0, sysFaEvent = 0;
+reg sysFaEvent_d1, sysFAstrobe, sysFaToggle = 0;
 
-    always @(posedge sysClk) begin
-        sysFaEvent_m  <= evrFaMarker;
-        sysFaEvent    <= sysFaEvent_m;
-        sysFaEvent_d1 <= sysFaEvent;
-        if (sysFaEvent && !sysFaEvent_d1) begin
-            sysFAstrobe <= 1;
-        end
-        else begin
-            sysFAstrobe <= 0;
-        end
-
-        if (sysFAstrobe) begin
-            positionCalcFaFake <= positionCalcFaFake + 1;
-        end
+always @(posedge sysClk) begin
+    sysFaEvent_m  <= evrFaMarker;
+    sysFaEvent    <= sysFaEvent_m;
+    sysFaEvent_d1 <= sysFaEvent;
+    if (sysFaEvent && !sysFaEvent_d1) begin
+        sysFAstrobe <= 1;
+        sysFaToggle <= !sysFaToggle;
+    end
+    else begin
+        sysFAstrobe <= 0;
     end
 
-    assign positionCalcFaXFlatten[32*dsbpm+:32] = {16'hcafe, positionCalcFaFake};
-    assign positionCalcFaYFlatten[32*dsbpm+:32] = {16'hbeef, positionCalcFaFake};
-    assign positionCalcFaSFlatten[32*dsbpm+:32] = {16'hbead, positionCalcFaFake};
+    if (sysFAstrobe) begin
+        positionCalcFaFake <= positionCalcFaFake + 1;
+    end
+end
+
+reg cellCommTestData = 0;
+always @(posedge sysClk) begin
+    if (GPIO_STROBES[GPIO_IDX_CELL_COMM_TEST + dsbpm*GPIO_IDX_PER_DSBPM]) begin
+        cellCommTestData <= GPIO_OUT[0];
+    end
+end
+
+assign GPIO_IN[GPIO_IDX_CELL_COMM_TEST + dsbpm*GPIO_IDX_PER_DSBPM] = cellCommTestData;
+
+if (TEST_BYPASS_PRELIM_PROC == "FALSE") begin
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hcafe, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaX[dsbpm];
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hbeef, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaY[dsbpm];
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hbead, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaS[dsbpm];
+    assign positionCalcFaToggleFlatten[dsbpm]   = cellCommTestData?
+        sysFaToggle :
+        positionCalcFaToggle[dsbpm];
+end
+else begin
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = {16'hcafe, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = {16'hbeef, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = {16'hbead, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaToggleFlatten[dsbpm] = sysFaToggle;
 end
 
 end

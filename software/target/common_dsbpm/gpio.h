@@ -93,8 +93,9 @@
 #define GPIO_IDX_PH_GAIN_FACTOR_2        85 // ADC 2 high freq pilot tone gain
 #define GPIO_IDX_PH_GAIN_FACTOR_3        86 // ADC 3 high freq pilot tone gain
 #define GPIO_IDX_CLOCK_STATUS            87 // BPM Sync/Clock status
+#define GPIO_IDX_CELL_COMM_TEST          88 // Cell Comm test
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_CLOCK_STATUS-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_CELL_COMM_TEST-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
 // For compatibility
