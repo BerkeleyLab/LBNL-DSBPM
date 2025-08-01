@@ -158,8 +158,8 @@ cellCommCrank(void)
 static int
 cellCommInitSingle(struct cellCommInfo *cellp)
 {
-    uint32_t then, now;
-    uint32_t r;
+    uint32_t then, now, start;
+    uint32_t csr;
 
     GPIO_WRITE(cellp->gpioIdx, cellp->auroraReset |
             cellp->gtReset);
@@ -168,22 +168,30 @@ cellCommInitSingle(struct cellCommInfo *cellp)
     microsecondSpin(1000000);
     GPIO_WRITE(cellp->gpioIdx, 0);
 
-    then = GPIO_READ(GPIO_IDX_SECONDS_SINCE_BOOT);
-    for (;;) {
-        r = GPIO_READ(cellp->gpioIdx) & cellp->channelUp;
-        if (r == cellp->channelUp) {
-            printf("Aurora %s communication active.\n", cellp->name);
-            return 0;
-        }
-
-        now = GPIO_READ(GPIO_IDX_SECONDS_SINCE_BOOT);
-        if ((now - then) > 5) {
-            printf("Warning -- NO %s COMMUNICATION.\n", cellp->name);
-            printf("Will continue attempting to connect after boot "
-                    "sequence completes.\n");
+    then = MICROSECONDS_SINCE_BOOT();
+    // Check if PLL locks and resets have been completed
+    while (((csr = GPIO_READ(cellp->gpioIdx)) &
+                (CELLCOMM_MGT_CSR_LOCKS_MASK | CELLCOMM_MGT_CSR_RESETS_MASK)) !=
+                (CELLCOMM_MGT_CSR_LOCKS_GOOD | CELLCOMM_MGT_CSR_RESETS_GOOD)) {
+        if ((MICROSECONDS_SINCE_BOOT() - then) > 250000) {
+            warn("Aurora %s didn't reset: %X", cellp->name, csr);
             return -1;
         }
     }
+
+    start = then = MICROSECONDS_SINCE_BOOT();
+    while(((csr = GPIO_READ(cellp->gpioIdx)) &
+            cellp->channelUp) != cellp->channelUp) {
+        if ((MICROSECONDS_SINCE_BOOT() - then) > 2000000) {
+            warn("Aurora %s channel down: %X", cellp->name, csr);
+            return -1;
+        }
+    }
+
+    printf("auroraInit %s done: %d us\n", cellp->name,
+            MICROSECONDS_SINCE_BOOT() - start);
+
+    return 0;
 }
 
 int
@@ -219,10 +227,10 @@ cellCommStatusSingle(struct cellCommInfo *cellp)
             printf("  lane NOT up");
         }
         if ((r & CELLCOMM_MGT_CSR_TX_RESET_DONE) != CELLCOMM_MGT_CSR_TX_RESET_DONE) {
-            printf("  TX NOT done");
+            printf("  TX reset NOT done");
         }
         if ((r & CELLCOMM_MGT_CSR_RX_RESET_DONE) != CELLCOMM_MGT_CSR_RX_RESET_DONE) {
-            printf("  RX NOT done");
+            printf("  RX reset NOT done");
         }
         if ((r & CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) != CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) {
             printf("  MMCM NOT locked");
