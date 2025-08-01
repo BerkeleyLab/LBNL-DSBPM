@@ -29,6 +29,11 @@
 #include "user_mgt_refclk.h"
 #include "util.h"
 
+/* FIXME. MOve this to per-bpm cellComm routine file */
+#define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
+
+#define CELL_COMM_BPM_CSR_TEST_DATA             0x1
+
 enum consoleMode { consoleModeCommand,
                    consoleModeLogReplay,
                    consoleModeBootQuery,
@@ -152,6 +157,26 @@ cmdBOOT(int argc, char **argv)
 }
 
 static int
+cellCommFakeDataToggle(void)
+{
+    int i = 0;
+    uint32_t csr = 0;
+
+    for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+        csr = GPIO_READ(REG(GPIO_IDX_CELL_COMM_TEST, i));
+
+        if (csr & CELL_COMM_BPM_CSR_TEST_DATA) {
+            csr &= ~CELL_COMM_BPM_CSR_TEST_DATA;
+        }
+        else {
+            csr |= CELL_COMM_BPM_CSR_TEST_DATA;
+        }
+
+        GPIO_WRITE(REG(GPIO_IDX_CELL_COMM_TEST, i), csr);
+    }
+}
+
+static int
 cmdDEBUG(int argc, char **argv)
 {
     char *endp;
@@ -182,6 +207,7 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
     if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfDCsync();
     if (debugFlags & DEBUGFLAG_CELL_COMM) cellCommStatus();
+    if (debugFlags & DEBUGFLAG_CELL_TEST_DATA) cellCommFakeDataToggle();
     if (sFlag) {
         systemParameters.startupDebugFlags = debugFlags;
         systemParametersFetchEEPROM();
