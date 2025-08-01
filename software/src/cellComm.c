@@ -34,17 +34,17 @@ struct cellCommInfo {
 static struct cellCommInfo cellCommInfos[CELL_COMM_LINKS_COUNT] =
 {
     {
-        .name        = "CW",
+        .name        = "CCW",
         .state       = S_UP,
-        .gpioIdx     = GPIO_IDX_CELL_COMM_CW_CSR,
+        .gpioIdx     = GPIO_IDX_CELL_COMM_CCW_CSR,
         .gtReset     = CELLCOMM_MGT_CSR_GT_RESET,
         .auroraReset = CELLCOMM_MGT_CSR_AURORA_RESET,
         .channelUp   = CELLCOMM_MGT_CSR_CHANNEL_UP
     },
     {
-        .name        = "CCW",
+        .name        = "CW",
         .state       = S_UP,
-        .gpioIdx     = GPIO_IDX_CELL_COMM_CCW_CSR,
+        .gpioIdx     = GPIO_IDX_CELL_COMM_CW_CSR,
         .gtReset     = CELLCOMM_MGT_CSR_GT_RESET,
         .auroraReset = CELLCOMM_MGT_CSR_AURORA_RESET,
         .channelUp   = CELLCOMM_MGT_CSR_CHANNEL_UP
