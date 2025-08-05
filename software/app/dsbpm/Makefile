@@ -44,6 +44,7 @@ __SRC_FILES = \
 	adcProcessing.c \
 	afe.c \
 	autotrim.c \
+	bpmComm.c \
 	calibrationGains.c \
 	cellComm.c \
 	console.c \
@@ -83,6 +84,7 @@ __HDR_FILES = \
 	adcProcessing.h \
 	afe.h \
 	autotrim.h \
+	bpmComm.h \
 	calibrationGains.h \
 	cellComm.h \
 	console.h \
