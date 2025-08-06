@@ -20,8 +20,8 @@
 #define DSBPM_PROTOCOL_RECORDER_COUNT             7
 
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
-#define DSBPM_PROTOCOL_MAGIC                    0xD06F9891
-#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91986FD0
+#define DSBPM_PROTOCOL_MAGIC                    0xD06F9991
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x91996FD0
 #define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9B92
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
                                                 0x929B6FD0
@@ -36,6 +36,7 @@
                                                 0x95976FD0
 
 #define DSBPM_PROTOCOL_ARG_CAPACITY    350
+#define DSBPM_PROTOCOL_FOFB_CAPACITY   512
 #define DSBPM_PROTOCOL_ADC_COUNT       8
 #define DSBPM_PROTOCOL_DAC_COUNT       8
 #define DSBPM_PROTOCOL_DSP_COUNT       2

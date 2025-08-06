@@ -33,6 +33,7 @@
 #include "publisher.h"
 #include "positionCalc.h"
 #include "waveformRecorder.h"
+#include "cellComm.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -115,6 +116,7 @@ main(void)
     eyescanInit();
     mgtInit();
     evrInit();
+    cellCommInit();
     rfClkInit();
     mmcmInit();
     sysrefInit(0);
@@ -171,6 +173,7 @@ main(void)
     for (;;) {
         checkForReset();
         mgtCrankRxAligner();
+        cellCommCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();

@@ -1,4 +1,7 @@
 module dsbpm_lbl208 #(
+    parameter FPGA_FAMILY               = "ultrascaleplus",
+    parameter TEST_BYPASS_RECORDERS     = "FALSE",
+    parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
@@ -25,9 +28,13 @@ module dsbpm_lbl208 #(
     input  USER_MGT_SI570_CLK_P, USER_MGT_SI570_CLK_N,
     input  IDT_8A34001_Q7_CLK_P, IDT_8A34001_Q7_CLK_N,
     input  IDT_8A34001_Q11_CLK_P, IDT_8A34001_Q11_CLK_N,
-    input  SFP2_RX_P, SFP2_RX_N,
-    output SFP2_TX_P, SFP2_TX_N,
-    output SFP2_TX_ENABLE,
+
+    input  [2:0] SFP_RX_P,
+    input  [2:0] SFP_RX_N,
+    output [2:0] SFP_TX_P,
+    output [2:0] SFP_TX_N,
+
+    output [2:0] SFP_TX_ENABLE,
 
     input  FPGA_REFCLK_OUT_C_P, FPGA_REFCLK_OUT_C_N,
     input  SYSREF_FPGA_C_P, SYSREF_FPGA_C_N,
@@ -93,6 +100,9 @@ module dsbpm_lbl208 #(
 );
 
 common_dsbpm_top #(
+    .FPGA_FAMILY(FPGA_FAMILY),
+    .TEST_BYPASS_RECORDERS(TEST_BYPASS_RECORDERS),
+    .TEST_BYPASS_PRELIM_PROC(TEST_BYPASS_PRELIM_PROC),
     .DDR_ILA_CHIPSCOPE_DBG(DDR_ILA_CHIPSCOPE_DBG),
     .DAC_ILA_CHIPSCOPE_DBG(DAC_ILA_CHIPSCOPE_DBG),
     .ADC_WIDTH(ADC_WIDTH),
@@ -124,11 +134,13 @@ common_dsbpm_top #(
     .IDT_8A34001_Q7_CLK_N(IDT_8A34001_Q7_CLK_N),
     .IDT_8A34001_Q11_CLK_P(IDT_8A34001_Q11_CLK_P),
     .IDT_8A34001_Q11_CLK_N(IDT_8A34001_Q11_CLK_N),
-    .SFP2_RX_P(SFP2_RX_P),
-    .SFP2_RX_N(SFP2_RX_N),
-    .SFP2_TX_P(SFP2_TX_P),
-    .SFP2_TX_N(SFP2_TX_N),
-    .SFP2_TX_ENABLE(SFP2_TX_ENABLE),
+
+    .SFP_RX_P(SFP_RX_P),
+    .SFP_RX_N(SFP_RX_N),
+    .SFP_TX_P(SFP_TX_P),
+    .SFP_TX_N(SFP_TX_N),
+
+    .SFP_TX_ENABLE(SFP_TX_ENABLE),
 
     .FPGA_REFCLK_OUT_C_P(FPGA_REFCLK_OUT_C_P),
     .FPGA_REFCLK_OUT_C_N(FPGA_REFCLK_OUT_C_N),

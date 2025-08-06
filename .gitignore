@@ -57,6 +57,8 @@ work/
 !/gateware/platform/xilinx/*/*/prbsMMCM/prbsMMCM.xci
 /gateware/platform/xilinx/*/*/system/*
 !/gateware/platform/xilinx/*/*/system/system.bd
+/gateware/platform/xilinx/*/*/system_without_ddr/*
+!/gateware/platform/xilinx/*/*/system_without_ddr/system_without_ddr.bd
 /gateware/platform/xilinx/*/*/ila_td256_s4096_cap/*
 !/gateware/platform/xilinx/*/*/ila_td256_s4096_cap/ila_td256_s4096_cap.xci
 /gateware/platform/xilinx/*/*/PacketMem/*
@@ -73,6 +75,12 @@ work/
 !/gateware/platform/xilinx/*/*/positionCalcDivider/positionCalcDivider.xci
 /gateware/platform/xilinx/*/*/positionCalcMultiplier/*
 !/gateware/platform/xilinx/*/*/positionCalcMultiplier/positionCalcMultiplier.xci
+/gateware/platform/xilinx/*/*/cellCommMux/*
+!/gateware/platform/xilinx/*/*/cellCommMux/cellCommMux.xci
+/gateware/platform/xilinx/*/*/cellCommFIFO/*
+!/gateware/platform/xilinx/*/*/cellCommFIFO/cellCommFIFO.xci
+/gateware/platform/xilinx/*/*/cellCommSendFIFO/*
+!/gateware/platform/xilinx/*/*/cellCommSendFIFO/cellCommSendFIFO.xci
 
 # NCO tables
 *csv

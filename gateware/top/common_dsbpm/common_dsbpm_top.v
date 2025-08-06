@@ -1,4 +1,7 @@
 module common_dsbpm_top #(
+    parameter FPGA_FAMILY               = "ultrascaleplus",
+    parameter TEST_BYPASS_RECORDERS     = "FALSE",
+    parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,
@@ -25,9 +28,13 @@ module common_dsbpm_top #(
     input  USER_MGT_SI570_CLK_P, USER_MGT_SI570_CLK_N,
     input  IDT_8A34001_Q7_CLK_P, IDT_8A34001_Q7_CLK_N,
     input  IDT_8A34001_Q11_CLK_P, IDT_8A34001_Q11_CLK_N,
-    input  SFP2_RX_P, SFP2_RX_N,
-    output SFP2_TX_P, SFP2_TX_N,
-    output SFP2_TX_ENABLE,
+
+    input  [2:0] SFP_RX_P,
+    input  [2:0] SFP_RX_N,
+    output [2:0] SFP_TX_P,
+    output [2:0] SFP_TX_N,
+
+    output [2:0] SFP_TX_ENABLE,
 
     input  FPGA_REFCLK_OUT_C_P, FPGA_REFCLK_OUT_C_N,
     input  SYSREF_FPGA_C_P, SYSREF_FPGA_C_N,
@@ -94,7 +101,9 @@ module common_dsbpm_top #(
 
 //////////////////////////////////////////////////////////////////////////////
 // Static outputs
-assign SFP2_TX_ENABLE = 1'b1;
+assign SFP_TX_ENABLE[2] = 1'b1;
+assign SFP_TX_ENABLE[1] = 1'b1;
+assign SFP_TX_ENABLE[0] = 1'b1;
 
 //////////////////////////////////////////////////////////////////////////////
 // General-purpose I/O block
@@ -176,6 +185,15 @@ BUFG_GT userMgt128Refclk1Buf (.O(mgt128Refclk1Monitor),
                           .DIV(3'd0),
                           .I(IDT_8A34001_Q11_CLK_O2));
 
+wire mgt128Refclk1Div4;
+BUFG_GT userMgt128Refclk1Div4Buf (.O(mgt128Refclk1Div4),
+                          .CE(1'b1),
+                          .CEMASK(1'b0),
+                          .CLR(1'b0),
+                          .CLRMASK(1'b0),
+                          .DIV(3'd1),
+                          .I(IDT_8A34001_Q11_CLK_O2));
+
 //////////////////////////////////////////////////////////////////////////////
 // Front panel controls
 // Also provide on-board alternatives in case the front panel board is absent.
@@ -215,10 +233,10 @@ evrGTYwrapper #(.DEBUG("false"))
     .drp(GPIO_IN[GPIO_IDX_EVR_GTY_DRP]),
     .refClk(USER_MGT_SI570_CLK),
     .evrTxClk(evrTxClk),
-    .RX_N(SFP2_RX_N),
-    .RX_P(SFP2_RX_P),
-    .TX_N(SFP2_TX_N),
-    .TX_P(SFP2_TX_P),
+    .RX_N(SFP_RX_N[2]),
+    .RX_P(SFP_RX_P[2]),
+    .TX_N(SFP_TX_N[2]),
+    .TX_P(SFP_TX_P[2]),
     .evrClk(evrClk),
     .evrRxSynchronized(evrRxSynchronized),
     .evrChars(evrChars),
@@ -475,7 +493,7 @@ forwardMultiCDC #(
 
 /////////////////////////////////////////////////////////////////////////////
 // Measure clock rates
-localparam FREQ_COUNTERS_NUM = 13;
+localparam FREQ_COUNTERS_NUM = 15;
 localparam FREQ_SEL_WIDTH = $clog2(FREQ_COUNTERS_NUM+1);
 reg  [FREQ_SEL_WIDTH-1:0] frequencyMonitorSelect;
 wire [29:0] measuredFrequency;
@@ -485,6 +503,7 @@ always @(posedge sysClk) begin
     end
 end
 assign GPIO_IN[GPIO_IDX_FREQ_MONITOR_CSR] = { 2'b0, measuredFrequency };
+wire ccwTxOutClk;
 wire rfdc_adc0_clk;
 wire rfdc_dac0_clk;
 freq_multi_count #(
@@ -495,7 +514,9 @@ freq_multi_count #(
         .rw($clog2(SYSCLK_RATE*4/3)), // reference counter width
         .uw(30)) // unknown counter width
   frequencyCounters (
-    .unk_clk({user_sysref_dac, user_sysref_adc,
+    .unk_clk({
+              mgt128Refclk1Div4, ccwTxOutClk,
+              user_sysref_dac, user_sysref_adc,
               dacClk, rfdc_dac0_clk,
               mgt128Refclk1Monitor,
               mgt129Refclk1Monitor,
@@ -660,475 +681,484 @@ wire                            wr_fa_pos_axi_BVALID[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire adcSoftTrigger[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire ddrLossOffBeamTrigger[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire ddrSoftTrigger[0:CFG_DSBPM_COUNT-1];
+
+generate
+if (TEST_BYPASS_RECORDERS != "TRUE" && TEST_BYPASS_RECORDERS != "FALSE") begin
+    TEST_BYPASS_RECORDERS_only_TRUE_or_FALSE_SUPPORTED error();
+end
+endgenerate
+
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recorders
+    if (TEST_BYPASS_RECORDERS == "FALSE") begin
 
-//
-// Waveform recorder triggers
-// Stretch soft trigger to ensure it is seen across clock boundaries
-//
-reg [3:0] softTriggerStretch;
-always @(posedge sysClk) begin
-    if (GPIO_STROBES[GPIO_IDX_WFR_SOFT_TRIGGER + dsbpm*GPIO_IDX_PER_DSBPM]) begin
-        softTrigger[dsbpm] <= 1;
-        softTriggerStretch <= ~0;
+    //
+    // Waveform recorder triggers
+    // Stretch soft trigger to ensure it is seen across clock boundaries
+    //
+    reg [3:0] softTriggerStretch;
+    always @(posedge sysClk) begin
+        if (GPIO_STROBES[GPIO_IDX_WFR_SOFT_TRIGGER + dsbpm*GPIO_IDX_PER_DSBPM]) begin
+            softTrigger[dsbpm] <= 1;
+            softTriggerStretch <= ~0;
+        end
+        else if (softTriggerStretch) begin
+            softTriggerStretch <= softTriggerStretch - 1;
+        end
+        else begin
+            softTrigger[dsbpm] <= 0;
+        end
     end
-    else if (softTriggerStretch) begin
-        softTriggerStretch <= softTriggerStretch - 1;
-    end
-    else begin
-        softTrigger[dsbpm] <= 0;
-    end
-end
 
-forwardMultiCDC #(
-    .DATA_WIDTH(2))
-  forwardTriggersMultiCDCToADC(
-    .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
-    .clk(adcClk),
-    .dataOut({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
+    forwardMultiCDC #(
+        .DATA_WIDTH(2))
+      forwardTriggersMultiCDCToADC(
+        .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
+        .clk(adcClk),
+        .dataOut({adcLossOffBeamTrigger[dsbpm], adcSoftTrigger[dsbpm]}));
 
-forwardMultiCDC #(
-    .DATA_WIDTH(2))
-  forwardTriggersMultiCDCToToDDR(
-    .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
-    .clk(ddr4_ui_clk),
-    .dataOut({ddrLossOffBeamTrigger[dsbpm], ddrSoftTrigger[dsbpm]}));
+    forwardMultiCDC #(
+        .DATA_WIDTH(2))
+      forwardTriggersMultiCDCToToDDR(
+        .dataIn({lossOfBeamTrigger[dsbpm], softTrigger[dsbpm]}),
+        .clk(ddr4_ui_clk),
+        .dataOut({ddrLossOffBeamTrigger[dsbpm], ddrSoftTrigger[dsbpm]}));
 
-wire [7:0] sysRecorderTriggerBus = { sysTriggerBus[7:4],
-                                  1'b0,
-                                  sysSingleTrig[dsbpm],
-                                  lossOfBeamTrigger[dsbpm],
-                                  softTrigger[dsbpm] };
+    wire [7:0] sysRecorderTriggerBus = { sysTriggerBus[7:4],
+                                      1'b0,
+                                      sysSingleTrig[dsbpm],
+                                      lossOfBeamTrigger[dsbpm],
+                                      softTrigger[dsbpm] };
 
-wire [7:0] adcRecorderTriggerBus = { adcTriggerBus[7:4],
-                                  1'b0,
-                                  adcSingleTrig[dsbpm],
-                                  adcLossOffBeamTrigger[dsbpm],
-                                  adcSoftTrigger[dsbpm] };
+    wire [7:0] adcRecorderTriggerBus = { adcTriggerBus[7:4],
+                                      1'b0,
+                                      adcSingleTrig[dsbpm],
+                                      adcLossOffBeamTrigger[dsbpm],
+                                      adcSoftTrigger[dsbpm] };
 
-//
-// ADC waveform recorder
-//
-wire [31:0] adcWfrCSR, adcWfrPretrigCount, adcWfrAcqCount, adcWfrAcqAddrMSB, adcWfrAcqAddrLSB;
-wire [63:0] adcWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = adcWfrCSR;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = adcWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = adcWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = adcWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = adcWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = adcWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = adcWfrWhenTriggered[31:0];
+    //
+    // ADC waveform recorder
+    //
+    wire [31:0] adcWfrCSR, adcWfrPretrigCount, adcWfrAcqCount, adcWfrAcqAddrMSB, adcWfrAcqAddrLSB;
+    wire [63:0] adcWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = adcWfrCSR;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = adcWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = adcWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = adcWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = adcWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = adcWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = adcWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .HIGH_BANDWIDTH_MODE("TRUE"),
-    .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
-    .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH), // twice as large as input (DATA_WIDTH)
-    .FIFO_CAPACITY(ADC_FIFO_CAPACITY),
-    .CHIPSCOPE_DBG((dsbpm == 0)? "TRUE" : "FALSE"))
-  adcWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(adcWfrCSR),
-    .pretrigCount(adcWfrPretrigCount),
-    .acqCount(adcWfrAcqCount),
-    .acqAddressMSB(adcWfrAcqAddrMSB),
-    .acqAddressLSB(adcWfrAcqAddrLSB),
-    .whenTriggered(adcWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .HIGH_BANDWIDTH_MODE("TRUE"),
+        .ACQ_CAPACITY(CFG_RECORDER_ADC_SAMPLE_CAPACITY),
+        .DATA_WIDTH(8*AXI_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(16*AXI_ADC_SAMPLE_WIDTH), // twice as large as input (DATA_WIDTH)
+        .FIFO_CAPACITY(ADC_FIFO_CAPACITY),
+        .CHIPSCOPE_DBG((dsbpm == 0)? "TRUE" : "FALSE"))
+      adcWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_ADC_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(adcWfrCSR),
+        .pretrigCount(adcWfrPretrigCount),
+        .acqCount(adcWfrAcqCount),
+        .acqAddressMSB(adcWfrAcqAddrMSB),
+        .acqAddressLSB(adcWfrAcqAddrLSB),
+        .whenTriggered(adcWfrWhenTriggered),
 
-    .clk(adcClk),
-    .data({
-        prelimProcADCQ3[dsbpm],
-        prelimProcADC3[dsbpm],
-        prelimProcADCQ2[dsbpm],
-        prelimProcADC2[dsbpm],
-        prelimProcADCQ1[dsbpm],
-        prelimProcADC1[dsbpm],
-        prelimProcADCQ0[dsbpm],
-        prelimProcADC0[dsbpm]}),
-    .testData({
-        {prelimProcADCQ3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
-        {prelimProcADC3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
-        {prelimProcADCQ2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
-        {prelimProcADC2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
-        {prelimProcADCQ1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
-        {prelimProcADC1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
-        {prelimProcADCQ0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]},
-        {prelimProcADC0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]}
-        }),
-    .valid(1'b1),
-    .triggers(adcRecorderTriggerBus),
-    .timestamp(adcTimestamp),
+        .clk(adcClk),
+        .data({
+            prelimProcADCQ3[dsbpm],
+            prelimProcADC3[dsbpm],
+            prelimProcADCQ2[dsbpm],
+            prelimProcADC2[dsbpm],
+            prelimProcADCQ1[dsbpm],
+            prelimProcADC1[dsbpm],
+            prelimProcADCQ0[dsbpm],
+            prelimProcADC0[dsbpm]}),
+        .testData({
+            {prelimProcADCQ3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
+            {prelimProcADC3[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcUseThisSample[dsbpm]},
+            {prelimProcADCQ2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
+            {prelimProcADC2[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLoadAccumulator[dsbpm]},
+            {prelimProcADCQ1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
+            {prelimProcADC1[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcTbtLatchAccumulator[dsbpm]},
+            {prelimProcADCQ0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]},
+            {prelimProcADC0[dsbpm][AXI_ADC_SAMPLE_WIDTH-1:1], adcMtLoadAndLatch[dsbpm]}
+            }),
+        .valid(1'b1),
+        .triggers(adcRecorderTriggerBus),
+        .timestamp(adcTimestamp),
 
-    .diagExtMode(1'b1),
-    .diagExtData(adcCounterHB),
+        .diagExtMode(1'b1),
+        .diagExtData(adcCounterHB),
 
-    .axi_AWADDR(wr_adc_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_adc_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_adc_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_adc_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_adc_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_adc_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_adc_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_adc_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_adc_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_adc_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_adc_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_adc_axi_BVALID[dsbpm]));
+        .axi_AWADDR(wr_adc_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_adc_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_adc_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_adc_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_adc_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_adc_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_adc_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_adc_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_adc_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_adc_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_adc_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_adc_axi_BVALID[dsbpm]));
 
-///////////////////////////////////////////////////////////////////////////////
-// Magnitude recorders
-///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    // Magnitude recorders
+    ///////////////////////////////////////////////////////////////////////////////
 
-//
-// TbT waveform recorder
-//
-wire [31:0] tbtWfrCSR, tbtWfrPretrigCount, tbtWfrAcqCount, tbtWfrAcqAddrMSB, tbtWfrAcqAddrLSB;
-wire [63:0] tbtWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = tbtWfrCSR;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = tbtWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = tbtWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = tbtWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = tbtWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = tbtWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = tbtWfrWhenTriggered[31:0];
+    //
+    // TbT waveform recorder
+    //
+    wire [31:0] tbtWfrCSR, tbtWfrPretrigCount, tbtWfrAcqCount, tbtWfrAcqAddrMSB, tbtWfrAcqAddrLSB;
+    wire [63:0] tbtWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = tbtWfrCSR;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = tbtWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = tbtWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = tbtWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = tbtWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = tbtWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = tbtWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_TBT_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  tbtWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(tbtWfrCSR),
-    .pretrigCount(tbtWfrPretrigCount),
-    .acqCount(tbtWfrAcqCount),
-    .acqAddressMSB(tbtWfrAcqAddrMSB),
-    .acqAddressLSB(tbtWfrAcqAddrLSB),
-    .whenTriggered(tbtWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_TBT_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      tbtWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(tbtWfrCSR),
+        .pretrigCount(tbtWfrPretrigCount),
+        .acqCount(tbtWfrAcqCount),
+        .acqAddressMSB(tbtWfrAcqAddrMSB),
+        .acqAddressLSB(tbtWfrAcqAddrLSB),
+        .whenTriggered(tbtWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfTbtMag3[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfTbtMag2[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfTbtMag1[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfTbtMag0[dsbpm]}),
-    .testData(0),
-    .valid(prelimProcRfTbtMagValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_tbt_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_tbt_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_tbt_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_tbt_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_tbt_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_tbt_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_tbt_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_tbt_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_tbt_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_tbt_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_tbt_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_tbt_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfTbtMag3[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfTbtMag2[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfTbtMag1[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfTbtMag0[dsbpm]}),
+        .testData(0),
+        .valid(prelimProcRfTbtMagValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_tbt_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_tbt_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_tbt_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_tbt_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_tbt_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_tbt_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_tbt_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_tbt_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_tbt_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_tbt_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_tbt_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_tbt_axi_BVALID[dsbpm]));
 
-//
-// FA waveform recorder
-//
-wire [31:0] faWfrCSR, faWfrPretrigCount, faWfrAcqCount, faWfrAcqAddrMSB, faWfrAcqAddrLSB;
-wire [63:0] faWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = faWfrCSR;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = faWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = faWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = faWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = faWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = faWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = faWfrWhenTriggered[31:0];
+    //
+    // FA waveform recorder
+    //
+    wire [31:0] faWfrCSR, faWfrPretrigCount, faWfrAcqCount, faWfrAcqAddrMSB, faWfrAcqAddrLSB;
+    wire [63:0] faWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = faWfrCSR;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = faWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = faWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = faWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = faWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = faWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = faWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_FA_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  faWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(faWfrCSR),
-    .pretrigCount(faWfrPretrigCount),
-    .acqCount(faWfrAcqCount),
-    .acqAddressMSB(faWfrAcqAddrMSB),
-    .acqAddressLSB(faWfrAcqAddrLSB),
-    .whenTriggered(faWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_FA_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      faWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_FA_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(faWfrCSR),
+        .pretrigCount(faWfrPretrigCount),
+        .acqCount(faWfrAcqCount),
+        .acqAddressMSB(faWfrAcqAddrMSB),
+        .acqAddressLSB(faWfrAcqAddrLSB),
+        .whenTriggered(faWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfFaMag3[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfFaMag2[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfFaMag1[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcRfFaMag0[dsbpm]}),
-    .testData(0),
-    .valid(prelimProcRfFaMagValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_fa_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_fa_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_fa_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_fa_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_fa_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_fa_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_fa_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_fa_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_fa_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_fa_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_fa_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_fa_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfFaMag3[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfFaMag2[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfFaMag1[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcRfFaMag0[dsbpm]}),
+        .testData(0),
+        .valid(prelimProcRfFaMagValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_fa_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_fa_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_fa_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_fa_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_fa_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_fa_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_fa_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_fa_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_fa_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_fa_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_fa_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_fa_axi_BVALID[dsbpm]));
 
-//
-// Low pilot tone waveform recorder
-//
-wire [31:0] plWfrCSR, plWfrPretrigCount, plWfrAcqCount, plWfrAcqAddrMSB, plWfrAcqAddrLSB;
-wire [63:0] plWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = plWfrCSR;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = plWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = plWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = plWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = plWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = plWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = plWfrWhenTriggered[31:0];
+    //
+    // Low pilot tone waveform recorder
+    //
+    wire [31:0] plWfrCSR, plWfrPretrigCount, plWfrAcqCount, plWfrAcqAddrMSB, plWfrAcqAddrLSB;
+    wire [63:0] plWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = plWfrCSR;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = plWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = plWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = plWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = plWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = plWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = plWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  plWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(plWfrCSR),
-    .pretrigCount(plWfrPretrigCount),
-    .acqCount(plWfrAcqCount),
-    .acqAddressMSB(plWfrAcqAddrMSB),
-    .acqAddressLSB(plWfrAcqAddrLSB),
-    .whenTriggered(plWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      plWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_PL_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(plWfrCSR),
+        .pretrigCount(plWfrPretrigCount),
+        .acqCount(plWfrAcqCount),
+        .acqAddressMSB(plWfrAcqAddrMSB),
+        .acqAddressLSB(plWfrAcqAddrLSB),
+        .whenTriggered(plWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlFaMag3[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlFaMag2[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlFaMag1[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPlFaMag0[dsbpm]}),
-    .testData(0),
-    .valid(prelimProcPtFaValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_pl_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_pl_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_pl_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_pl_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_pl_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_pl_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_pl_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_pl_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_pl_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_pl_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_pl_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_pl_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPlFaMag3[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPlFaMag2[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPlFaMag1[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPlFaMag0[dsbpm]}),
+        .testData(0),
+        .valid(prelimProcPtFaValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_pl_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_pl_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_pl_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_pl_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_pl_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_pl_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_pl_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_pl_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_pl_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_pl_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_pl_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_pl_axi_BVALID[dsbpm]));
 
-//
-// High pilot tone waveform recorder
-//
-wire [31:0] phWfrCSR, phWfrPretrigCount, phWfrAcqCount, phWfrAcqAddrMSB, phWfrAcqAddrLSB;
-wire [63:0] phWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = phWfrCSR;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = phWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = phWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = phWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = phWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = phWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = phWfrWhenTriggered[31:0];
+    //
+    // High pilot tone waveform recorder
+    //
+    wire [31:0] phWfrCSR, phWfrPretrigCount, phWfrAcqCount, phWfrAcqAddrMSB, phWfrAcqAddrLSB;
+    wire [63:0] phWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = phWfrCSR;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = phWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = phWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = phWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = phWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = phWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = phWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  phWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(phWfrCSR),
-    .pretrigCount(phWfrPretrigCount),
-    .acqCount(phWfrAcqCount),
-    .acqAddressMSB(phWfrAcqAddrMSB),
-    .acqAddressLSB(phWfrAcqAddrLSB),
-    .whenTriggered(phWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_PT_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      phWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_PH_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(phWfrCSR),
+        .pretrigCount(phWfrPretrigCount),
+        .acqCount(phWfrAcqCount),
+        .acqAddressMSB(phWfrAcqAddrMSB),
+        .acqAddressLSB(phWfrAcqAddrLSB),
+        .whenTriggered(phWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhFaMag3[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhFaMag2[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhFaMag1[dsbpm],
-        {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
-                                     prelimProcPhFaMag0[dsbpm]}),
-    .testData(0),
-    .valid(prelimProcPtFaValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_ph_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_ph_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_ph_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_ph_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_ph_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_ph_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_ph_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_ph_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_ph_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_ph_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_ph_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_ph_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPhFaMag3[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPhFaMag2[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPhFaMag1[dsbpm],
+            {ACQ_ADC_SAMPLE_WIDTH-MAG_WIDTH{1'b0}},
+                                         prelimProcPhFaMag0[dsbpm]}),
+        .testData(0),
+        .valid(prelimProcPtFaValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_ph_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_ph_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_ph_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_ph_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_ph_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_ph_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_ph_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_ph_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_ph_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_ph_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_ph_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_ph_axi_BVALID[dsbpm]));
 
-///////////////////////////////////////////////////////////////////////////////
-// Position recorders
-///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    // Position recorders
+    ///////////////////////////////////////////////////////////////////////////////
 
-//
-// TbT position waveform recorder
-//
-wire [31:0] tbtPosWfrCSR, tbtPosWfrPretrigCount, tbtPosWfrAcqCount, tbtPosWfrAcqAddrMSB, tbtPosWfrAcqAddrLSB;
-wire [63:0] tbtPosWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = tbtPosWfrCSR;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = tbtPosWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = tbtPosWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = tbtPosWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = tbtPosWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = tbtPosWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = tbtPosWfrWhenTriggered[31:0];
+    //
+    // TbT position waveform recorder
+    //
+    wire [31:0] tbtPosWfrCSR, tbtPosWfrPretrigCount, tbtPosWfrAcqCount, tbtPosWfrAcqAddrMSB, tbtPosWfrAcqAddrLSB;
+    wire [63:0] tbtPosWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = tbtPosWfrCSR;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = tbtPosWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = tbtPosWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = tbtPosWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = tbtPosWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = tbtPosWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = tbtPosWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  tbtPosWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(tbtPosWfrCSR),
-    .pretrigCount(tbtPosWfrPretrigCount),
-    .acqCount(tbtPosWfrAcqCount),
-    .acqAddressMSB(tbtPosWfrAcqAddrMSB),
-    .acqAddressLSB(tbtPosWfrAcqAddrLSB),
-    .whenTriggered(tbtPosWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      tbtPosWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_TBT_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(tbtPosWfrCSR),
+        .pretrigCount(tbtPosWfrPretrigCount),
+        .acqCount(tbtPosWfrAcqCount),
+        .acqAddressMSB(tbtPosWfrAcqAddrMSB),
+        .acqAddressLSB(tbtPosWfrAcqAddrLSB),
+        .whenTriggered(tbtPosWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        positionCalcTbtS[dsbpm],
-        positionCalcTbtQ[dsbpm],
-        positionCalcTbtY[dsbpm],
-        positionCalcTbtX[dsbpm]}),
-    .testData(0),
-    .valid(positionCalcTbtValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_tbt_pos_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_tbt_pos_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_tbt_pos_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_tbt_pos_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_tbt_pos_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_tbt_pos_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_tbt_pos_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_tbt_pos_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_tbt_pos_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_tbt_pos_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_tbt_pos_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_tbt_pos_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            positionCalcTbtS[dsbpm],
+            positionCalcTbtQ[dsbpm],
+            positionCalcTbtY[dsbpm],
+            positionCalcTbtX[dsbpm]}),
+        .testData(0),
+        .valid(positionCalcTbtValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_tbt_pos_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_tbt_pos_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_tbt_pos_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_tbt_pos_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_tbt_pos_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_tbt_pos_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_tbt_pos_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_tbt_pos_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_tbt_pos_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_tbt_pos_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_tbt_pos_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_tbt_pos_axi_BVALID[dsbpm]));
 
-//
-// FA position waveform recorder
-//
+    //
+    // FA position waveform recorder
+    //
 
-wire [31:0] faPosWfrCSR, faPosWfrPretrigCount, faPosWfrAcqCount, faPosWfrAcqAddrMSB, faPosWfrAcqAddrLSB;
-wire [63:0] faPosWfrWhenTriggered;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = faPosWfrCSR;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = faPosWfrPretrigCount;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = faPosWfrAcqCount;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = faPosWfrAcqAddrLSB;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = faPosWfrAcqAddrMSB;
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = faPosWfrWhenTriggered[63:32];
-assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = faPosWfrWhenTriggered[31:0];
+    wire [31:0] faPosWfrCSR, faPosWfrPretrigCount, faPosWfrAcqCount, faPosWfrAcqAddrMSB, faPosWfrAcqAddrLSB;
+    wire [63:0] faPosWfrWhenTriggered;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+0] = faPosWfrCSR;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+1] = faPosWfrPretrigCount;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+2] = faPosWfrAcqCount;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+3] = faPosWfrAcqAddrLSB;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+4] = faPosWfrAcqAddrMSB;
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+5] = faPosWfrWhenTriggered[63:32];
+    assign GPIO_IN[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+6] = faPosWfrWhenTriggered[31:0];
 
-genericWaveformRecorder #(
-    .ACQ_CAPACITY(CFG_RECORDER_FA_POS_SAMPLE_CAPACITY),
-    .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
-    .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
-  faPosWaveformRecorder(
-    .sysClk(sysClk),
-    .writeData(GPIO_OUT),
-    .regStrobes(GPIO_STROBES[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
-    .csr(faPosWfrCSR),
-    .pretrigCount(faPosWfrPretrigCount),
-    .acqCount(faPosWfrAcqCount),
-    .acqAddressMSB(faPosWfrAcqAddrMSB),
-    .acqAddressLSB(faPosWfrAcqAddrLSB),
-    .whenTriggered(faPosWfrWhenTriggered),
+    genericWaveformRecorder #(
+        .ACQ_CAPACITY(CFG_RECORDER_FA_POS_SAMPLE_CAPACITY),
+        .DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH(4*ACQ_ADC_SAMPLE_WIDTH),
+        .FIFO_CAPACITY(DDC_FIFO_CAPACITY))
+      faPosWaveformRecorder(
+        .sysClk(sysClk),
+        .writeData(GPIO_OUT),
+        .regStrobes(GPIO_STROBES[GPIO_IDX_FA_POS_RECORDER_BASE+(dsbpm*GPIO_IDX_RECORDER_PER_DSBPM)+:5]),
+        .csr(faPosWfrCSR),
+        .pretrigCount(faPosWfrPretrigCount),
+        .acqCount(faPosWfrAcqCount),
+        .acqAddressMSB(faPosWfrAcqAddrMSB),
+        .acqAddressLSB(faPosWfrAcqAddrLSB),
+        .whenTriggered(faPosWfrWhenTriggered),
 
-    .clk(sysClk),
-    .data({
-        positionCalcFaS[dsbpm],
-        positionCalcFaQ[dsbpm],
-        positionCalcFaY[dsbpm],
-        positionCalcFaX[dsbpm]}),
-    .testData(0),
-    .valid(positionCalcFaValid[dsbpm]),
-    .triggers(sysRecorderTriggerBus),
-    .timestamp(sysTimestamp),
-    .diagExtMode(1'b0),
-    .axi_AWADDR(wr_fa_pos_axi_AWADDR[dsbpm]),
-    .axi_AWLEN(wr_fa_pos_axi_AWLEN[dsbpm]),
-    .axi_AWVALID(wr_fa_pos_axi_AWVALID[dsbpm]),
-    .axi_AWREADY(wr_fa_pos_axi_AWREADY[dsbpm]),
-    .axi_AWSIZE(wr_fa_pos_axi_AWSIZE[dsbpm]),
-    .axi_WDATA(wr_fa_pos_axi_WDATA[dsbpm]),
-    .axi_WLAST(wr_fa_pos_axi_WLAST[dsbpm]),
-    .axi_WVALID(wr_fa_pos_axi_WVALID[dsbpm]),
-    .axi_WSTRB(wr_fa_pos_axi_WSTRB[dsbpm]),
-    .axi_WREADY(wr_fa_pos_axi_WREADY[dsbpm]),
-    .axi_BRESP(wr_fa_pos_axi_BRESP[dsbpm]),
-    .axi_BVALID(wr_fa_pos_axi_BVALID[dsbpm]));
+        .clk(sysClk),
+        .data({
+            positionCalcFaS[dsbpm],
+            positionCalcFaQ[dsbpm],
+            positionCalcFaY[dsbpm],
+            positionCalcFaX[dsbpm]}),
+        .testData(0),
+        .valid(positionCalcFaValid[dsbpm]),
+        .triggers(sysRecorderTriggerBus),
+        .timestamp(sysTimestamp),
+        .diagExtMode(1'b0),
+        .axi_AWADDR(wr_fa_pos_axi_AWADDR[dsbpm]),
+        .axi_AWLEN(wr_fa_pos_axi_AWLEN[dsbpm]),
+        .axi_AWVALID(wr_fa_pos_axi_AWVALID[dsbpm]),
+        .axi_AWREADY(wr_fa_pos_axi_AWREADY[dsbpm]),
+        .axi_AWSIZE(wr_fa_pos_axi_AWSIZE[dsbpm]),
+        .axi_WDATA(wr_fa_pos_axi_WDATA[dsbpm]),
+        .axi_WLAST(wr_fa_pos_axi_WLAST[dsbpm]),
+        .axi_WVALID(wr_fa_pos_axi_WVALID[dsbpm]),
+        .axi_WSTRB(wr_fa_pos_axi_WSTRB[dsbpm]),
+        .axi_WREADY(wr_fa_pos_axi_WREADY[dsbpm]),
+        .axi_BRESP(wr_fa_pos_axi_BRESP[dsbpm]),
+        .axi_BVALID(wr_fa_pos_axi_BVALID[dsbpm]));
 
-end // for
+    end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
+end // for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1)
 endgenerate
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1182,6 +1212,10 @@ wire            ddr_aximm_dbg_WVALID;
 
 //////////////////////////////////////////////////////////////////////////////
 // ZYNQ processor system
+
+generate
+if (TEST_BYPASS_RECORDERS == "FALSE") begin
+
 system
   system_i (
     .sysClk(sysClk),
@@ -1645,6 +1679,198 @@ system
     .ddr_aximm_dbg_wvalid(ddr_aximm_dbg_WVALID)
     );
 
+end
+else begin
+
+system
+  system_i (
+    .sysClk(sysClk),
+    .sysReset_n(sysReset_n),
+
+    .GPIO_IN(GPIO_IN_FLATTENED),
+    .GPIO_OUT(GPIO_OUT),
+    .GPIO_STROBES(GPIO_STROBES),
+
+    .evrCharIsComma(evrCharIsComma),
+    .evrCharIsK(evrCharIsK),
+    .evrClk(evrClk),
+    .evrChars(evrChars),
+    .evrMgtResetDone(evrRxSynchronized),
+    .evrTriggerBus(evrTriggerBus),
+    .evrTimestamp(evrTimestamp),
+
+    .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
+    .adcClk(adcClk),
+    .adcClkLocked(adcClkLocked),
+    .clk_adc0_0(rfdc_adc0_clk),
+
+    // ADC tile 225 distributes clock to all others
+    //.adc01_clk_n(),
+    //.adc01_clk_p(),
+    .adc23_clk_n(RF1_CLKO_B_C_N),
+    .adc23_clk_p(RF1_CLKO_B_C_P),
+    //.adc45_clk_n(),
+    //.adc45_clk_p(),
+    //.adc67_clk_n(),
+    //.adc67_clk_p(),
+    .user_sysref_adc(user_sysref_adc),
+
+    // DAC tile 0 must be enabled dfor sysref
+    // to be distributed to ADC/DAC for RFSoC GEN3
+    .sysref_in_diff_n(SYSREF_RFSOC_C_N),
+    .sysref_in_diff_p(SYSREF_RFSOC_C_P),
+
+    .dacClk(dacClk),
+    .dacClkLocked(dacClkLocked),
+    .clk_dac0_0(rfdc_dac0_clk),
+
+    // DAC tile 230 distributes clock to all others
+    .dac45_clk_n(RF4_CLKO_B_C_N),
+    .dac45_clk_p(RF4_CLKO_B_C_P),
+    .user_sysref_dac(user_sysref_dac),
+
+    .vin0_v_n(RFMC_ADC_00_N),
+    .vin0_v_p(RFMC_ADC_00_P),
+    .vin1_v_n(RFMC_ADC_01_N),
+    .vin1_v_p(RFMC_ADC_01_P),
+    .vin2_v_n(RFMC_ADC_02_N),
+    .vin2_v_p(RFMC_ADC_02_P),
+    .vin3_v_n(RFMC_ADC_03_N),
+    .vin3_v_p(RFMC_ADC_03_P),
+    .vin4_v_n(RFMC_ADC_04_N),
+    .vin4_v_p(RFMC_ADC_04_P),
+    .vin5_v_n(RFMC_ADC_05_N),
+    .vin5_v_p(RFMC_ADC_05_P),
+    .vin6_v_n(RFMC_ADC_06_N),
+    .vin6_v_p(RFMC_ADC_06_P),
+    .vin7_v_n(RFMC_ADC_07_N),
+    .vin7_v_p(RFMC_ADC_07_P),
+
+    .adc0stream_tdata(adcsTDATA[0*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc1stream_tdata(adcsTDATA[2*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc2stream_tdata(adcsTDATA[4*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc3stream_tdata(adcsTDATA[6*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc4stream_tdata(adcsTDATA[8*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc5stream_tdata(adcsTDATA[10*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc6stream_tdata(adcsTDATA[12*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc7stream_tdata(adcsTDATA[14*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc0Qstream_tdata(adcsTDATA[1*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc1Qstream_tdata(adcsTDATA[3*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc2Qstream_tdata(adcsTDATA[5*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc3Qstream_tdata(adcsTDATA[7*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc4Qstream_tdata(adcsTDATA[9*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc5Qstream_tdata(adcsTDATA[11*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc6Qstream_tdata(adcsTDATA[13*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc7Qstream_tdata(adcsTDATA[15*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
+    .adc0stream_tvalid(adcsTVALID[0]),
+    .adc1stream_tvalid(adcsTVALID[2]),
+    .adc2stream_tvalid(adcsTVALID[4]),
+    .adc3stream_tvalid(adcsTVALID[6]),
+    .adc4stream_tvalid(adcsTVALID[8]),
+    .adc5stream_tvalid(adcsTVALID[10]),
+    .adc6stream_tvalid(adcsTVALID[12]),
+    .adc7stream_tvalid(adcsTVALID[14]),
+    .adc0Qstream_tvalid(adcsTVALID[1]),
+    .adc1Qstream_tvalid(adcsTVALID[3]),
+    .adc2Qstream_tvalid(adcsTVALID[5]),
+    .adc3Qstream_tvalid(adcsTVALID[7]),
+    .adc4Qstream_tvalid(adcsTVALID[9]),
+    .adc5Qstream_tvalid(adcsTVALID[11]),
+    .adc6Qstream_tvalid(adcsTVALID[13]),
+    .adc7Qstream_tvalid(adcsTVALID[15]),
+    .adc0stream_tready(1'b1),
+    .adc1stream_tready(1'b1),
+    .adc2stream_tready(1'b1),
+    .adc3stream_tready(1'b1),
+    .adc4stream_tready(1'b1),
+    .adc5stream_tready(1'b1),
+    .adc6stream_tready(1'b1),
+    .adc7stream_tready(1'b1),
+    .adc0Qstream_tready(1'b1),
+    .adc1Qstream_tready(1'b1),
+    .adc2Qstream_tready(1'b1),
+    .adc3Qstream_tready(1'b1),
+    .adc4Qstream_tready(1'b1),
+    .adc5Qstream_tready(1'b1),
+    .adc6Qstream_tready(1'b1),
+    .adc7Qstream_tready(1'b1),
+
+    .dac0stream_tdata(dacsTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac1stream_tdata(dacsTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac2stream_tdata(dacsTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac3stream_tdata(dacsTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac4stream_tdata(dacsTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac5stream_tdata(dacsTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac6stream_tdata(dacsTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac7stream_tdata(dacsTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac0stream_tvalid(dacsTVALID[0]),
+    .dac1stream_tvalid(dacsTVALID[1]),
+    .dac2stream_tvalid(dacsTVALID[2]),
+    .dac3stream_tvalid(dacsTVALID[3]),
+    .dac4stream_tvalid(dacsTVALID[4]),
+    .dac5stream_tvalid(dacsTVALID[5]),
+    .dac6stream_tvalid(dacsTVALID[6]),
+    .dac7stream_tvalid(dacsTVALID[7]),
+    .dac0stream_tready(dacsTREADY[0]),
+    .dac1stream_tready(dacsTREADY[1]),
+    .dac2stream_tready(dacsTREADY[2]),
+    .dac3stream_tready(dacsTREADY[3]),
+    .dac4stream_tready(dacsTREADY[4]),
+    .dac5stream_tready(dacsTREADY[5]),
+    .dac6stream_tready(dacsTREADY[6]),
+    .dac7stream_tready(dacsTREADY[7]),
+
+    .vout0_v_n(RFMC_DAC_00_N),
+    .vout0_v_p(RFMC_DAC_00_P),
+    .vout1_v_n(RFMC_DAC_01_N),
+    .vout1_v_p(RFMC_DAC_01_P),
+    .vout2_v_n(RFMC_DAC_02_N),
+    .vout2_v_p(RFMC_DAC_02_P),
+    .vout3_v_n(RFMC_DAC_03_N),
+    .vout3_v_p(RFMC_DAC_03_P),
+    .vout4_v_n(RFMC_DAC_04_N),
+    .vout4_v_p(RFMC_DAC_04_P),
+    .vout5_v_n(RFMC_DAC_05_N),
+    .vout5_v_p(RFMC_DAC_05_P),
+    .vout6_v_n(RFMC_DAC_06_N),
+    .vout6_v_p(RFMC_DAC_06_P),
+    .vout7_v_n(RFMC_DAC_07_N),
+    .vout7_v_p(RFMC_DAC_07_P)
+    );
+
+    assign DDR4_C0_ACT_N = 1'b1;
+    assign DDR4_C0_ADR = 0;
+    assign DDR4_C0_BA = 0;
+    assign DDR4_C0_BG = 0;
+
+    OBUFDS ddr4_c0_ck_obufds (
+        .O(DDR4_C0_CK_T),
+        .OB(DDR4_C0_CK_C),
+        .I(1'b0)
+    );
+
+    assign DDR4_C0_CKE = 1'b0;
+    assign DDR4_C0_CS_N = {2{1'b1}};
+
+    assign DDR4_C0_DM_DBI_N = {4{1'bz}};
+    assign DDR4_C0_DQ = {32{1'bz}};
+
+    for(i = 0; i < 4; i = i + 1) begin
+
+        OBUFTDS ddr4_c0_dqs_obuftds (
+            .O(DDR4_C0_DQS_T[i]),
+            .OB(DDR4_C0_DQS_C[i]),
+            .I(1'b0),
+            .T(1'b1) // High-Z
+        );
+
+    end
+
+    assign DDR4_C0_ODT = 1'b0;
+    assign DDR4_C0_RESET_N = 1'b1;
+
+end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
+endgenerate
 
 generate
 if (DDR_ILA_CHIPSCOPE_DBG != "TRUE" && DDR_ILA_CHIPSCOPE_DBG != "FALSE") begin
@@ -1801,7 +2027,7 @@ wire tbtMagsValid[0:CFG_DSBPM_COUNT-1];
 
 generate
 if (IQ_DATA != "TRUE") begin
-    IQ_DATA_false_NOT_SUPPORTED();
+    IQ_DATA_false_NOT_SUPPORTED error();
 end
 endgenerate
 
@@ -1809,251 +2035,260 @@ localparam ADC_SIGNALS_PER_DSP = CFG_ADC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
 localparam DAC_SIGNAL_OFFSET_PER_DSP = CFG_DAC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
 
 generate
+if (TEST_BYPASS_PRELIM_PROC != "TRUE" && TEST_BYPASS_PRELIM_PROC != "FALSE") begin
+    TEST_BYPASS_PRELIM_PROC_only_TRUE_or_FALSE_SUPPORTED error();
+end
+endgenerate
+
+
+generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_chain
+    if (TEST_BYPASS_PRELIM_PROC == "FALSE") begin
 
-wire [(BD_ADC_CHANNEL_COUNT*ADC_SAMPLE_WIDTH)-1:0] adcsProcTDATA;
-wire                                            adcsProcTVALID;
+    wire [(BD_ADC_CHANNEL_COUNT*ADC_SAMPLE_WIDTH)-1:0] adcsProcTDATA;
+    wire                                            adcsProcTVALID;
 
-adcProcessing #(
-    // because we are using DDC, the ADC samples are 16-bits, even though
-    // the ADC is 14-bits
-    .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
-    .DATA_WIDTH(AXI_ADC_SAMPLE_WIDTH))
-  adcProcessing (
-    .sysClk(sysClk),
-    .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .GPIO_OUT(GPIO_OUT),
-    .sysReadout(GPIO_IN[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
+    adcProcessing #(
+        // because we are using DDC, the ADC samples are 16-bits, even though
+        // the ADC is 14-bits
+        .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
+        .DATA_WIDTH(AXI_ADC_SAMPLE_WIDTH))
+      adcProcessing (
+        .sysClk(sysClk),
+        .sysCsrStrobe(GPIO_STROBES[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .GPIO_OUT(GPIO_OUT),
+        .sysReadout(GPIO_IN[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .adcClk(adcClk),
-    .adcValidIn(adcsTVALID[dsbpm*ADC_SIGNALS_PER_DSP]),
-    .adc0In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
-    .adc1In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
-    .adc2In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
-    .adc3In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
-    .adc0QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-    .adc1QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-    .adc2QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-    .adc3QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        .adcClk(adcClk),
+        .adcValidIn(adcsTVALID[dsbpm*ADC_SIGNALS_PER_DSP]),
+        .adc0In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
+        .adc1In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
+        .adc2In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
+        .adc3In(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
+        .adc0QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
+        .adc1QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
+        .adc2QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
+        .adc3QIn(adcsTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
 
-    .adcValidOut(adcsProcTVALID),
-    .adc0Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
-    .adc1Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
-    .adc2Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
-    .adc3Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
-    .adc0QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-    .adc1QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-    .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-    .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        .adcValidOut(adcsProcTVALID),
+        .adc0Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
+        .adc1Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
+        .adc2Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
+        .adc3Out(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
+        .adc0QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
+        .adc1QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
+        .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
+        .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
 
-    .adcUseThisSample(adcUseThisSample[dsbpm]),
-    .adcExceedsThreshold(adcExceedsThreshold[dsbpm]));
+        .adcUseThisSample(adcUseThisSample[dsbpm]),
+        .adcExceedsThreshold(adcExceedsThreshold[dsbpm]));
 
-assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    {32-1{1'b0}},
-    prelimProcOverflow[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfSaMag0[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfSaMag1[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfSaMag2[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcRfSaMag3[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlSaMag0[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlSaMag1[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlSaMag2[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPlSaMag3[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhSaMag0[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhSaMag1[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhSaMag2[dsbpm] };
-assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
-    magPAD, prelimProcPhSaMag3[dsbpm] };
-preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
-                        .SYSCLK_RATE(SYSCLK_RATE),
-                        .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
-                        .MAG_WIDTH(MAG_WIDTH),
-                        .IQ_DATA(IQ_DATA),
-                        .SAMPLES_PER_TURN(SITE_SAMPLES_PER_TURN),
-                        .LO_WIDTH(LO_WIDTH),
-                        .TURNS_PER_PT(SITE_TURNS_PER_PT),
-                        .CIC_STAGES(SITE_CIC_STAGES),
-                        .CIC_FA_DECIMATE(SITE_CIC_FA_DECIMATE),
-                        .CIC_SA_DECIMATE(SITE_CIC_SA_DECIMATE),
-                        .GPIO_LO_RF_ROW_CAPACITY(CFG_LO_RF_ROW_CAPACITY),
-                        .GPIO_LO_PT_ROW_CAPACITY(CFG_LO_PT_ROW_CAPACITY))
-  prelimProc(
-    .clk(sysClk),
-    .gpioData(GPIO_OUT),
+    assign GPIO_IN[GPIO_IDX_PRELIM_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        {32-1{1'b0}},
+        prelimProcOverflow[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcRfSaMag0[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcRfSaMag1[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcRfSaMag2[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_RF_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcRfSaMag3[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPlSaMag0[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPlSaMag1[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPlSaMag2[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_LO_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPlSaMag3[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_0 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPhSaMag0[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_1 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPhSaMag1[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_2 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPhSaMag2[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_PRELIM_PT_HI_MAG_3 + dsbpm*GPIO_IDX_PER_DSBPM] = {
+        magPAD, prelimProcPhSaMag3[dsbpm] };
+    preliminaryProcessing #(.CHIPSCOPE_DBG("FALSE"),
+                            .SYSCLK_RATE(SYSCLK_RATE),
+                            .ADC_WIDTH(AXI_ADC_SAMPLE_WIDTH),
+                            .MAG_WIDTH(MAG_WIDTH),
+                            .IQ_DATA(IQ_DATA),
+                            .SAMPLES_PER_TURN(SITE_SAMPLES_PER_TURN),
+                            .LO_WIDTH(LO_WIDTH),
+                            .TURNS_PER_PT(SITE_TURNS_PER_PT),
+                            .CIC_STAGES(SITE_CIC_STAGES),
+                            .CIC_FA_DECIMATE(SITE_CIC_FA_DECIMATE),
+                            .CIC_SA_DECIMATE(SITE_CIC_SA_DECIMATE),
+                            .GPIO_LO_RF_ROW_CAPACITY(CFG_LO_RF_ROW_CAPACITY),
+                            .GPIO_LO_PT_ROW_CAPACITY(CFG_LO_PT_ROW_CAPACITY))
+      prelimProc(
+        .clk(sysClk),
+        .gpioData(GPIO_OUT),
 
-    .localOscillatorAddressStrobe(GPIO_STROBES[GPIO_IDX_LOTABLE_ADDRESS + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .localOscillatorCsrStrobe(GPIO_STROBES[GPIO_IDX_LOTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .localOscillatorCsr(GPIO_IN[GPIO_IDX_LOTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .sumShiftCsrStrobe(GPIO_STROBES[GPIO_IDX_SUM_SHIFT_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .sumShiftCsr(GPIO_IN[GPIO_IDX_SUM_SHIFT_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .autotrimCsrStrobe(GPIO_STROBES[GPIO_IDX_AUTOTRIM_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .autotrimThresholdStrobe(GPIO_STROBES[GPIO_IDX_AUTOTRIM_THRESHOLD + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .autotrimGainStrobes({GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .autotrimCsr(GPIO_IN[GPIO_IDX_AUTOTRIM_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .autotrimThreshold(GPIO_IN[GPIO_IDX_AUTOTRIM_THRESHOLD + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainRBK0(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainRBK1(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainRBK2(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainRBK3(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .localOscillatorAddressStrobe(GPIO_STROBES[GPIO_IDX_LOTABLE_ADDRESS + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .localOscillatorCsrStrobe(GPIO_STROBES[GPIO_IDX_LOTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .localOscillatorCsr(GPIO_IN[GPIO_IDX_LOTABLE_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .sumShiftCsrStrobe(GPIO_STROBES[GPIO_IDX_SUM_SHIFT_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .sumShiftCsr(GPIO_IN[GPIO_IDX_SUM_SHIFT_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .autotrimCsrStrobe(GPIO_STROBES[GPIO_IDX_AUTOTRIM_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .autotrimThresholdStrobe(GPIO_STROBES[GPIO_IDX_AUTOTRIM_THRESHOLD + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .autotrimGainStrobes({GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_ADC_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
+        .autotrimCsr(GPIO_IN[GPIO_IDX_AUTOTRIM_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .autotrimThreshold(GPIO_IN[GPIO_IDX_AUTOTRIM_THRESHOLD + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainRBK0(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainRBK1(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainRBK2(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainRBK3(GPIO_IN[GPIO_IDX_ADC_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .calRFGainStrobes({GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .gainCalRFRBK0(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalRFRBK1(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalRFRBK2(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalRFRBK3(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .calRFGainStrobes({GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_RF_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
+        .gainCalRFRBK0(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalRFRBK1(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalRFRBK2(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalRFRBK3(GPIO_IN[GPIO_IDX_RF_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .calPLGainStrobes({GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .gainCalPLRBK0(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPLRBK1(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPLRBK2(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPLRBK3(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .calPLGainStrobes({GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PL_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
+        .gainCalPLRBK0(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPLRBK1(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPLRBK2(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPLRBK3(GPIO_IN[GPIO_IDX_PL_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .calPHGainStrobes({GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
-                          GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .gainCalPHRBK0(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPHRBK1(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPHRBK2(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .gainCalPHRBK3(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .calPHGainStrobes({GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM],
+                              GPIO_STROBES[GPIO_IDX_PH_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]}),
+        .gainCalPHRBK0(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_0 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPHRBK1(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_1 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPHRBK2(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_2 + dsbpm*GPIO_IDX_PER_DSBPM]),
+        .gainCalPHRBK3(GPIO_IN[GPIO_IDX_PH_GAIN_FACTOR_3 + dsbpm*GPIO_IDX_PER_DSBPM]),
 
-    .sysTimestamp(sysTimestamp),
+        .sysTimestamp(sysTimestamp),
 
-    .adcClk(adcClk),
-    .adc0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I0
-    .adc1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I1
-    .adc2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I2
-    .adc3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I3
-    .adcQ0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-    .adcQ1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-    .adcQ2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-    .adcQ3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
-    // All ADC data clocked with adcClk
-    .adc0Out(prelimProcADC0[dsbpm]),
-    .adc1Out(prelimProcADC1[dsbpm]),
-    .adc2Out(prelimProcADC2[dsbpm]),
-    .adc3Out(prelimProcADC3[dsbpm]),
-    .adc0QOut(prelimProcADCQ0[dsbpm]),
-    .adc1QOut(prelimProcADCQ1[dsbpm]),
-    .adc2QOut(prelimProcADCQ2[dsbpm]),
-    .adc3QOut(prelimProcADCQ3[dsbpm]),
-    .adc0OutMag(prelimProcADC0Mag[dsbpm]),
-    .adc1OutMag(prelimProcADC1Mag[dsbpm]),
-    .adc2OutMag(prelimProcADC2Mag[dsbpm]),
-    .adc3OutMag(prelimProcADC3Mag[dsbpm]),
+        .adcClk(adcClk),
+        .adc0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I0
+        .adc1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I1
+        .adc2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I2
+        .adc3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I3
+        .adcQ0(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
+        .adcQ1(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
+        .adcQ2(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
+        .adcQ3(adcsProcTDATA[(dsbpm*ADC_SIGNALS_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        // All ADC data clocked with adcClk
+        .adc0Out(prelimProcADC0[dsbpm]),
+        .adc1Out(prelimProcADC1[dsbpm]),
+        .adc2Out(prelimProcADC2[dsbpm]),
+        .adc3Out(prelimProcADC3[dsbpm]),
+        .adc0QOut(prelimProcADCQ0[dsbpm]),
+        .adc1QOut(prelimProcADCQ1[dsbpm]),
+        .adc2QOut(prelimProcADCQ2[dsbpm]),
+        .adc3QOut(prelimProcADCQ3[dsbpm]),
+        .adc0OutMag(prelimProcADC0Mag[dsbpm]),
+        .adc1OutMag(prelimProcADC1Mag[dsbpm]),
+        .adc2OutMag(prelimProcADC2Mag[dsbpm]),
+        .adc3OutMag(prelimProcADC3Mag[dsbpm]),
 
-    .adcExceedsThreshold(adcExceedsThreshold[dsbpm]),
-    .adcUseThisSample(adcUseThisSample[dsbpm]),
-    .adcTbtLoadAccumulator(adcTbtLoadAccumulator[dsbpm]),
-    .adcTbtLatchAccumulator(adcTbtLatchAccumulator[dsbpm]),
-    .adcMtLoadAndLatch(adcMtLoadAndLatch[dsbpm]),
+        .adcExceedsThreshold(adcExceedsThreshold[dsbpm]),
+        .adcUseThisSample(adcUseThisSample[dsbpm]),
+        .adcTbtLoadAccumulator(adcTbtLoadAccumulator[dsbpm]),
+        .adcTbtLatchAccumulator(adcTbtLatchAccumulator[dsbpm]),
+        .adcMtLoadAndLatch(adcMtLoadAndLatch[dsbpm]),
 
-    .evrClk(evrClk),
-    .evrFaMarker(evrFaMarker),
-    .evrSaMarker(evrSaMarker),
-    .evrTimestamp(evrTimestamp),
-    .evrSinglePassTrigger(evrSinglePass),
-    .evrHbMarker(evrHeartbeat),
-    .sysSingleTrig(sysSingleTrig[dsbpm]),
-    .adcSingleTrig(adcSingleTrig[dsbpm]),
-    .adcLoSynced(adcLoSynced[dsbpm]),
+        .evrClk(evrClk),
+        .evrFaMarker(evrFaMarker),
+        .evrSaMarker(evrSaMarker),
+        .evrTimestamp(evrTimestamp),
+        .evrSinglePassTrigger(evrSinglePass),
+        .evrHbMarker(evrHeartbeat),
+        .sysSingleTrig(sysSingleTrig[dsbpm]),
+        .adcSingleTrig(adcSingleTrig[dsbpm]),
+        .adcLoSynced(adcLoSynced[dsbpm]),
 
-    .rfTbtToggle(prelimProcTbtToggle[dsbpm]),
-    .rfTbtMagValid(prelimProcRfTbtMagValid[dsbpm]),
-    .rfTbtMag0(prelimProcRfTbtMag0[dsbpm]),
-    .rfTbtMag1(prelimProcRfTbtMag1[dsbpm]),
-    .rfTbtMag2(prelimProcRfTbtMag2[dsbpm]),
-    .rfTbtMag3(prelimProcRfTbtMag3[dsbpm]),
+        .rfTbtToggle(prelimProcTbtToggle[dsbpm]),
+        .rfTbtMagValid(prelimProcRfTbtMagValid[dsbpm]),
+        .rfTbtMag0(prelimProcRfTbtMag0[dsbpm]),
+        .rfTbtMag1(prelimProcRfTbtMag1[dsbpm]),
+        .rfTbtMag2(prelimProcRfTbtMag2[dsbpm]),
+        .rfTbtMag3(prelimProcRfTbtMag3[dsbpm]),
 
-    .rfFaToggle(prelimProcRfFaToggle[dsbpm]),
-    .rfFaMagValid(prelimProcRfFaMagValid[dsbpm]),
-    .rfFaMag0(prelimProcRfFaMag0[dsbpm]),
-    .rfFaMag1(prelimProcRfFaMag1[dsbpm]),
-    .rfFaMag2(prelimProcRfFaMag2[dsbpm]),
-    .rfFaMag3(prelimProcRfFaMag3[dsbpm]),
+        .rfFaToggle(prelimProcRfFaToggle[dsbpm]),
+        .rfFaMagValid(prelimProcRfFaMagValid[dsbpm]),
+        .rfFaMag0(prelimProcRfFaMag0[dsbpm]),
+        .rfFaMag1(prelimProcRfFaMag1[dsbpm]),
+        .rfFaMag2(prelimProcRfFaMag2[dsbpm]),
+        .rfFaMag3(prelimProcRfFaMag3[dsbpm]),
 
-    .rfSaToggle(prelimProcRfSaToggle[dsbpm]),
-    .rfSaValid(prelimProcRfSaValid[dsbpm]),
-    .sysSaTimestamp({GPIO_IN[GPIO_IDX_SA_TIMESTAMP_SEC + dsbpm*GPIO_IDX_PER_DSBPM],
-                     GPIO_IN[GPIO_IDX_SA_TIMESTAMP_FRACTION + dsbpm*GPIO_IDX_PER_DSBPM]}),
-    .rfSaMag0(prelimProcRfSaMag0[dsbpm]),
-    .rfSaMag1(prelimProcRfSaMag1[dsbpm]),
-    .rfSaMag2(prelimProcRfSaMag2[dsbpm]),
-    .rfSaMag3(prelimProcRfSaMag3[dsbpm]),
+        .rfSaToggle(prelimProcRfSaToggle[dsbpm]),
+        .rfSaValid(prelimProcRfSaValid[dsbpm]),
+        .sysSaTimestamp({GPIO_IN[GPIO_IDX_SA_TIMESTAMP_SEC + dsbpm*GPIO_IDX_PER_DSBPM],
+                         GPIO_IN[GPIO_IDX_SA_TIMESTAMP_FRACTION + dsbpm*GPIO_IDX_PER_DSBPM]}),
+        .rfSaMag0(prelimProcRfSaMag0[dsbpm]),
+        .rfSaMag1(prelimProcRfSaMag1[dsbpm]),
+        .rfSaMag2(prelimProcRfSaMag2[dsbpm]),
+        .rfSaMag3(prelimProcRfSaMag3[dsbpm]),
 
-    .ptFaToggle(prelimProcPtFaToggle[dsbpm]),
-    .ptFaValid(prelimProcPtFaValid[dsbpm]),
-    .overflowFlag(prelimProcOverflow[dsbpm]),
-    .plFaMag0(prelimProcPlFaMag0[dsbpm]),
-    .plFaMag1(prelimProcPlFaMag1[dsbpm]),
-    .plFaMag2(prelimProcPlFaMag2[dsbpm]),
-    .plFaMag3(prelimProcPlFaMag3[dsbpm]),
-    .phFaMag0(prelimProcPhFaMag0[dsbpm]),
-    .phFaMag1(prelimProcPhFaMag1[dsbpm]),
-    .phFaMag2(prelimProcPhFaMag2[dsbpm]),
-    .phFaMag3(prelimProcPhFaMag3[dsbpm]),
+        .ptFaToggle(prelimProcPtFaToggle[dsbpm]),
+        .ptFaValid(prelimProcPtFaValid[dsbpm]),
+        .overflowFlag(prelimProcOverflow[dsbpm]),
+        .plFaMag0(prelimProcPlFaMag0[dsbpm]),
+        .plFaMag1(prelimProcPlFaMag1[dsbpm]),
+        .plFaMag2(prelimProcPlFaMag2[dsbpm]),
+        .plFaMag3(prelimProcPlFaMag3[dsbpm]),
+        .phFaMag0(prelimProcPhFaMag0[dsbpm]),
+        .phFaMag1(prelimProcPhFaMag1[dsbpm]),
+        .phFaMag2(prelimProcPhFaMag2[dsbpm]),
+        .phFaMag3(prelimProcPhFaMag3[dsbpm]),
 
-    .ptSaToggle(prelimProcPtSaToggle[dsbpm]),
-    .ptSaValid(prelimProcPtSaValid[dsbpm]),
-    .plSaMag0(prelimProcPlSaMag0[dsbpm]),
-    .plSaMag1(prelimProcPlSaMag1[dsbpm]),
-    .plSaMag2(prelimProcPlSaMag2[dsbpm]),
-    .plSaMag3(prelimProcPlSaMag3[dsbpm]),
-    .phSaMag0(prelimProcPhSaMag0[dsbpm]),
-    .phSaMag1(prelimProcPhSaMag1[dsbpm]),
-    .phSaMag2(prelimProcPhSaMag2[dsbpm]),
-    .phSaMag3(prelimProcPhSaMag3[dsbpm]),
+        .ptSaToggle(prelimProcPtSaToggle[dsbpm]),
+        .ptSaValid(prelimProcPtSaValid[dsbpm]),
+        .plSaMag0(prelimProcPlSaMag0[dsbpm]),
+        .plSaMag1(prelimProcPlSaMag1[dsbpm]),
+        .plSaMag2(prelimProcPlSaMag2[dsbpm]),
+        .plSaMag3(prelimProcPlSaMag3[dsbpm]),
+        .phSaMag0(prelimProcPhSaMag0[dsbpm]),
+        .phSaMag1(prelimProcPhSaMag1[dsbpm]),
+        .phSaMag2(prelimProcPhSaMag2[dsbpm]),
+        .phSaMag3(prelimProcPhSaMag3[dsbpm]),
 
-    .rfProductsDbg(rfProducts[dsbpm]),
-    .plProductsDbg(plProducts[dsbpm]),
-    .phProductsDbg(phProducts[dsbpm]),
-    .rfLOcosDbg(rfLOcos[dsbpm]),
-    .rfLOsinDbg(rfLOsin[dsbpm]),
-    .plLOcosDbg(plLOcos[dsbpm]),
-    .plLOsinDbg(plLOsin[dsbpm]),
-    .phLOcosDbg(phLOcos[dsbpm]),
-    .phLOsinDbg(phLOsin[dsbpm]),
-    .tbtSumsDbg(tbtSums[dsbpm]),
-    .tbtSumsValidDbg(tbtSumsValid[dsbpm]),
-    .tbtMagsDbg(tbtMags[dsbpm]),
-    .tbtMagsValidDbg(tbtMagsValid[dsbpm]),
-    .cicFaMagValidDbg(prelimProcRfCicFaMagValid[dsbpm]),
-    .cicFaMag0Dbg(prelimProcRfCicFaMag0[dsbpm]),
-    .cicFaMag1Dbg(prelimProcRfCicFaMag1[dsbpm]),
-    .cicFaMag2Dbg(prelimProcRfCicFaMag2[dsbpm]),
-    .cicFaMag3Dbg(prelimProcRfCicFaMag3[dsbpm])
-);
+        .rfProductsDbg(rfProducts[dsbpm]),
+        .plProductsDbg(plProducts[dsbpm]),
+        .phProductsDbg(phProducts[dsbpm]),
+        .rfLOcosDbg(rfLOcos[dsbpm]),
+        .rfLOsinDbg(rfLOsin[dsbpm]),
+        .plLOcosDbg(plLOcos[dsbpm]),
+        .plLOsinDbg(plLOsin[dsbpm]),
+        .phLOcosDbg(phLOcos[dsbpm]),
+        .phLOsinDbg(phLOsin[dsbpm]),
+        .tbtSumsDbg(tbtSums[dsbpm]),
+        .tbtSumsValidDbg(tbtSumsValid[dsbpm]),
+        .tbtMagsDbg(tbtMags[dsbpm]),
+        .tbtMagsValidDbg(tbtMagsValid[dsbpm]),
+        .cicFaMagValidDbg(prelimProcRfCicFaMagValid[dsbpm]),
+        .cicFaMag0Dbg(prelimProcRfCicFaMag0[dsbpm]),
+        .cicFaMag1Dbg(prelimProcRfCicFaMag1[dsbpm]),
+        .cicFaMag2Dbg(prelimProcRfCicFaMag2[dsbpm]),
+        .cicFaMag3Dbg(prelimProcRfCicFaMag3[dsbpm])
+    );
 
-assign GPIO_IN[GPIO_IDX_CLOCK_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
-         16'b0,
-         1'b0, 1'b0, 1'b0, 1'b0,
-         1'b0, 1'b0, isHBvalid, isPPSvalid,
-         evrRxSynchronized, evrSROCsynced, evrSaSynced, evrFaSynced,
-         1'b0, 1'b0, 1'b0, adcLoSynced[dsbpm] };
+    assign GPIO_IN[GPIO_IDX_CLOCK_STATUS + dsbpm*GPIO_IDX_PER_DSBPM] = {
+             16'b0,
+             1'b0, 1'b0, 1'b0, 1'b0,
+             1'b0, 1'b0, isHBvalid, isPPSvalid,
+             evrRxSynchronized, evrSROCsynced, evrSaSynced, evrFaSynced,
+             1'b0, 1'b0, 1'b0, adcLoSynced[dsbpm] };
 
-end // for
-endgenerate // generate
+    end // if (TEST_BYPASS_PRELIM_PROC == "FALSE")
+end // for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1)
+endgenerate
 
 //
 // Position calculation
@@ -2171,7 +2406,6 @@ rmsCalc rmsCalc(.clk(sysClk),
                 .wideYrms(wideYrms[dsbpm]),
                 .narrowXrms(narrowXrms[dsbpm]),
                 .narrowYrms(narrowYrms[dsbpm]));
-
 //
 // DAC streamer
 //
@@ -2222,6 +2456,130 @@ assign AFE_SPI_SDI[dsbpm] = ~spiSDI;
 
 end // for
 endgenerate // generate
+
+//
+// FOFB communication
+//
+
+wire [CFG_DSBPM_COUNT*32-1:0] sysBPMCsrFlatten;
+generate
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : gpio_cell_comm_bpm_gpio
+    assign GPIO_IN[GPIO_IDX_CELL_COMM_BPM_CSR+(dsbpm*GPIO_IDX_CELL_COMM_BPM_PER_DSBPM)] =
+        sysBPMCsrFlatten[32*dsbpm+:32];
+end
+endgenerate
+
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaXFlatten;
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaYFlatten;
+wire [CFG_DSBPM_COUNT*32-1:0] positionCalcFaSFlatten;
+wire [CFG_DSBPM_COUNT-1:0] positionCalcFaToggleFlatten;
+generate
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : gpio_cell_comm_bpm_position
+
+wire [3:0] dsbpmIdx = dsbpm;
+reg [11:0] positionCalcFaFake = 0;
+(* ASYNC_REG="TRUE" *) reg sysFaEvent_m = 0, sysFaEvent = 0;
+reg sysFaEvent_d1, sysFAstrobe, sysFaToggle = 0;
+
+always @(posedge sysClk) begin
+    sysFaEvent_m  <= evrFaMarker;
+    sysFaEvent    <= sysFaEvent_m;
+    sysFaEvent_d1 <= sysFaEvent;
+    if (sysFaEvent && !sysFaEvent_d1) begin
+        sysFAstrobe <= 1;
+        sysFaToggle <= !sysFaToggle;
+    end
+    else begin
+        sysFAstrobe <= 0;
+    end
+
+    if (sysFAstrobe) begin
+        positionCalcFaFake <= positionCalcFaFake + 1;
+    end
+end
+
+reg cellCommTestData = 0;
+always @(posedge sysClk) begin
+    if (GPIO_STROBES[GPIO_IDX_CELL_COMM_TEST + dsbpm*GPIO_IDX_PER_DSBPM]) begin
+        cellCommTestData <= GPIO_OUT[0];
+    end
+end
+
+assign GPIO_IN[GPIO_IDX_CELL_COMM_TEST + dsbpm*GPIO_IDX_PER_DSBPM] = cellCommTestData;
+
+if (TEST_BYPASS_PRELIM_PROC == "FALSE") begin
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hcafe, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaX[dsbpm];
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hbeef, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaY[dsbpm];
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = cellCommTestData?
+        {16'hbead, dsbpmIdx, positionCalcFaFake} :
+        positionCalcFaS[dsbpm];
+    assign positionCalcFaToggleFlatten[dsbpm]   = cellCommTestData?
+        sysFaToggle :
+        positionCalcFaToggle[dsbpm];
+end
+else begin
+    assign positionCalcFaXFlatten[32*dsbpm+:32] = {16'hcafe, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaYFlatten[32*dsbpm+:32] = {16'hbeef, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaSFlatten[32*dsbpm+:32] = {16'hbead, dsbpmIdx, positionCalcFaFake};
+    assign positionCalcFaToggleFlatten[dsbpm] = sysFaToggle;
+end
+
+end
+endgenerate
+
+wire ccwTxOutClkClr;
+cellComm #(
+    .FPGA_FAMILY(FPGA_FAMILY),
+    .NUM_BPMS(CFG_DSBPM_COUNT),
+    // A, B, C, D
+    .ADC_COUNT(4))
+  cellComm (
+    .sysClk(sysClk),
+    .sysGpioData(GPIO_OUT),
+
+    .sysCCWCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_CCW_CSR]),
+    .sysCCWCsr(GPIO_IN[GPIO_IDX_CELL_COMM_CCW_CSR]),
+
+    .sysCWCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_CW_CSR]),
+    .sysCWCsr(GPIO_IN[GPIO_IDX_CELL_COMM_CW_CSR]),
+
+    .ccwCRCfaults(GPIO_IN[GPIO_IDX_CELL_COMM_CCW_CRC_FAULTS]),
+    .cwCRCfaults(GPIO_IN[GPIO_IDX_CELL_COMM_CW_CRC_FAULTS]),
+
+    .sysBPMCsrStrobe(GPIO_STROBES[GPIO_IDX_CELL_COMM_BPM_CSR+:CFG_DSBPM_COUNT]),
+    .sysBPMCsr(sysBPMCsrFlatten),
+
+    .sysFA_X(positionCalcFaXFlatten),
+    .sysFA_Y(positionCalcFaYFlatten),
+    .sysFA_S(positionCalcFaSFlatten),
+    .sysFaToggle(positionCalcFaToggleFlatten),
+    // FIXME: Add ADC clip status
+    .sysClippedAdc(0),
+
+    .initClk(mgt128Refclk1Div4),
+    .GT_REFCLK(IDT_8A34001_Q11_CLK),
+
+    .CCW_TX_N(SFP_TX_N[0]),
+    .CCW_TX_P(SFP_TX_P[0]),
+    .CCW_RX_N(SFP_RX_N[0]),
+    .CCW_RX_P(SFP_RX_P[0]),
+
+    .ccwTxOutClk(ccwTxOutClk),
+    .ccwTxOutClkClr(ccwTxOutClkClr),
+
+    .CW_TX_N(SFP_TX_N[1]),
+    .CW_TX_P(SFP_TX_P[1]),
+    .CW_RX_N(SFP_RX_N[1]),
+    .CW_RX_P(SFP_RX_P[1])
+);
+
+//
+// Debug probes
+//
 
 generate
 if (DAC_ILA_CHIPSCOPE_DBG != "TRUE" && DAC_ILA_CHIPSCOPE_DBG != "FALSE") begin
