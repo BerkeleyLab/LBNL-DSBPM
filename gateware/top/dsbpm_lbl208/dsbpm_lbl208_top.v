@@ -1,7 +1,7 @@
 module dsbpm_lbl208 #(
     parameter FPGA_FAMILY               = "ultrascaleplus",
-    parameter TEST_BYPASS_RECORDERS     = "TRUE",
-    parameter TEST_BYPASS_PRELIM_PROC   = "TRUE",
+    parameter TEST_BYPASS_RECORDERS     = "FALSE",
+    parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter ADC_WIDTH                 = 14,

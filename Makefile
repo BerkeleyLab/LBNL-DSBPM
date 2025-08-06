@@ -7,7 +7,7 @@ SAMPLES_PER_TURN ?= 81
 VCXO_TYPE        ?= 160
 VARIANT          ?=
 
-BD_SYSTEM_NAME   ?= system_without_ddr
+BD_SYSTEM_NAME   ?= system
 
 TARGET       = $(APP)_$(PLATFORM)
 GW_TGT_DIR   = $(GW_SYN_DIR)/$(TARGET)

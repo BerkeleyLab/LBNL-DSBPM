@@ -6,6 +6,6 @@ FPGA_PLATFORM := zu47
 TARGET := dsbpm_lbl208
 FPGA_APPLICATION := dsbpm
 
-BD_SYSTEM_NAME ?= system_without_ddr
+BD_SYSTEM_NAME ?= system
 
 include ../common_dsbpm/Makefile
