@@ -21,6 +21,7 @@ bpmCommSetFOFB(unsigned int bpm, int fofbIndex)
 
     reg |= BPMCOMM_CSR_FOFB_INDEX_ENABLE;
     if ((fofbIndex >= 0) && (fofbIndex < DSBPM_PROTOCOL_FOFB_CAPACITY))  {
+        reg &= ~BPMCOMM_CSR_FOFB_INDEX_MASK;
         reg |= BPMCOMM_CSR_FOFB_INDEX_VALID |
             ((fofbIndex << BPMCOMM_CSR_FOFB_INDEX_SHIFT) &
              BPMCOMM_CSR_FOFB_INDEX_MASK);
