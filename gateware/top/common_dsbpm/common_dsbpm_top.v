@@ -2433,12 +2433,12 @@ genericDACStreamer #(
 // Analog front end SPI components
 
 wire spiCLK, spiLE, spiSDI;
-afeSPI #(
+genericSPI #(
   .CLK_RATE(SYSCLK_RATE),
   .CSB_WIDTH(1),
   .BIT_RATE(100000),
   .DEBUG("false")
-) afeSPI (
+) genericSPI (
     .clk(sysClk),
     .csrStrobe(GPIO_STROBES[GPIO_IDX_AFE_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
     .gpioOut(GPIO_OUT),
