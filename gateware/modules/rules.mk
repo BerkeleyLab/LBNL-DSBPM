@@ -9,7 +9,7 @@ TEST_BENCH = \
 	adcProcessing_tb \
 	genericDPRAM_tb \
 	genericDACStreamer_tb \
-	afeSPI_tb
+	genericSPI_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =

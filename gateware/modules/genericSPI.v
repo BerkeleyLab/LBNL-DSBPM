@@ -1,7 +1,7 @@
 // SPI interface to analog front end components
 // 16 or 24 bits
 
-module afeSPI #(
+module genericSPI #(
     parameter CLK_RATE  = 100000000,
     parameter BIT_RATE  = 12500000,
     parameter CSB_WIDTH = 9,

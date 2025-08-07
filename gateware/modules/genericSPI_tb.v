@@ -1,6 +1,6 @@
 `timescale 1ns / 1ns
 
-module afeSPI_tb #(
+module genericSPI_tb #(
     parameter CSR_DATA_BUS_WIDTH = 32,
     parameter CSR_STROBE_BUS_WIDTH = 1,
 
@@ -34,8 +34,8 @@ reg module_ready = 0;
 integer errors = 0;
 initial begin
     if ($test$plusargs("vcd")) begin
-        $dumpfile("afeSPI.vcd");
-        $dumpvars(0, afeSPI_tb);
+        $dumpfile("genericSPI.vcd");
+        $dumpvars(0, genericSPI_tb);
     end
 
     wait(module_done);
@@ -84,11 +84,11 @@ wire [CSB_WIDTH-1:0] SPI_CSB;
 wire [LE_WIDTH-1:0]  SPI_LE;
 wire                 SPI_SDI;
 
-afeSPI #(
+genericSPI #(
     .CLK_RATE(CLK_RATE),
     .BIT_RATE(BIT_RATE),
     .CSB_WIDTH(CSB_WIDTH)
-) afeSPI (
+) genericSPI (
     .clk(clk),
     .csrStrobe(GPIO_STROBES[0]),
     .gpioOut(GPIO_OUT),
