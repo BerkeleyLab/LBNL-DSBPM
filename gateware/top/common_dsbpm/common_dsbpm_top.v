@@ -95,6 +95,13 @@ module common_dsbpm_top #(
     output wire [1:0] AFE_SPI_SDI,
     output wire [1:0] AFE_SPI_LE,
 
+    output wire  [1:0] AMI_SPI_CLK,
+    output wire  [1:0] AMI_SPI_SDI,
+    input  wire  [1:0] AMI_SPI_SDO,
+    output wire  [1:0] AMI_SPI_CSB,
+    output wire        AMI_BUCK_EN,
+    output wire [15:9] DACIO,
+
     output wire       CLK_SPI_MUX_SEL0,
     output wire       CLK_SPI_MUX_SEL1
 );
@@ -2454,8 +2461,44 @@ assign AFE_SPI_CLK[dsbpm] = ~spiCLK;
 assign AFE_SPI_LE[dsbpm] = ~spiLE;
 assign AFE_SPI_SDI[dsbpm] = ~spiSDI;
 
+//////////////////////////////////////////////////////////////////////////////
+// Analog Module Interface (AMI) interface
+//
+// This modules has only 1 CSB line that selects a GPIO
+// expander. That, in turn, selects any of the SPI devices
+// available. So, provide 2 CSB here, 1 for the expander and
+// 1 (not used) for everything else.
+localparam AMI_NUM_CSB = 2;
+
+wire spiAmiCLK, spiAmiSDI, spiAmiSDO;
+wire [AMI_NUM_CSB-1:0] spiAmiCSB;
+genericSPI #(
+  .CLK_RATE(SYSCLK_RATE),
+  .CSB_WIDTH(AMI_NUM_CSB),
+  .BIT_RATE(100000),
+  .DEBUG("false")
+) genericAmiSPI (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_AMI_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .gpioOut(GPIO_OUT),
+    .status(GPIO_IN[GPIO_IDX_AMI_SPI_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
+    .SPI_CLK(spiAmiCLK),
+    .SPI_CSB(spiAmiCSB),
+    .SPI_LE(),
+    .SPI_SDI(spiAmiSDI),
+    .SPI_SDO(spiAmiSDO)
+);
+
+assign AMI_SPI_CLK[dsbpm] = spiAmiCLK;
+assign AMI_SPI_CSB[dsbpm] = spiAmiCSB[0];
+assign AMI_SPI_SDI[dsbpm] = spiAmiSDI;
+assign spiAmiSDO = AMI_SPI_SDO[dsbpm];
+
 end // for
 endgenerate // generate
+
+assign AMI_BUCK_EN = 1'b1;
+assign DACIO = 0;
 
 //
 // FOFB communication
