@@ -100,7 +100,7 @@ module dsbpm_lbl208 #(
     input  wire  [1:0] AMI_SPI_SDO,
     output wire  [1:0] AMI_SPI_CSB,
     output wire        AMI_BUCK_EN,
-    output wire [15:9] DACIO,
+    output wire [15:10] DACIO,
 
     output wire       CLK_SPI_MUX_SEL0,
     output wire       CLK_SPI_MUX_SEL1
