@@ -11,6 +11,8 @@
 #include "util.h"
 #include "gpio.h"
 
+#define IIC_MAX_TRIES   4
+
 const unsigned int lmx2594MuxSel[LMX2594_MUX_SEL_SIZE] = {
     SPI_MUX_2594_A_ADC,  // Tile 224, 225, 226, 227 (ADC 0, 1, 2, 3, 4, 5, 6, 7)
     SPI_MUX_2594_B_DAC,  // Tile 228, 229, 230, 231 (DAC 0, 1, 2, 3, 4, 5, 6, 7)
@@ -179,27 +181,35 @@ iicInit(void)
 static int
 iicSend(struct controller *cp, int address, const uint8_t *buf, int n)
 {
+    int i = 0;
+    int isBusy = 1;
     int status;
 
     if (debugFlags & DEBUGFLAG_IIC) {
-        int i;
         printf("IIC %d:0x%02X <-", cp->controllerIndex, address);
         for (i = 0 ; i < n ; i++) printf(" %02X", buf[i]);
     }
-    if (XIicPs_BusIsBusy(&cp->Iic)) {
+
+    for (i = 0; i < IIC_MAX_TRIES; ++i) {
+        if (!XIicPs_BusIsBusy(&cp->Iic)) {
+            isBusy = 0;
+            break;
+        }
         microsecondSpin(100);
+    }
+
+    if (isBusy) {
+        if (debugFlags & DEBUGFLAG_IIC) {
+            printf(" == reset ==");
+        }
+        XIicPs_Reset(&cp->Iic);
+        microsecondSpin(10000);
         if (XIicPs_BusIsBusy(&cp->Iic)) {
-            if (debugFlags & DEBUGFLAG_IIC) {
-                printf(" == reset ==");
-            }
-            XIicPs_Reset(&cp->Iic);
-            microsecondSpin(10000);
-            if (XIicPs_BusIsBusy(&cp->Iic)) {
-                printf("===== IIC %d reset failed ====\n", cp->controllerIndex);
-                return 0;
-            }
+            printf("===== IIC %d reset failed ====\n", cp->controllerIndex);
+            return 0;
         }
     }
+
     status = XIicPs_MasterSendPolled(&cp->Iic, (uint8_t *)buf, n, address);
     if (debugFlags & DEBUGFLAG_IIC) {
         if (status != XST_SUCCESS) printf(" FAILED");
