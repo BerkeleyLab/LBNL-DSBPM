@@ -101,7 +101,8 @@ struct controller {
     uint8_t controllerIndex;
     uint8_t muxPort[2];
 };
-    static struct controller controllers[CONTROLLER_COUNT];
+
+static struct controller controllers[CONTROLLER_COUNT];
 
 /*
  * Initialize IIC controllers
