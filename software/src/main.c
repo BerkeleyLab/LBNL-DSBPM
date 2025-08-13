@@ -4,6 +4,7 @@
 #include <lwip/inet.h>
 #include <netif/xadapter.h>
 #include "afe.h"
+#include "ami.h"
 #include "console.h"
 #include "display.h"
 #include "epics.h"
@@ -125,6 +126,7 @@ main(void)
     sysrefShow(1);
     rfDCinit();
     afeInit();
+    amiInit();
     rfADCrestart();
     rfDACrestart();
     rfDCsync();

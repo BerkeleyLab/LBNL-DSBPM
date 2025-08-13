@@ -6,6 +6,7 @@
 #include <lwip/udp.h>
 #include "autotrim.h"
 #include "afe.h"
+#include "ami.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "cellComm.h"
@@ -88,7 +89,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->calibPHFactor[i] = GPIO_READ(REG(GPIO_IDX_PH_GAIN_FACTOR_0 +
                 adcChannel, chainNumber));
         pk->rfADCDSA[i] = rfADCGetDSADSBPM(chainNumber, adcChannel);
-        pk->afeAtt[i] = afeAttenGet(chainNumber, adcChannel);
+        pk->afeAtt[i] = amiAfeAttenGet(chainNumber, adcChannel);
 
     }
 

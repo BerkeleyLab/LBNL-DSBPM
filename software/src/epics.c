@@ -6,6 +6,7 @@
 #include <lwip/udp.h>
 #include "adcProcessing.h"
 #include "afe.h"
+#include "ami.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "epics.h"

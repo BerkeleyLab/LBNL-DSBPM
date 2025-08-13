@@ -6,6 +6,7 @@
 #include <string.h>
 #include "adcProcessing.h"
 #include "afe.h"
+#include "ami.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "lossOfBeam.h"
@@ -76,6 +77,8 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_AFE_ATT:
             afeAttenSet(idx / CFG_ADC_PER_BPM_COUNT,
+                    idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
+            amiAfeAttenSet(idx / CFG_ADC_PER_BPM_COUNT,
                     idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
             break;
 
