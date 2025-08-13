@@ -43,6 +43,7 @@ __SRC_FILES = \
 	acqSync.c \
 	adcProcessing.c \
 	afe.c \
+	ami.c \
 	autotrim.c \
 	bpmComm.c \
 	calibrationGains.c \
@@ -56,6 +57,7 @@ __SRC_FILES = \
 	eyescan.c \
 	ffs.c \
 	frequencyMonitor.c \
+	genericSPI.c \
 	interlock.c \
 	lossOfBeam.c \
 	main.c \
@@ -83,6 +85,7 @@ __HDR_FILES = \
 	acqSync.h \
 	adcProcessing.h \
 	afe.h \
+	ami.h \
 	autotrim.h \
 	bpmComm.h \
 	calibrationGains.h \
@@ -96,6 +99,7 @@ __HDR_FILES = \
 	eyescan.h \
 	ffs.h \
 	frequencyMonitor.h \
+	genericSPI.h \
 	dsbpmProtocol.h \
 	interlock.h \
 	lossOfBeam.h \
