@@ -85,7 +85,7 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 dacCurrent[DSBPM_PROTOCOL_DAC_COUNT];
     epicsUInt32 dacCtl[DSBPM_PROTOCOL_DAC_COUNT];
     epicsUInt32 clockStatus[DSBPM_PROTOCOL_DSP_COUNT];
-    epicsUInt32 ptmAtt[DSBPM_PROTOCOL_DSP_COUNT];
+    epicsUInt32 ptmAtt[DSBPM_PROTOCOL_DAC_COUNT];
 };
 
 /*
