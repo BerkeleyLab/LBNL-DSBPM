@@ -127,9 +127,8 @@ amiInit(void)
  * Set multiplexers
  */
 static int
-setMux(struct controller *cp, unsigned int muxPort)
+amiMcp23s08(struct controller *cp, unsigned int muxPort)
 {
-    int bytesWritten = 0;
     uint32_t data = 0;
 
     /*
@@ -139,16 +138,32 @@ setMux(struct controller *cp, unsigned int muxPort)
      */
     genericSPISetOptions(&cp->spi, 1, 0, 0);
 
-    muxPort = muxPort & 0x7;
     data = MCP23S08_REG_ADDR << 16;
     data |= 0x09 << 8;
-    data |= ~(1 << muxPort) & 0xFF;
-    bytesWritten = genericSPIWrite(&cp->spi, data);
+    data |= muxPort & 0xFF;
+
+    return genericSPIWrite(&cp->spi, data);
+}
+
+static int
+amiSetMux(struct controller *cp, unsigned int muxPort)
+{
+    int bytesWritten = 0;
+
+    if (muxPort == MUXPORT_NONE) {
+        muxPort = 0xFF;
+    }
+    else {
+        muxPort &= 0x7;
+        muxPort = ~(1 << muxPort) & 0xFF;
+    }
+
+    bytesWritten = amiMcp23s08(cp, muxPort);
 
     if (bytesWritten == 3) {
         cp->muxPort = muxPort;
     }
-    else{
+    else {
         cp->muxPort = MUXPORT_UNKNOWN;
         return -1;
     }
@@ -160,6 +175,7 @@ static int
 amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
         uint32_t data)
 {
+    int bytesWritten = 0;
     const struct deviceInfo *dp;
     struct controller *cp;
 
@@ -174,7 +190,7 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
     dp = &deviceTable[deviceIndex];
     cp = &controllers[controllerIndex];
 
-    if (setMux(cp, dp->muxPort) < 0) {
+    if (amiSetMux(cp, dp->muxPort) < 0) {
         return -1;
     }
 
@@ -182,7 +198,13 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
      * Only the mux is on channel 0. Everything is on channel 1
      */
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, 1);
-    return genericSPIWrite(&cp->spi, data);
+    bytesWritten = genericSPIWrite(&cp->spi, data);
+
+    if (amiSetMux(cp, MUXPORT_NONE) < 0) {
+        return -1;
+    }
+
+    return bytesWritten;
 }
 
 static int
@@ -203,7 +225,7 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
     dp = &deviceTable[deviceIndex];
     cp = &controllers[controllerIndex];
 
-    if (setMux(cp, dp->muxPort) < 0) {
+    if (amiSetMux(cp, dp->muxPort) < 0) {
         return -1;
     }
 
