@@ -223,12 +223,6 @@ amiAttenSet(unsigned int controllerIndex, unsigned int channel,
 {
     unsigned int deviceIndex = AMI_SPI_INDEX_AFE_ATT_ALL;
 
-    if (channel >= CFG_ADC_PER_BPM_COUNT) {
-        return -1;
-    }
-    // All channels are wired together
-    channel = 0;
-
     /*
      * Write trimmed value
      */
@@ -250,6 +244,16 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
     const int address = 0x7;
     int bytesWritten = 0;
 
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= CFG_ADC_PER_BPM_COUNT) {
+        return -1;
+    }
+
+    // All channels are wired together
+    channel = 0;
     bytesWritten = amiAttenSet(bpm, channel, address, mdB);
 
     if (bytesWritten >= 0) {
@@ -266,6 +270,16 @@ amiPtmAttenSet(unsigned int bpm, unsigned int channel,
     const int address = 0x3;
     int bytesWritten = 0;
 
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= CFG_ADC_PER_BPM_COUNT) {
+        return -1;
+    }
+
+    // All channels are wired together
+    channel = 0;
     bytesWritten = amiAttenSet(bpm, channel, address, mdB);
 
     if (bytesWritten >= 0) {
@@ -278,21 +292,31 @@ amiPtmAttenSet(unsigned int bpm, unsigned int channel,
 unsigned int
 amiAfeAttenGet(unsigned int bpm, unsigned int channel)
 {
-    if (bpm >= CFG_DSBPM_COUNT) return 0;
-    if (channel >= CFG_ADC_PER_BPM_COUNT) return 0;
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= CFG_ADC_PER_BPM_COUNT) {
+        return -1;
+    }
+
     // All channels are wired together
     channel = 0;
-
     return amiAfeAttenuation[bpm][channel];
 }
 
 unsigned int
 amiPtmAttenGet(unsigned int bpm, unsigned int channel)
 {
-    if (bpm >= CFG_DSBPM_COUNT) return 0;
-    if (channel >= CFG_ADC_PER_BPM_COUNT) return 0;
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= CFG_ADC_PER_BPM_COUNT) {
+        return -1;
+    }
+
     // All channels are wired together
     channel = 0;
-
     return amiPtmAttenuation[bpm][channel];
 }
