@@ -18,7 +18,7 @@ void amiInit(void);
 int amiAfeGetSerialNumber(void);
 int amiAfeAttenSet(unsigned int bpm, unsigned int channel, unsigned int mdB);
 unsigned int amiAfeAttenGet(unsigned int bpm, unsigned int channel);
-int amiPtmAttenSet(unsigned int bpm, unsigned int channel, unsigned int mdB);
-unsigned int amiPtmAttenGet(unsigned int bpm, unsigned int channel);
+int amiPtmAttenSet(unsigned int bpm, unsigned int mdB);
+unsigned int amiPtmAttenGet(unsigned int bpm);
 
 #endif /* _AMI_SPI_H_ */

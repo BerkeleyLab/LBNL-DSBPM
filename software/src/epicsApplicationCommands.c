@@ -28,6 +28,8 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
     int lo = cmdp->command & DSBPM_PROTOCOL_CMD_MASK_LO;
     int idx = cmdp->command & DSBPM_PROTOCOL_CMD_MASK_IDX;
     int replyArgCount = 0;
+    unsigned int bpm = 0;
+    unsigned int dac = 0;
 
     switch (cmdp->command & DSBPM_PROTOCOL_CMD_MASK_HI) {
     case DSBPM_PROTOCOL_CMD_HI_LONGOUT:
@@ -88,8 +90,8 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_CTL:
-            unsigned int bpm = idx / CFG_DAC_PER_BPM_COUNT;
-            unsigned int dac = idx % CFG_DAC_PER_BPM_COUNT;
+            bpm = idx / CFG_DAC_PER_BPM_COUNT;
+            dac = idx % CFG_DAC_PER_BPM_COUNT;
 
             // Invalid DAC channel
             if (dac != 0)
@@ -111,6 +113,17 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_PH_GAINS:
             cgSetStaticPHGains(idx / CFG_ADC_PER_BPM_COUNT,
                     idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_PTM_ATT:
+            bpm = idx / CFG_DAC_PER_BPM_COUNT;
+            dac = idx % CFG_DAC_PER_BPM_COUNT;
+
+            // Invalid DAC channel
+            if (dac != 0)
+                return -1;
+
+            amiPtmAttenSet(bpm, cmdp->args[0]);
             break;
 
         default: return -1;

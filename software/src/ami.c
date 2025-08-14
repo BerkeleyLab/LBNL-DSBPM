@@ -75,7 +75,7 @@ static struct controller controllers[] = {
 #define NUM_CONTROLLERS ARRAY_SIZE(controllers)
 
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
-static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
+static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
 int
 amiAfeGetSerialNumber(void)
@@ -286,8 +286,7 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
 }
 
 int
-amiPtmAttenSet(unsigned int bpm, unsigned int channel,
-        unsigned int mdB)
+amiPtmAttenSet(unsigned int bpm, unsigned int mdB)
 {
     const int address = 0x3;
     int bytesWritten = 0;
@@ -296,16 +295,12 @@ amiPtmAttenSet(unsigned int bpm, unsigned int channel,
         return -1;
     }
 
-    if (channel >= CFG_ADC_PER_BPM_COUNT) {
-        return -1;
-    }
-
-    // All channels are wired together
-    channel = 0;
+    // Only a single PTM module
+    unsigned int channel = 0;
     bytesWritten = amiAttenSet(bpm, channel, address, mdB);
 
     if (bytesWritten >= 0) {
-        amiPtmAttenuation[bpm][channel] = mdB;
+        amiPtmAttenuation[bpm] = mdB;
     }
 
     return bytesWritten;
@@ -328,17 +323,11 @@ amiAfeAttenGet(unsigned int bpm, unsigned int channel)
 }
 
 unsigned int
-amiPtmAttenGet(unsigned int bpm, unsigned int channel)
+amiPtmAttenGet(unsigned int bpm)
 {
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
     }
 
-    if (channel >= CFG_ADC_PER_BPM_COUNT) {
-        return -1;
-    }
-
-    // All channels are wired together
-    channel = 0;
-    return amiPtmAttenuation[bpm][channel];
+    return amiPtmAttenuation[bpm];
 }
