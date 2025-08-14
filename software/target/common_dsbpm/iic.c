@@ -125,8 +125,10 @@ initController(struct controller *cp, int deviceId)
 
 	/*
 	 * Set the IIC serial clock rate.
+     * Use 80kHz because there might be a bug with the driver:
+     * https://adaptivesupport.amd.com/s/article/59366?language=en_US
 	 */
-	XIicPs_SetSClk(&cp->Iic, 100000);
+	XIicPs_SetSClk(&cp->Iic, 80000);
 
 }
 
