@@ -29,8 +29,9 @@ static int
 genericSPITransaction(struct genericSPI *spip, uint32_t value)
 {
     int bytes = spip->wordSize24? 3 : 2;
-    uint32_t mask = (1 << bytes*8) - 1;
-    int v = value & mask;
+    uint32_t mask = ((1 << (bytes*8)) - 1);
+    uint32_t v = value & mask;
+
     // SPI module options
     v |= (spip->wordSize24? SPI_W_24_BIT_OP: 0) |
          (spip->lsbFirst? SPI_W_LSB_FIRST: 0) |
@@ -40,8 +41,14 @@ genericSPITransaction(struct genericSPI *spip, uint32_t value)
         return -1;
     }
 
-    if (genericSPIIsBusy(spip)) {
-        return -1;
+    // Wait up to 1 ms for transaction to complete
+    int pass = 0;
+    while (genericSPIIsBusy(spip)) {
+        if (++pass >= 100) {
+            return -1;
+        }
+
+        microsecondSpin(10);
     }
 
     GPIO_WRITE(spip->gpioIdx, v);
