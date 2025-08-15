@@ -114,7 +114,7 @@ amiInit(void)
 
         data = MCP23S08_REG_ADDR << 16;
         data |= 0x00 << 8;
-        data |= 0x3F;
+        data |= 0xC0;
         ret = genericSPIWrite(&cp->spi, data);
 
         if (ret != 3) {
