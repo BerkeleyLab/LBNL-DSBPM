@@ -120,6 +120,19 @@ amiInit(void)
         if (ret != 3) {
             warn("Configure MCP23S08 %d", cp->controllerIndex);
         }
+
+        /*
+         * Configure all outputs to 1:
+         */
+
+        data = MCP23S08_REG_ADDR << 16;
+        data |= 0x09 << 8;
+        data |= 0xFF;
+        ret = genericSPIWrite(&cp->spi, data);
+
+        if (ret != 3) {
+            warn("Configure MCP23S08 %d", cp->controllerIndex);
+        }
     }
 }
 
