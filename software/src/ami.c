@@ -51,7 +51,7 @@ static struct controller controllers[] = {
     {
         .spi = {
             .gpioIdx = REG(GPIO_IDX_AMI_SPI_CSR, 0),
-            .lsbFirst = 1,
+            .lsbFirst = 0,
             .channel = 0,
             .wordSize24 = 1,
             .inProgress = 0
@@ -62,7 +62,7 @@ static struct controller controllers[] = {
     {
         .spi = {
             .gpioIdx = REG(GPIO_IDX_AMI_SPI_CSR, 1),
-            .lsbFirst = 1,
+            .lsbFirst = 0,
             .channel = 0,
             .wordSize24 = 1,
             .inProgress = 0
