@@ -33,6 +33,8 @@ assign SPI_SDI = lsbFirst ? shiftReg[0] : shiftReg[SHIFTREG_WIDTH-1];
 
 localparam BIT_COUNTER_WIDTH = $clog2(SHIFTREG_WIDTH-1);
 reg [BIT_COUNTER_WIDTH:0] bitCounter;
+wire bitCounterOdd = bitCounter[0];
+wire bitCounterEven = ~bitCounter[0];
 wire done = bitCounter[BIT_COUNTER_WIDTH];
 
 // State machine
@@ -51,8 +53,6 @@ wire [DEVSEL_WIDTH-1:0] deviceSelect = gpioOut[SHIFTREG_WIDTH+:DEVSEL_WIDTH];
 wire [SHIFTREG_WIDTH-1:0] spiData = gpioOut[0+:SHIFTREG_WIDTH];
 wire spiLargeTransfer = gpioOut[31];
 wire spiLSBFirst = gpioOut[30];
-
-wire [BIT_COUNTER_WIDTH:0] spiBitsTransfer = spiLargeTransfer? 24 : 16;
 
 always @(posedge clk) begin
     if (state == S_IDLE) begin
@@ -99,10 +99,13 @@ always @(posedge clk) begin
                 end
             end
             else begin
-                if (lsbFirst) begin
-                    shiftReg[SHIFTREG_WIDTH-1] <= SPI_SDO;
-                end else begin
-                    shiftReg[0] <= SPI_SDO;
+                // Only sample after the shift
+                if (bitCounterOdd) begin
+                    if (lsbFirst) begin
+                        shiftReg[SHIFTREG_WIDTH-1] <= SPI_SDO;
+                    end else begin
+                        shiftReg[0] <= SPI_SDO;
+                    end
                 end
             end
         end
