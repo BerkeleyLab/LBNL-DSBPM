@@ -13,6 +13,7 @@ create_clock -period 652.80 [get_ports SYSREF_FPGA_C_P]
 
 set clk_pl_0_period                   [get_property PERIOD [get_clocks clk_pl_0]]
 set clk_mgt_rx_period                 [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrClk}]]]
+set clk_mgt_tx_period                 [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrTxClk}]]]
 set clk_drp_period                    [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]]]
 set clk_adc_dac_period                [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *system_i/rfadc_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0}]]]
 
@@ -44,6 +45,9 @@ set_max_delay -datapath_only -from [get_clocks IDT_8A34001_Q11_CLK_O2] -to [get_
 # and with ASYNC_REG properties in RTL.
 set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrClk}]] $clk_mgt_rx_period
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrClk}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
+
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrTxClk}]] $clk_mgt_tx_period
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrTxClk}]] -to [get_clocks clk_pl_0] $clk_pl_0_period
 
 #########################################
 # Don't check timing across clock domains.
