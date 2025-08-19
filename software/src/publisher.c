@@ -69,7 +69,6 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->sdSyncStatus[i] = localOscGetSdSyncStatus(i);
         pk->cellCommStatus[i] = 0;
         pk->clockStatus[i] = GPIO_READ(REG(GPIO_IDX_CLOCK_STATUS, chainNumber));
-        pk->ptmAtt[i] = amiPtmAttenGet(chainNumber);
     }
     pk->clipStatus = rfADCstatus();
     for (i = 0 ; i < DSBPM_PROTOCOL_ADC_COUNT ; i++) {
@@ -98,6 +97,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         chainNumber = i / MAX_DAC_CHANNELS_PER_CHAIN;
         pk->dacCurrent[i] = rfDACGetVOPDSBPM(chainNumber, dacChannel);
         pk->dacCtl[i] = isPtGenRun(chainNumber);
+        pk->ptmAtt[i] = amiPtmAttenGet(chainNumber);
     }
 
 
