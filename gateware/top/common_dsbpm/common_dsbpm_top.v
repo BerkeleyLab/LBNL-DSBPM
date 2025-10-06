@@ -1881,25 +1881,6 @@ system
 end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
 endgenerate
 
-adcMapping #(
-    .ADC_NUM_CHANNELS(CFG_ADC_PHYSICAL_COUNT),
-    // I and Q together
-    .ADC_WIDTH(2*ADC_SAMPLE_WIDTH))
-  adcMapping (
-      .sysClk(sysClk),
-      .csrStrobe(GPIO_STROBES[GPIO_IDX_ADC_MAPPING]),
-      .GPIO_OUT(GPIO_OUT),
-      .csr(GPIO_IN[GPIO_IDX_ADC_MAPPING]),
-
-      .adcClk(adcClk),
-      // I and Q together
-      .adcPhysicalData(adcsPhysicalTDATA),
-      .adcPhysicalValid(adcsPhysicalValid),
-
-      .adcLogicalData(adcsTDATA),
-      .adcLogicalValid(adcsTVALID)
-  );
-
 generate
 if (DDR_ILA_CHIPSCOPE_DBG != "TRUE" && DDR_ILA_CHIPSCOPE_DBG != "FALSE") begin
     DDR_ILA_CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
@@ -1935,6 +1916,25 @@ end // end if
 endgenerate
 
 `endif // `ifndef SIMULATE
+
+
+adcMapping #(
+    .ADC_NUM_CHANNELS(CFG_ADC_PHYSICAL_COUNT),
+    // I and Q together
+    .ADC_WIDTH(2*ADC_SAMPLE_WIDTH))
+  adcMapping (
+    .sysClk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_ADC_MAPPING]),
+    .GPIO_OUT(GPIO_OUT),
+    .csr(GPIO_IN[GPIO_IDX_ADC_MAPPING]),
+
+    .adcClk(adcClk),
+    // I and Q together
+    .adcPhysicalData(adcsPhysicalTDATA),
+    .adcPhysicalValid(adcsPhysicalValid),
+
+    .adcLogicalData(adcsTDATA),
+    .adcLogicalValid(adcsTVALID));
 
 //
 // Create slow (SA) and fast (FA) acquistion triggers
