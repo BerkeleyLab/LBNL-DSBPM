@@ -53,8 +53,7 @@ for (i = 0; i < ADC_NUM_CHANNELS; i = i + 1) begin
 
     always @(posedge adcClk) begin
         adcLogicalData[(i+1)*ADC_WIDTH-1:i*ADC_WIDTH] <=
-            adcPhysicalData[(adcPhysicalChannel+1)*ADC_WIDTH-1:
-                             adcPhysicalChannel*ADC_WIDTH];
+            adcPhysicalData[adcPhysicalChannel*ADC_WIDTH+:ADC_WIDTH];
         adcLogicalValid[i] <=
             adcPhysicalValid[adcPhysicalChannel];
     end
