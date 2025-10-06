@@ -42,6 +42,7 @@ all: $(TARGET_VARIANT) $(TARGET_VARIANT).elf $(TARGET_VARIANT).elf.size $(BIN)
 __SRC_FILES = \
 	acqSync.c \
 	adcProcessing.c \
+	adcMapping.c \
 	afe.c \
 	ami.c \
 	autotrim.c \
@@ -84,6 +85,7 @@ SRC_FILES = $(addprefix $(SW_SRC_DIR)/, $(__SRC_FILES))
 __HDR_FILES = \
 	acqSync.h \
 	adcProcessing.h \
+	adcMapping.h \
 	afe.h \
 	ami.h \
 	autotrim.h \
