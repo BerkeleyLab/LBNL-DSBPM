@@ -35,6 +35,7 @@
 #include "positionCalc.h"
 #include "waveformRecorder.h"
 #include "cellComm.h"
+#include "adcMapping.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -156,6 +157,7 @@ main(void)
     publisherInit();
     acqSyncInit();
     evrSROCInit();
+    adcMappingInit();
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         localOscillatorInit(bpm);
