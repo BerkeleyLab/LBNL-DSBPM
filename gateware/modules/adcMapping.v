@@ -27,29 +27,29 @@ if (ADC_NUM_CHANNELS > ADC_MAX_CHANNELS) begin
 end
 endgenerate
 
-reg [31:0] sysADCMapping = 0;
-assign csr = sysADCMapping;
+reg [31:0] sysAdcMap = 0;
+assign csr = sysAdcMap;
 always @(posedge sysClk) begin
     if(csrStrobe) begin
-        sysADCMapping <= GPIO_OUT;
+        sysAdcMap <= GPIO_OUT;
     end
 end
 
-wire [31:0] adcMapping;
+wire [31:0] adcMap;
 forwardData #(
     .DATA_WIDTH(32))
   forwardData(
     .inClk(sysClk),
-    .inData(sysADCMapping),
+    .inData(sysAdcMap),
     .outClk(adcClk),
-    .outData(adcMapping));
+    .outData(adcMap));
 
 genvar i;
 generate
 for (i = 0; i < ADC_NUM_CHANNELS; i = i + 1) begin
 
     wire [ADC_OPERAND_WIDTH-1:0] adcPhysicalChannel =
-        adcMapping[(i+1)*ADC_OPERAND_WIDTH-1:i*ADC_OPERAND_WIDTH];
+        adcMap[(i+1)*ADC_OPERAND_WIDTH-1:i*ADC_OPERAND_WIDTH];
 
     always @(posedge adcClk) begin
         adcLogicalData[(i+1)*ADC_WIDTH-1:i*ADC_WIDTH] <=
