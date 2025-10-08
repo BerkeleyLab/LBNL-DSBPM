@@ -77,6 +77,20 @@ static struct controller controllers[] = {
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
 static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
+static struct {
+    int     deviceIndex;
+    int     ampsPerVolt; /* 1/Rshunt */
+    const char *name;
+} const psInfo[] = {
+    { AMI_SPI_INDEX_AFE_0,              0,         "AFE_0"          },
+    { AMI_SPI_INDEX_AFE_1,              0,         "AFE_1"          },
+    { AMI_SPI_INDEX_AFE_2,              0,         "AFE_2"          },
+    { AMI_SPI_INDEX_AFE_3,              0,         "AFE_3"          },
+    { AMI_SPI_INDEX_PTM_0,              0,         "PTM_0"          },
+};
+
+#define NUM_SENSORS ARRAY_SIZE(psInfo)
+
 int
 amiAfeGetSerialNumber(void)
 {
@@ -140,7 +154,7 @@ amiInit(void)
  * Set multiplexers
  */
 static int
-amiMcp23s08(struct controller *cp, unsigned int muxPort)
+amiSetMcp23s08(struct controller *cp, unsigned int muxPort)
 {
     uint32_t data = 0;
 
@@ -171,7 +185,7 @@ amiSetMux(struct controller *cp, unsigned int muxPort)
         muxPort = ~(1 << muxPort) & 0xFF;
     }
 
-    bytesWritten = amiMcp23s08(cp, muxPort);
+    bytesWritten = amiSetMcp23s08(cp, muxPort);
 
     if (bytesWritten == 3) {
         cp->muxPort = muxPort;
@@ -222,7 +236,7 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
 
 static int
 amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
-        uint32_t data)
+        uint32_t data, uint32_t *buf)
 {
     const struct deviceInfo *dp;
     struct controller *cp;
@@ -246,7 +260,7 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
      * Only the mux is on channel 0. Everything is on channel 1
      */
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, 1);
-    return genericSPIRead(&cp->spi, data);
+    return genericSPIRead(&cp->spi, data, buf);
 }
 
 /*
@@ -319,6 +333,9 @@ amiPtmAttenSet(unsigned int bpm, unsigned int mdB)
     return bytesWritten;
 }
 
+/*
+ * Get attenuators
+ */
 unsigned int
 amiAfeAttenGet(unsigned int bpm, unsigned int channel)
 {
@@ -343,4 +360,108 @@ amiPtmAttenGet(unsigned int bpm)
     }
 
     return amiPtmAttenuation[bpm];
+}
+
+/*
+ * Get INA239 values
+ */
+static int
+amiGetIna239(unsigned int controllerIndex, unsigned int deviceIndex,
+        int address, uint32_t *buf)
+{
+    // SPI data: 6-bit reg address | 1b0 | 1b1 (read op) | 16-bit data (0)
+    int v = 0x0000;
+    v |= ((address & 0x3F) << 2 | 0x01) << 16;
+
+    return amiSPIRead(controllerIndex, deviceIndex, v, buf);
+}
+
+static int
+amiGetIna239MfrId(unsigned int controllerIndex, unsigned int deviceIndex)
+{
+    uint32_t buf = 0;
+    int status = 0;
+
+    status = amiGetIna239(controllerIndex, deviceIndex, 0x3E, &buf);
+    if (status < 0) {
+        return status;
+    }
+
+    return buf;
+}
+
+int
+amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
+{
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= NUM_SENSORS) {
+        return -1;
+    }
+
+    return amiGetIna239MfrId(bpm, psInfo[channel].deviceIndex);
+}
+
+static int
+amiGetIna239DevId(unsigned int controllerIndex, unsigned int deviceIndex)
+{
+    uint32_t buf = 0;
+    int status = 0;
+
+    status = amiGetIna239(controllerIndex, deviceIndex, 0x3F, &buf);
+    if (status < 0) {
+        return status;
+    }
+
+    return buf;
+}
+
+int
+amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
+{
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return -1;
+    }
+
+    if (channel >= NUM_SENSORS) {
+        return -1;
+    }
+
+    return amiGetIna239DevId(bpm, psInfo[channel].deviceIndex);
+}
+
+void amiPSinfoDisplay(unsigned int bpm)
+{
+    unsigned int channel = 0;
+    int value = 0;
+
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return;
+    }
+
+    printf("BPM%u:\n", bpm);
+
+    for (channel = 0 ; channel < NUM_SENSORS; channel++) {
+        printf("  PS%u %s:\n", channel, psInfo[channel].name);
+
+        value = amiIna239MfrIdGet(bpm, channel);
+        printf("    MFR ID: ");
+        if (value < 0) {
+            printf("Could not read\n");
+        }
+        else {
+            printf("0x%04X\n", value);
+        }
+
+        value = amiIna239DevIdGet(bpm, channel);
+        printf("    Device ID: ");
+        if (value < 0) {
+            printf("Could not read\n");
+        }
+        else {
+            printf("0x%04X\n", value);
+        }
+    }
 }

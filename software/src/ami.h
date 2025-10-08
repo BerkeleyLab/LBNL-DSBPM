@@ -21,4 +21,8 @@ unsigned int amiAfeAttenGet(unsigned int bpm, unsigned int channel);
 int amiPtmAttenSet(unsigned int bpm, unsigned int mdB);
 unsigned int amiPtmAttenGet(unsigned int bpm);
 
+int amiIna239MfrIdGet(unsigned int bpm, unsigned int channel);
+int amiIna239DevIdGet(unsigned int bpm, unsigned int channel);
+void amiPSinfoDisplay();
+
 #endif /* _AMI_SPI_H_ */
