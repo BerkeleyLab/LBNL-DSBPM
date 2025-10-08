@@ -167,6 +167,13 @@ main(void)
     }
 
     /*
+     * Test AFE module communication
+     */
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
+
+    /*
      * Main processing loop
      */
     printf("DFE serial number: %03d\n", serialNumberDFE());
