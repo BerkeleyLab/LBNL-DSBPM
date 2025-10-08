@@ -29,9 +29,9 @@ void genericSPISetOptions(struct genericSPI *spip, int wordSize24,
         int lsbFirst, int channel);
 int genericSPIIsBusy(struct genericSPI* spip);
 int genericSPIWrite(struct genericSPI* spip, uint32_t value);
-int genericSPIRead(struct genericSPI* spip, uint32_t value);
+int genericSPIRead(struct genericSPI* spip, uint32_t value, uint32_t *buf);
 
 int genericSPIReadAsync(struct genericSPI* spip, uint32_t value);
-int genericSPITryRead(struct genericSPI* spip, uint32_t value);
+int genericSPITryRead(struct genericSPI* spip, uint32_t *buf);
 
 #endif /* _AFE_SPI_H_ */

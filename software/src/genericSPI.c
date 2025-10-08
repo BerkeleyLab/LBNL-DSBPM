@@ -26,21 +26,8 @@ genericSPISetOptions(struct genericSPI *spip, int wordSize24,
 }
 
 static int
-genericSPITransaction(struct genericSPI *spip, uint32_t value)
+genericSPIBusyWait(struct genericSPI *spip)
 {
-    int bytes = spip->wordSize24? 3 : 2;
-    uint32_t mask = ((1 << (bytes*8)) - 1);
-    uint32_t v = value & mask;
-
-    // SPI module options
-    v |= (spip->wordSize24? SPI_W_24_BIT_OP: 0) |
-         (spip->lsbFirst? SPI_W_LSB_FIRST: 0) |
-         ((spip->channel << SPI_DEVSEL_SHIFT) & SPI_DEVSEL_MASK);
-
-    if (spip->inProgress) {
-        return -1;
-    }
-
     // Wait up to 1 ms for transaction to complete
     int pass = 0;
     while (genericSPIIsBusy(spip)) {
@@ -50,6 +37,25 @@ genericSPITransaction(struct genericSPI *spip, uint32_t value)
 
         microsecondSpin(10);
     }
+
+    return 0;
+}
+
+static int
+genericSPITransaction(struct genericSPI *spip, uint32_t value)
+{
+    int bytes = spip->wordSize24? 3 : 2;
+    uint32_t mask = ((1 << (bytes*8)) - 1);
+    uint32_t v = value & mask;
+
+    if (spip->inProgress) {
+        return -1;
+    }
+
+    // SPI module options
+    v |= (spip->wordSize24? SPI_W_24_BIT_OP: 0) |
+         (spip->lsbFirst? SPI_W_LSB_FIRST: 0) |
+         ((spip->channel << SPI_DEVSEL_SHIFT) & SPI_DEVSEL_MASK);
 
     GPIO_WRITE(spip->gpioIdx, v);
     return 0;
@@ -58,8 +64,16 @@ genericSPITransaction(struct genericSPI *spip, uint32_t value)
 int
 genericSPIWrite(struct genericSPI* spip, uint32_t value)
 {
-    if (genericSPITransaction(spip, value) < 0) {
-        return -1;
+    int status = 0;
+
+    status = genericSPIBusyWait(spip);
+    if (status < 0) {
+        return status;
+    }
+
+    status = genericSPITransaction(spip, value);
+    if (status < 0) {
+        return status;
     }
 
     // Number of bytes written
@@ -67,30 +81,44 @@ genericSPIWrite(struct genericSPI* spip, uint32_t value)
 }
 
 int
-genericSPIRead(struct genericSPI* spip, uint32_t value)
+genericSPIRead(struct genericSPI* spip, uint32_t value, uint32_t *buf)
 {
-    if (genericSPITransaction(spip, value) < 0) {
-        return -1;
+    int status = 0;
+
+    status = genericSPIBusyWait(spip);
+    if (status < 0) {
+        return status;
     }
 
-    // Wait up to 1 ms for transaction to complete
-    int pass = 0;
-    while (genericSPIIsBusy(spip)) {
-        if (++pass >= 100) {
-            return -1;
-        }
-
-        microsecondSpin(10);
+    status = genericSPITransaction(spip, value);
+    if (status < 0) {
+        return status;
     }
 
-    return GPIO_READ(spip->gpioIdx) & 0x00FFFFFF;
+    status = genericSPIBusyWait(spip);
+    if (status < 0) {
+        return status;
+    }
+
+    *buf = GPIO_READ(spip->gpioIdx) & 0x00FFFFFF;
+
+    // Number of bytes read
+    return spip->wordSize24? 3 : 2;
 }
 
 int
 genericSPIReadAsync(struct genericSPI* spip, uint32_t value)
 {
-    if (genericSPITransaction(spip, value) < 0) {
-        return -1;
+    int status = 0;
+
+    status = genericSPIBusyWait(spip);
+    if (status < 0) {
+        return status;
+    }
+
+    status = genericSPITransaction(spip, value);
+    if (status < 0) {
+        return status;
     }
 
     spip->inProgress = 1;
@@ -99,7 +127,7 @@ genericSPIReadAsync(struct genericSPI* spip, uint32_t value)
 }
 
 int
-genericSPITryRead(struct genericSPI* spip, uint32_t value)
+genericSPITryRead(struct genericSPI* spip, uint32_t *buf)
 {
     if (genericSPIIsBusy(spip)) {
         return -1;
@@ -107,5 +135,8 @@ genericSPITryRead(struct genericSPI* spip, uint32_t value)
 
     spip->inProgress = 0;
 
-    return GPIO_READ(spip->gpioIdx) & 0x00FFFFFF;
+    *buf = GPIO_READ(spip->gpioIdx) & 0x00FFFFFF;
+
+    // Number of bytes read
+    return spip->wordSize24? 3 : 2;
 }
