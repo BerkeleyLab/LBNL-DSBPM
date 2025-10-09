@@ -28,13 +28,12 @@ wire tick = tickCounter[TICK_COUNTER_WIDTH-1];
 
 localparam SHIFTREG_WIDTH = 24;
 reg [SHIFTREG_WIDTH-1:0] shiftReg;
+reg sampleStart = 0;
 reg lsbFirst = 0;
 assign SPI_SDI = lsbFirst ? shiftReg[0] : shiftReg[SHIFTREG_WIDTH-1];
 
 localparam BIT_COUNTER_WIDTH = $clog2(SHIFTREG_WIDTH-1);
 reg [BIT_COUNTER_WIDTH:0] bitCounter;
-wire bitCounterOdd = bitCounter[0];
-wire bitCounterEven = ~bitCounter[0];
 wire done = bitCounter[BIT_COUNTER_WIDTH];
 
 // State machine
@@ -66,6 +65,7 @@ always @(posedge clk) begin
                 (!spiLSBFirst) ? {spiData[0+:SHIFTREG_WIDTH-8], 8'h00} :
                                {8'h00, spiData[0+:SHIFTREG_WIDTH-8]};
             bitCounter <= spiLargeTransfer? 24 - 2 : 16 - 2;
+            sampleStart <= 0;
             lsbFirst <= spiLSBFirst;
             SPI_CSB[deviceSelect] <= 0;
             SPI_LE[deviceSelect] <= 0;
@@ -85,6 +85,7 @@ always @(posedge clk) begin
             SPI_CLK <= !SPI_CLK;
             if (SPI_CLK) begin
                 bitCounter <= bitCounter - 1;
+                sampleStart <= 1;
                 if (done) begin
                     state <= S_CSB_LE;
                 end
@@ -100,7 +101,7 @@ always @(posedge clk) begin
             end
             else begin
                 // Only sample after the shift
-                if (bitCounterOdd) begin
+                if (sampleStart) begin
                     if (lsbFirst) begin
                         shiftReg[SHIFTREG_WIDTH-1] <= SPI_SDO;
                     end else begin
