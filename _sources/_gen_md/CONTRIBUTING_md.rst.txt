@@ -1,0 +1,8 @@
+.. _CONTRIBUTING:
+
+------------
+ CONTRIBUTING
+------------
+
+.. mdinclude:: /home/runner/work/LBNL-DSBPM/LBNL-DSBPM/CONTRIBUTING.md
+
