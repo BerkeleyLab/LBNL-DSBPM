@@ -14,7 +14,7 @@ module genericSPI #(
     input               [31:0] gpioOut,
     output wire         [31:0] status,
 
-    (*mark_debug=DEBUG*) output reg                 SPI_CLK = 0,
+    (*mark_debug=DEBUG*) output                     SPI_CLK,
     (*mark_debug=DEBUG*) output reg [CSB_WIDTH-1:0] SPI_CSB = {CSB_WIDTH{1'b1}},
     (*mark_debug=DEBUG*) output reg [LE_WIDTH-1:0]  SPI_LE = {LE_WIDTH{1'b0}},
     (*mark_debug=DEBUG*) output wire                SPI_SDI,
@@ -28,13 +28,18 @@ wire tick = tickCounter[TICK_COUNTER_WIDTH-1];
 
 localparam SHIFTREG_WIDTH = 24;
 reg [SHIFTREG_WIDTH-1:0] shiftReg;
-reg sampleStart = 0;
-reg lsbFirst = 0;
+reg spiClk_r = 0;
+reg sampleStart = 0, spiClkFirst = 0;
+reg lsbFirst = 0, cpha = 0, cpol = 0;
 assign SPI_SDI = lsbFirst ? shiftReg[0] : shiftReg[SHIFTREG_WIDTH-1];
 
 localparam BIT_COUNTER_WIDTH = $clog2(SHIFTREG_WIDTH-1);
 reg [BIT_COUNTER_WIDTH:0] bitCounter;
 wire done = bitCounter[BIT_COUNTER_WIDTH];
+
+wire bitCounterNoMax = bitCounter[0];
+
+wire spiClk_active = (cpha == 0)? spiClk_r : !spiClk_r & spiClkFirst;
 
 // State machine
 localparam S_IDLE     = 0,
@@ -48,14 +53,24 @@ assign status = { busy, {32-1-SHIFTREG_WIDTH{1'b0}}, shiftReg };
 
 localparam DEVSEL_WIDTH = CSB_WIDTH > 1 ? $clog2(CSB_WIDTH) : 1;
 
+generate
+if (DEVSEL_WIDTH > 4) begin
+    ERROR_DEVSEL_WIDTH_bigger_than_4_unsupported();
+end
+endgenerate
+
 wire [DEVSEL_WIDTH-1:0] deviceSelect = gpioOut[SHIFTREG_WIDTH+:DEVSEL_WIDTH];
 wire [SHIFTREG_WIDTH-1:0] spiData = gpioOut[0+:SHIFTREG_WIDTH];
 wire spiLargeTransfer = gpioOut[31];
 wire spiLSBFirst = gpioOut[30];
+wire spiCPOL = gpioOut[29];
+wire spiCPHA = gpioOut[28];
 
 always @(posedge clk) begin
     if (state == S_IDLE) begin
         tickCounter <= TICK_COUNTER_RELOAD;
+        spiClk_r <= 0;
+        spiClkFirst <= 0;
         if (csrStrobe) begin
             busy <= 1;
             // full 24-bit transfer, all good
@@ -67,6 +82,8 @@ always @(posedge clk) begin
             bitCounter <= spiLargeTransfer? 24 - 2 : 16 - 2;
             sampleStart <= 0;
             lsbFirst <= spiLSBFirst;
+            cpha <= spiCPHA;
+            cpol <= spiCPOL;
             SPI_CSB[deviceSelect] <= 0;
             SPI_LE[deviceSelect] <= 0;
             state <= S_TRANSFER;
@@ -74,7 +91,6 @@ always @(posedge clk) begin
         else begin
             SPI_CSB <= {CSB_WIDTH{1'b1}};
             SPI_LE <= 0;
-            SPI_CLK <= 0;
             busy <= 0;
         end
     end
@@ -82,8 +98,9 @@ always @(posedge clk) begin
         case (state)
         S_TRANSFER: begin
             tickCounter <= TICK_COUNTER_RELOAD;
-            SPI_CLK <= !SPI_CLK;
-            if (SPI_CLK) begin
+            spiClk_r <= !spiClk_r;
+            spiClkFirst <= 1;
+            if (spiClk_active) begin
                 bitCounter <= bitCounter - 1;
                 sampleStart <= 1;
                 if (done) begin
@@ -132,5 +149,7 @@ always @(posedge clk) begin
         tickCounter <= tickCounter - 1;
     end
 end
+
+assign SPI_CLK = (cpol == 0)? spiClk_r : !spiClk_r;
 
 endmodule
