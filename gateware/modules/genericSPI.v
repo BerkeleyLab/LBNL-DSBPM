@@ -103,7 +103,11 @@ always @(posedge clk) begin
                 // Only sample after the shift
                 if (sampleStart) begin
                     if (lsbFirst) begin
-                        shiftReg[SHIFTREG_WIDTH-1] <= SPI_SDO;
+                        if (spiLargeTransfer) begin
+                            shiftReg[SHIFTREG_WIDTH-1] <= SPI_SDO;
+                        end else begin
+                            shiftReg[SHIFTREG_WIDTH-8-1] <= SPI_SDO;
+                        end
                     end else begin
                         shiftReg[0] <= SPI_SDO;
                     end
