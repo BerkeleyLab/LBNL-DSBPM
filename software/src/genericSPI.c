@@ -18,11 +18,13 @@ genericSPIIsBusy(struct genericSPI* spip)
 
 void
 genericSPISetOptions(struct genericSPI *spip, int wordSize24,
-        int lsbFirst, int channel)
+        int lsbFirst, int cpol, int cpha, int channel)
 {
     spip->lsbFirst = lsbFirst;
-    spip->channel = channel;
     spip->wordSize24 = wordSize24;
+    spip->cpol = cpol;
+    spip->cpha = cpha;
+    spip->channel = channel;
 }
 
 static int
@@ -55,6 +57,8 @@ genericSPITransaction(struct genericSPI *spip, uint32_t value)
     // SPI module options
     v |= (spip->wordSize24? SPI_W_24_BIT_OP: 0) |
          (spip->lsbFirst? SPI_W_LSB_FIRST: 0) |
+         (spip->cpol? SPI_W_CPOL: 0) |
+         (spip->cpha? SPI_W_CPHA: 0) |
          ((spip->channel << SPI_DEVSEL_SHIFT) & SPI_DEVSEL_MASK);
 
     GPIO_WRITE(spip->gpioIdx, v);

@@ -14,6 +14,8 @@
 
 #define SPI_W_24_BIT_OP     0x80000000
 #define SPI_W_LSB_FIRST     0x40000000
+#define SPI_W_CPOL          0x20000000
+#define SPI_W_CPHA          0x10000000
 
 #define SPI_R_BUSY          0x80000000
 
@@ -22,11 +24,13 @@ struct genericSPI {
     uint8_t lsbFirst;
     uint8_t channel;
     uint8_t wordSize24;
+    uint8_t cpol;
+    uint8_t cpha;
     uint8_t inProgress;
 };
 
 void genericSPISetOptions(struct genericSPI *spip, int wordSize24,
-        int lsbFirst, int channel);
+        int lsbFirst, int cpol, int cpha, int channel);
 int genericSPIIsBusy(struct genericSPI* spip);
 int genericSPIWrite(struct genericSPI* spip, uint32_t value);
 int genericSPIRead(struct genericSPI* spip, uint32_t value, uint32_t *buf);
