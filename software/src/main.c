@@ -132,6 +132,13 @@ main(void)
     rfDACrestart();
     rfDCsync();
 
+    /*
+     * Test AFE module communication
+     */
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
+
     /* Start network */
     lwip_init();
     printf("Network:\n");
@@ -164,13 +171,6 @@ main(void)
         ptGenInit(bpm);
         positionCalcInit(bpm);
         wfrInit(bpm);
-    }
-
-    /*
-     * Test AFE module communication
-     */
-    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm);
     }
 
     /*
