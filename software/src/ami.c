@@ -24,19 +24,27 @@
 #define MUXPORT_UNKNOWN 127
 #define MUXPORT_NONE    126
 
+#define DEVINFO_CPOL_NORMAL   0
+#define DEVINFO_CPOL_INV      1
+
+#define DEVINFO_CPHA_NORMAL   0
+#define DEVINFO_CPHA_DLY      1
+
 struct deviceInfo {
     uint8_t muxPort;
     uint8_t lsbFirst;
     uint8_t wordSize24;
+    uint8_t cpol;
+    uint8_t cpha;
 };
 
 static const struct deviceInfo deviceTable[] = {
-    { 0,    1,    0 }, // AMI_SPI_INDEX_AFE_ATT_ALL
-    { 1,    0,    1 }, // AMI_SPI_INDEX_AFE_0
-    { 2,    0,    1 }, // AMI_SPI_INDEX_AFE_1
-    { 3,    0,    1 }, // AMI_SPI_INDEX_AFE_2
-    { 4,    0,    1 }, // AMI_SPI_INDEX_AFE_3
-    { 5,    0,    1 }, // AMI_SPI_INDEX_PTM_0
+    { 0,    1,    0,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_NORMAL}, // AMI_SPI_INDEX_AFE_ATT_ALL
+    { 1,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_0
+    { 2,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_1
+    { 3,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_2
+    { 4,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_3
+    { 5,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_PTM_0
 };
 
 #define NUM_DEVICES ARRAY_SIZE(deviceTable)
@@ -54,6 +62,8 @@ static struct controller controllers[] = {
             .lsbFirst = 0,
             .channel = 0,
             .wordSize24 = 1,
+            .cpol = DEVINFO_CPOL_NORMAL,
+            .cpha = DEVINFO_CPHA_NORMAL,
             .inProgress = 0
         },
         .controllerIndex = 0,
@@ -65,6 +75,8 @@ static struct controller controllers[] = {
             .lsbFirst = 0,
             .channel = 0,
             .wordSize24 = 1,
+            .cpol = DEVINFO_CPOL_NORMAL,
+            .cpha = DEVINFO_CPHA_NORMAL,
             .inProgress = 0
         },
         .controllerIndex = 1,
@@ -118,7 +130,8 @@ amiInit(void)
      * CSB 0
      */
     for (cp = controllers; cp < &controllers[NUM_CONTROLLERS]; ++cp) {
-        genericSPISetOptions(&cp->spi, 1, 0, 0);
+        genericSPISetOptions(&cp->spi, 1, 0, DEVINFO_CPOL_NORMAL,
+                DEVINFO_CPHA_NORMAL, 0);
 
         /*
          * Configure IODIR:
@@ -163,7 +176,8 @@ amiSetMcp23s08(struct controller *cp, unsigned int muxPort)
      * MSB first
      * CSB 0
      */
-    genericSPISetOptions(&cp->spi, 1, 0, 0);
+    genericSPISetOptions(&cp->spi, 1, 0, DEVINFO_CPOL_NORMAL,
+            DEVINFO_CPHA_NORMAL, 0);
 
     data = MCP23S08_REG_ADDR << 16;
     data |= 0x09 << 8;
@@ -224,7 +238,8 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
     /*
      * Only the mux is on channel 0. Everything is on channel 1
      */
-    genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, 1);
+    genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
+            dp->cpha, 1);
     bytesWritten = genericSPIWrite(&cp->spi, data);
 
     if (amiSetMux(cp, MUXPORT_NONE) < 0) {
@@ -259,7 +274,8 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
     /*
      * Only the mux is on channel 0. Everything is on channel 1
      */
-    genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, 1);
+    genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
+            dp->cpha, 1);
     return genericSPIRead(&cp->spi, data, buf);
 }
 
