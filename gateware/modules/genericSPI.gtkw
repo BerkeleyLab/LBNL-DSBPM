@@ -1,30 +1,48 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Fri Mar  1 21:43:18 2024
+[*] Fri Oct 10 00:14:11 2025
 [*]
 [dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericSPI.vcd"
-[dumpfile_mtime] "Fri Mar  1 21:00:37 2024"
-[dumpfile_size] 36947
+[dumpfile_mtime] "Fri Oct 10 00:09:03 2025"
+[dumpfile_size] 25046
 [savefile] "/home/lrusso/repos/dsbpm/gateware/modules/genericSPI.gtkw"
 [timestart] 0
-[size] 1723 937
-[pos] -200 -332
-*-9.000000 65 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1576 997
+[pos] -1715 -284
+*-9.000000 105 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] genericSPI_tb.
 [sst_width] 214
 [signals_width] 288
 [sst_expanded] 1
-[sst_vpaned_height] 270
+[sst_vpaned_height] 291
 @22
 genericSPI_tb.GPIO_OUT[31:0]
 @28
 genericSPI_tb.GPIO_STROBES
 genericSPI_tb.SPI_CLK
-@22
+@c00022
 genericSPI_tb.SPI_CSB[3:0]
+@28
+(0)genericSPI_tb.SPI_CSB[3:0]
+(1)genericSPI_tb.SPI_CSB[3:0]
+(2)genericSPI_tb.SPI_CSB[3:0]
+(3)genericSPI_tb.SPI_CSB[3:0]
+@1401200
+-group_end
+@22
 genericSPI_tb.SPI_LE[3:0]
 @28
 genericSPI_tb.SPI_SDI
+genericSPI_tb.SPI_SDO
+genericSPI_tb.SPI_CLK
+@22
+genericSPI_tb.SPI_SDO_r[15:0]
+@28
+genericSPI_tb.SPI_CLK_re
+genericSPI_tb.SPI_CLK_fe
+genericSPI_tb.spiClkFirst
+@29
+genericSPI_tb.SPI_CLK_tick
 @420
 genericSPI_tb.cc
 @28
@@ -36,7 +54,8 @@ genericSPI_tb.data[15:0]
 genericSPI_tb.errors
 @28
 genericSPI_tb.module_done
-genericSPI_tb.module_ready
+genericSPI_tb.cpol
+genericSPI_tb.cpha
 @200
 -
 @28
@@ -47,7 +66,13 @@ genericSPI_tb.genericSPI.SPI_LE[3:0]
 @28
 genericSPI_tb.genericSPI.SPI_SDI
 genericSPI_tb.genericSPI.SPI_SDO
-@22
+genericSPI_tb.genericSPI.cpol
+genericSPI_tb.genericSPI.cpha
+genericSPI_tb.genericSPI.lsbFirst
+genericSPI_tb.genericSPI.spiClkFirst
+genericSPI_tb.genericSPI.spiClk_active
+genericSPI_tb.genericSPI.spiClk_r
+@24
 genericSPI_tb.genericSPI.bitCounter[5:0]
 @28
 genericSPI_tb.genericSPI.busy
@@ -58,7 +83,7 @@ genericSPI_tb.genericSPI.lsbFirst
 genericSPI_tb.genericSPI.done
 @22
 genericSPI_tb.genericSPI.gpioOut[31:0]
-@c00023
+@c00022
 genericSPI_tb.genericSPI.shiftReg[23:0]
 @28
 (0)genericSPI_tb.genericSPI.shiftReg[23:0]
@@ -85,7 +110,7 @@ genericSPI_tb.genericSPI.shiftReg[23:0]
 (21)genericSPI_tb.genericSPI.shiftReg[23:0]
 (22)genericSPI_tb.genericSPI.shiftReg[23:0]
 (23)genericSPI_tb.genericSPI.shiftReg[23:0]
-@1401201
+@1401200
 -group_end
 @28
 genericSPI_tb.genericSPI.state[1:0]

@@ -23,6 +23,8 @@ localparam WR_W_CSR_DEVSEL_MASK              = 'h0F000000;
 
 localparam WR_W_CSR_24_BIT_OP                = 'h80000000;
 localparam WR_W_CSR_LSB_FIRST                = 'h40000000;
+localparam WR_W_CSR_CPOL                     = 'h20000000;
+localparam WR_W_CSR_CPHA                     = 'h10000000;
 
 //
 // Read CSR fields
@@ -30,7 +32,6 @@ localparam WR_W_CSR_LSB_FIRST                = 'h40000000;
 localparam WR_R_CSR_BUSY                     = 'h80000000;
 
 reg module_done = 0;
-reg module_ready = 0;
 integer errors = 0;
 initial begin
     if ($test$plusargs("vcd")) begin
@@ -83,6 +84,12 @@ wire                 SPI_CLK;
 wire [CSB_WIDTH-1:0] SPI_CSB;
 wire [LE_WIDTH-1:0]  SPI_LE;
 wire                 SPI_SDI;
+wire                 SPI_SDO;
+reg [15:0]           SPI_SDO_r = 0;
+reg                  lsbFirst = 0, largeTransfer = 0;
+reg                  cpol = 0, cpha = 0;
+
+localparam SPI_PERIPH_REG_DATA = 16'h55AA;
 
 genericSPI #(
     .CLK_RATE(CLK_RATE),
@@ -98,7 +105,7 @@ genericSPI #(
     .SPI_CSB(SPI_CSB),
     .SPI_LE(SPI_LE),
     .SPI_SDI(SPI_SDI),
-    .SPI_SDO(1'b0)
+    .SPI_SDO(SPI_SDO)
 );
 
 // set-up module
@@ -108,20 +115,84 @@ initial begin
     wait(CSR0.ready);
     @(posedge clk);
 
+    // Test 1
     // 8-bit address, 8-bit data
     data = 'h07 << 8 | 'hAA;
-    CSR0.write32(WR_REG_OFFSET_CSR, WR_W_CSR_LSB_FIRST |
+    lsbFirst = 1;
+    largeTransfer = 0;
+    cpol = 0;
+    cpha = 0;
+    CSR0.write32(WR_REG_OFFSET_CSR, (largeTransfer? WR_W_CSR_24_BIT_OP : 0) |
+                                    (lsbFirst? WR_W_CSR_LSB_FIRST : 0) |
+                                    (cpol? WR_W_CSR_CPOL : 0) |
+                                    (cpha? WR_W_CSR_CPHA : 0) |
                                     (0 << WR_W_CSR_DEVSEL_SHIFT) |
                                     data);
-    @(posedge clk);
-
-    module_ready = 1;
-    @(posedge clk);
-
-    repeat(1000) begin
+    repeat(200) begin
         @(posedge clk);
     end
+
+    // Test 2
+    // 8-bit address, 8-bit data
+    data = 'h07 << 8 | 'hAA;
+    lsbFirst = 1;
+    largeTransfer = 0;
+    cpol = 0;
+    cpha = 1;
+    CSR0.write32(WR_REG_OFFSET_CSR, (largeTransfer? WR_W_CSR_24_BIT_OP : 0) |
+                                    (lsbFirst? WR_W_CSR_LSB_FIRST : 0) |
+                                    (cpol? WR_W_CSR_CPOL : 0) |
+                                    (cpha? WR_W_CSR_CPHA : 0) |
+                                    (0 << WR_W_CSR_DEVSEL_SHIFT) |
+                                    data);
+    repeat(200) begin
+        @(posedge clk);
+    end
+
     module_done = 1;
 end
+
+// Peripheral
+reg SPI_CLK_d = 0;
+reg spiClkFirst = 0;
+wire SPI_CLK_re = SPI_CLK & ~SPI_CLK_d;
+wire SPI_CLK_fe = ~SPI_CLK & SPI_CLK_d;
+wire SPI_CLK_tick = cpol == 0? SPI_CLK_re : SPI_CLK_fe;
+always @(posedge clk) begin
+    SPI_CLK_d <= SPI_CLK;
+
+    if (SPI_CSB[0]) begin
+        spiClkFirst <= 1;
+    end else begin
+        if (cpha == 1) begin
+            if (SPI_CLK_tick) begin
+                if (spiClkFirst) begin
+                    SPI_SDO_r <= SPI_PERIPH_REG_DATA;
+                    spiClkFirst <= 0;
+                end else begin
+                    if (lsbFirst) begin
+                        SPI_SDO_r[0+:15] <= SPI_SDO_r[1+:15];
+                    end else begin
+                        SPI_SDO_r[1+:15] <= SPI_SDO_r[0+:15];
+                    end
+                end
+            end
+        end else begin
+            if (spiClkFirst) begin
+                SPI_SDO_r <= SPI_PERIPH_REG_DATA;
+                spiClkFirst <= 0;
+            end else if (SPI_CLK_tick) begin
+                spiClkFirst <= 0;
+                if (lsbFirst) begin
+                    SPI_SDO_r[0+:15] <= SPI_SDO_r[1+:15];
+                end else begin
+                    SPI_SDO_r[1+:15] <= SPI_SDO_r[0+:15];
+                end
+            end
+        end
+    end
+end
+
+assign SPI_SDO = lsbFirst? SPI_SDO_r[0] : SPI_SDO_r[15];
 
 endmodule

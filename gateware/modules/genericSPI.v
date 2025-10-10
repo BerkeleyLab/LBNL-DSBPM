@@ -82,8 +82,8 @@ always @(posedge clk) begin
             bitCounter <= spiLargeTransfer? 24 - 2 : 16 - 2;
             sampleStart <= 0;
             lsbFirst <= spiLSBFirst;
-            cpha <= spiCPHA;
             cpol <= spiCPOL;
+            cpha <= spiCPHA;
             SPI_CSB[deviceSelect] <= 0;
             SPI_LE[deviceSelect] <= 0;
             state <= S_TRANSFER;
