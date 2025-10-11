@@ -428,8 +428,6 @@ amiGetIna239Reading(unsigned int controllerIndex, unsigned int deviceIndex,
     status = amiGetIna239(controllerIndex, deviceIndex,
             ina239RegMap[type].addr, buf);
 
-    microsecondSpin(100*10);
-
     if (status < 0) {
         return status;
     }
