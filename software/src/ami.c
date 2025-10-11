@@ -539,6 +539,7 @@ fetchTemp(unsigned int controllerIndex, unsigned int channel,
 {
     int status = 0;
     uint32_t tbuf;
+    int temp = 0;
 
     if (channel >= NUM_SENSORS) {
         return -1;
@@ -551,8 +552,16 @@ fetchTemp(unsigned int controllerIndex, unsigned int channel,
         return status;
     }
 
+    // 4 LSB are reserved
+    tbuf >>= 4;
+
+    temp = tbuf;
+    if (temp & 0x8000) {
+        temp -= 0x10000;
+    }
+
     // 125 mC / LSB
-    *tp = tbuf / 8;
+    *tp = temp / 8.0;
 
     return 0;
 }
