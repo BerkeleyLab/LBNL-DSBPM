@@ -9,6 +9,7 @@
 #include <lwip/udp.h>
 #include <xparameters.h>
 #include <xuartps_hw.h>
+#include "ami.h"
 #include "afe.h"
 #include "cellComm.h"
 #include "display.h"
@@ -401,6 +402,13 @@ cmdSYSMON(int argc, char **argv)
 }
 
 static int
+cmdAMIMON(int argc, char **argv)
+{
+    amiPSinfoDisplay();
+    return 0;
+}
+
+static int
 cmdREG(int argc, char **argv)
 {
     char *endp;
@@ -562,6 +570,7 @@ static struct commandInfo commandTable[] = {
   { "tlog",   cmdTLOG,  "Timing system event logger"         },
   { "userMGT",cmdUMGT,  "User MGT reference clock adjustment"},
   { "values", cmdSYSMON,"Show system monitor values"         },
+  { "amiValues", cmdAMIMON, "Show AMI monitor values"        },
   { "xcvr",   eyescanCommand,"Perform transceiver eye scan"  },
 };
 static void
