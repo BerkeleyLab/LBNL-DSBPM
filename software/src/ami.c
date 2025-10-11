@@ -549,12 +549,12 @@ void amiPSinfoDisplay(unsigned int bpm)
         float v = 0, i = 0;
         status = fetchVI(bpm, channel, &v, &i);
         if (status < 0) {
-            printf("%16s(0x%04X:0x%04X): NaN V  NaN A\n",
+            printf("%8s(0x%04X:0x%04X): NaN V  NaN A\n",
                     psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
                     (devId >= 0)? devId : 0xDEAD);
         }
         else {
-            printf("%16s(0x%04X:0x%04X): %7.3f V  %8.3f A\n",
+            printf("%8s(0x%04X:0x%04X): %7.3f V  %8.3f A\n",
                     psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
                     (devId >= 0)? devId : 0xDEAD, v, i);
         }
