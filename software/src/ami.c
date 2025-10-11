@@ -253,6 +253,7 @@ static int
 amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
         uint32_t data, uint32_t *buf)
 {
+    int bytesWritten = 0;
     const struct deviceInfo *dp;
     struct controller *cp;
 
@@ -276,7 +277,13 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
      */
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
             dp->cpha, 1);
-    return genericSPIRead(&cp->spi, data, buf);
+    bytesWritten = genericSPIRead(&cp->spi, data, buf);
+
+    if (amiSetMux(cp, MUXPORT_NONE) < 0) {
+        return -1;
+    }
+
+    return bytesWritten;
 }
 
 /*
