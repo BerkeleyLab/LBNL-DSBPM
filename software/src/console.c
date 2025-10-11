@@ -175,6 +175,8 @@ cellCommFakeDataToggle(void)
 
         GPIO_WRITE(REG(GPIO_IDX_CELL_COMM_TEST, i), csr);
     }
+
+    return 0;
 }
 
 static int
