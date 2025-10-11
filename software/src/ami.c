@@ -21,6 +21,22 @@
 #define MCP23S08_REG_ADDR           0x40
 #define MCP23S08_REG_ADDR_RW        0x1
 
+struct ina239RegMap {
+    uint8_t addr;
+};
+
+static const struct ina239RegMap ina239RegMap[] = {
+    {0x02},         // AMI_INA239_INDEX_SHUNT_CAL
+    {0x04},         // AMI_INA239_INDEX_V_SHUNT
+    {0x05},         // AMI_INA239_INDEX_V_BUS
+    {0x07},         // AMI_INA239_INDEX_CURRENT
+    {0x08},         // AMI_INA239_INDEX_POWER
+    {0x3E},         // AMI_INA239_INDEX_MFR
+    {0x3F}          // AMI_INA239_INDEX_DEVID
+};
+
+#define NUM_INA239_INDECES ARRAY_SIZE(ina239RegMap)
+
 #define MUXPORT_UNKNOWN 127
 #define MUXPORT_NONE    126
 
@@ -94,11 +110,11 @@ static struct {
     int     ampsPerVolt; /* 1/Rshunt */
     const char *name;
 } const psInfo[] = {
-    { AMI_SPI_INDEX_AFE_0,              0,         "AFE_0"          },
-    { AMI_SPI_INDEX_AFE_1,              0,         "AFE_1"          },
-    { AMI_SPI_INDEX_AFE_2,              0,         "AFE_2"          },
-    { AMI_SPI_INDEX_AFE_3,              0,         "AFE_3"          },
-    { AMI_SPI_INDEX_PTM_0,              0,         "PTM_0"          },
+    { AMI_SPI_INDEX_AFE_0,              9,         "AFE_0"          },
+    { AMI_SPI_INDEX_AFE_1,              9,         "AFE_1"          },
+    { AMI_SPI_INDEX_AFE_2,              9,         "AFE_2"          },
+    { AMI_SPI_INDEX_AFE_3,              9,         "AFE_3"          },
+    { AMI_SPI_INDEX_PTM_0,              9,         "PTM_0"          },
 };
 
 #define NUM_SENSORS ARRAY_SIZE(psInfo)
@@ -400,22 +416,33 @@ amiGetIna239(unsigned int controllerIndex, unsigned int deviceIndex,
 }
 
 static int
-amiGetIna239MfrId(unsigned int controllerIndex, unsigned int deviceIndex)
+amiGetIna239Reading(unsigned int controllerIndex, unsigned int deviceIndex,
+        unsigned int type, uint32_t *buf)
 {
-    uint32_t buf = 0;
     int status = 0;
 
-    status = amiGetIna239(controllerIndex, deviceIndex, 0x3E, &buf);
+    if (type >= NUM_INA239_INDECES) {
+        return -1;
+    }
+
+    status = amiGetIna239(controllerIndex, deviceIndex,
+            ina239RegMap[type].addr, buf);
+
+    microsecondSpin(100*10);
+
     if (status < 0) {
         return status;
     }
 
-    return buf;
+    return 0;
 }
 
 int
 amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
 {
+    int status = 0;
+    uint32_t buf = 0;
+
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
     }
@@ -424,16 +451,9 @@ amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    return amiGetIna239MfrId(bpm, psInfo[channel].deviceIndex);
-}
+    status = amiGetIna239Reading(bpm, psInfo[channel].deviceIndex,
+        AMI_INA239_INDEX_MFR, &buf);
 
-static int
-amiGetIna239DevId(unsigned int controllerIndex, unsigned int deviceIndex)
-{
-    uint32_t buf = 0;
-    int status = 0;
-
-    status = amiGetIna239(controllerIndex, deviceIndex, 0x3F, &buf);
     if (status < 0) {
         return status;
     }
@@ -444,6 +464,9 @@ amiGetIna239DevId(unsigned int controllerIndex, unsigned int deviceIndex)
 int
 amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
 {
+    int status = 0;
+    uint32_t buf = 0;
+
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
     }
@@ -452,13 +475,66 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    return amiGetIna239DevId(bpm, psInfo[channel].deviceIndex);
+    status = amiGetIna239Reading(bpm, psInfo[channel].deviceIndex,
+        AMI_INA239_INDEX_DEVID, &buf);
+
+    if (status < 0) {
+        return status;
+    }
+
+    return buf;
+}
+
+static int
+fetchVI(unsigned int controllerIndex, unsigned int channel,
+        float *vp, float *ip)
+{
+    int status = 0;
+    uint32_t vbuf = 0, ibuf = 0;
+    int curr = 0;
+
+    if (channel >= NUM_SENSORS) {
+        return -1;
+    }
+
+    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+            AMI_INA239_INDEX_V_BUS, &vbuf);
+    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+            AMI_INA239_INDEX_CURRENT, &ibuf);
+
+    if (status < 0) {
+        return status;
+    }
+
+    // 3.125mV / LSB
+    *vp = vbuf / 320.0;
+
+    // From the INA239 datasheet:
+    // SHUNT_CAL = 819.2 x 10^6 x CURRENT_LSB x RSHUNT
+    // Current_LSB = Maximum Expected Current / 2^15
+    //
+    // With:
+    // SHUNT_CAL = 0x1000
+    // RSHUNT = 115mOHM
+    // CURRENT_LSB * RSHUNT = 5uV per count
+    curr = ibuf;
+    if (curr & 0x8000) {
+        curr -= 0x10000;
+    }
+
+    // 5uV per count
+    curr *= 5;
+    curr *= psInfo[channel].ampsPerVolt;
+    *ip = curr / 1.0e6;
+
+    return 0;
 }
 
 void amiPSinfoDisplay(unsigned int bpm)
 {
     unsigned int channel = 0;
-    int value = 0;
+    int mfrId = 0, devId = 0;
+    int status = 0;
 
     if (bpm >= CFG_DSBPM_COUNT) {
         return;
@@ -467,24 +543,20 @@ void amiPSinfoDisplay(unsigned int bpm)
     printf("BPM%u:\n", bpm);
 
     for (channel = 0 ; channel < NUM_SENSORS; channel++) {
-        printf("  PS%u %s:\n", channel, psInfo[channel].name);
+        mfrId = amiIna239MfrIdGet(bpm, channel);
+        devId = amiIna239DevIdGet(bpm, channel);
 
-        value = amiIna239MfrIdGet(bpm, channel);
-        printf("    MFR ID: ");
-        if (value < 0) {
-            printf("Could not read\n");
+        float v = 0, i = 0;
+        status = fetchVI(bpm, channel, &v, &i);
+        if (status < 0) {
+            printf("%16s(0x%04X:0x%04X): NaN V  NaN A\n",
+                    psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
+                    (devId >= 0)? devId : 0xDEAD);
         }
         else {
-            printf("0x%04X\n", value);
-        }
-
-        value = amiIna239DevIdGet(bpm, channel);
-        printf("    Device ID: ");
-        if (value < 0) {
-            printf("Could not read\n");
-        }
-        else {
-            printf("0x%04X\n", value);
+            printf("%16s(0x%04X:0x%04X): %7.3f V  %8.3f A\n",
+                    psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
+                    (devId >= 0)? devId : 0xDEAD, v, i);
         }
     }
 }
