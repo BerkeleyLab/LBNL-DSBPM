@@ -29,10 +29,10 @@ static const struct ina239RegMap ina239RegMap[] = {
     {0x02},         // AMI_INA239_INDEX_SHUNT_CAL
     {0x04},         // AMI_INA239_INDEX_V_SHUNT
     {0x05},         // AMI_INA239_INDEX_V_BUS
+    {0x06},         // AMI_INA239_INDEX_DIETEMP
     {0x07},         // AMI_INA239_INDEX_CURRENT
-    {0x08},         // AMI_INA239_INDEX_POWER
     {0x3E},         // AMI_INA239_INDEX_MFR
-    {0x3F}          // AMI_INA239_INDEX_DEVID
+    {0x3F},         // AMI_INA239_INDEX_DEVID
 };
 
 #define NUM_INA239_INDECES ARRAY_SIZE(ina239RegMap)
@@ -485,10 +485,10 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
 
 static int
 fetchVI(unsigned int controllerIndex, unsigned int channel,
-        float *vp, float *ip)
+        float *vp, float *vsp, float *ip)
 {
     int status = 0;
-    uint32_t vbuf = 0, ibuf = 0;
+    uint32_t vbuf = 0, vsbuf = 0, ibuf = 0;
     int curr = 0;
 
     if (channel >= NUM_SENSORS) {
@@ -498,6 +498,8 @@ fetchVI(unsigned int controllerIndex, unsigned int channel,
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
             AMI_INA239_INDEX_V_BUS, &vbuf);
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+            AMI_INA239_INDEX_V_SHUNT, &vsbuf);
+    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
             AMI_INA239_INDEX_CURRENT, &ibuf);
 
     if (status < 0) {
@@ -506,6 +508,9 @@ fetchVI(unsigned int controllerIndex, unsigned int channel,
 
     // 3.125mV / LSB
     *vp = vbuf / 320.0;
+
+    // 5uV / LSB
+    *vsp = vsbuf / 200000.0;
 
     // From the INA239 datasheet:
     // SHUNT_CAL = 819.2 x 10^6 x CURRENT_LSB x RSHUNT
@@ -528,6 +533,30 @@ fetchVI(unsigned int controllerIndex, unsigned int channel,
     return 0;
 }
 
+static int
+fetchTemp(unsigned int controllerIndex, unsigned int channel,
+        float *tp)
+{
+    int status = 0;
+    uint32_t tbuf;
+
+    if (channel >= NUM_SENSORS) {
+        return -1;
+    }
+
+    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+            AMI_INA239_INDEX_DIETEMP, &tbuf);
+
+    if (status < 0) {
+        return status;
+    }
+
+    // 125 mC / LSB
+    *tp = tbuf / 8;
+
+    return 0;
+}
+
 void amiPSinfoDisplay(unsigned int bpm)
 {
     unsigned int channel = 0;
@@ -541,20 +570,24 @@ void amiPSinfoDisplay(unsigned int bpm)
     printf("BPM%u:\n", bpm);
 
     for (channel = 0 ; channel < NUM_SENSORS; channel++) {
+        int idMismatch = 0;
         mfrId = amiIna239MfrIdGet(bpm, channel);
         devId = amiIna239DevIdGet(bpm, channel);
 
-        float v = 0, i = 0;
-        status = fetchVI(bpm, channel, &v, &i);
+        if (mfrId != AMI_INA239_MFR || devId != AMI_INA239_DEVID) {
+            idMismatch = 1;
+        }
+
+        float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
+        status = fetchVI(bpm, channel, &v, &vs, &i);
+        status |= fetchTemp(bpm, channel, &t);
         if (status < 0) {
-            printf("%8s(0x%04X:0x%04X): NaN V  NaN A\n",
-                    psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
-                    (devId >= 0)? devId : 0xDEAD);
+            printf("%8s%s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
+                    psInfo[channel].name, idMismatch? "(ID!)":"");
         }
         else {
-            printf("%8s(0x%04X:0x%04X): %7.3f V  %8.3f A\n",
-                    psInfo[channel].name, (mfrId >= 0)? mfrId : 0xDEAD,
-                    (devId >= 0)? devId : 0xDEAD, v, i);
+            printf("%8s%s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
+                    psInfo[channel].name, idMismatch? "(ID!)":"", v, vs, i, t);
         }
     }
 }
