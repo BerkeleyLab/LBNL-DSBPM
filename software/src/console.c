@@ -406,7 +406,22 @@ cmdSYSMON(int argc, char **argv)
 static int
 cmdAMIMON(int argc, char **argv)
 {
-    amiPSinfoDisplay();
+    char *endp;
+    int bpm;
+
+    if (argc > 1) {
+        bpm = strtol(argv[1], &endp, 0);
+        if (*endp != '\0')
+            return 1;
+
+        amiPSinfoDisplay(bpm);
+        return 0;
+    }
+
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
+
     return 0;
 }
 
