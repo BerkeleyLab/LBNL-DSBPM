@@ -48,6 +48,10 @@ static const struct ina239RegMap ina239RegMap[] = {
 
 struct deviceInfo {
     uint8_t muxPort;
+    // latch enable means a pulse at the end
+    // of an SPI transaction. Otherwise normal
+    // CSB behavior
+    uint8_t latchEn;
     uint8_t lsbFirst;
     uint8_t wordSize24;
     uint8_t cpol;
@@ -55,12 +59,12 @@ struct deviceInfo {
 };
 
 static const struct deviceInfo deviceTable[] = {
-    { 0,    1,    0,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_NORMAL}, // AMI_SPI_INDEX_AFE_ATT_ALL
-    { 1,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_0
-    { 2,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_1
-    { 3,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_2
-    { 4,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_3
-    { 5,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_PTM_0
+    { 0,    1,    1,    0,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_NORMAL}, // AMI_SPI_INDEX_AFE_ATT_ALL
+    { 1,    0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_0
+    { 2,    0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_1
+    { 3,    0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_2
+    { 4,    0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_AFE_3
+    { 5,    0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY},    // AMI_SPI_INDEX_PTM_0
 };
 
 #define NUM_DEVICES ARRAY_SIZE(deviceTable)
@@ -69,6 +73,7 @@ struct controller {
     struct genericSPI spi;
     uint8_t controllerIndex;
     uint8_t muxPort;
+    uint8_t muxPortNone;
 };
 
 static struct controller controllers[] = {
@@ -223,6 +228,7 @@ initController(void)
 void
 amiInit(void)
 {
+    int i = 0;
     struct controller *cp = NULL;
     gspiErr spiStatus = GSPI_SUCCESS;
     uint32_t data = 0;
@@ -255,12 +261,19 @@ amiInit(void)
         }
 
         /*
-         * Configure all outputs to 1:
+         * Configure outputs according to the "deselect" bit from
+         * each device:
          */
+        uint8_t deselect = 0;
+        for (i = 0; i < NUM_DEVICES; i++) {
+            deselect |= (deviceTable[i].latchEn? 0x0 : 0x1) << i;
+        }
+        cp->muxPortNone = deselect;
+        cp->muxPort = cp->muxPortNone;
 
         data = MCP23S08_REG_ADDR << 16;
         data |= 0x09 << 8;
-        data |= 0xFF;
+        data |= cp->muxPort;
         spiStatus = genericSPIWrite(&cp->spi, data);
 
         if (spiStatus != GSPI_SUCCESS) {
@@ -320,16 +333,20 @@ amiSetMcp23s08(struct controller *cp, unsigned int muxPort)
 }
 
 static int
-amiSetMux(struct controller *cp, unsigned int muxPort)
+amiSetMux(struct controller *cp, unsigned int muxPort,
+        unsigned int activeHigh)
 {
     int status = 0;
 
     if (muxPort == MUXPORT_NONE) {
-        muxPort = 0xFF;
+        muxPort = cp->muxPortNone;
     }
     else {
-        muxPort &= 0x7;
-        muxPort = ~(1 << muxPort) & 0xFF;
+        unsigned int muxPortBitmap = muxPort & 0x7;
+        muxPortBitmap = (1 << muxPortBitmap) & 0xFF;
+        //muxPort = ~(1 << muxPort) & 0xFF;
+        muxPort = activeHigh? (cp->muxPortNone | muxPortBitmap) :
+            (cp->muxPortNone & ~muxPortBitmap);
     }
 
     status = amiSetMcp23s08(cp, muxPort);
@@ -362,8 +379,10 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
     dp = &deviceTable[deviceIndex];
     cp = &controllers[controllerIndex];
 
-    if (amiSetMux(cp, dp->muxPort) < 0) {
-        return -1;
+    if (!dp->latchEn) {
+        if (amiSetMux(cp, dp->muxPort, dp->latchEn) < 0) {
+            return -1;
+        }
     }
 
     /*
@@ -373,7 +392,11 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
             dp->cpha, 1);
     spiStatus = genericSPIWrite(&cp->spi, data);
 
-    if (amiSetMux(cp, MUXPORT_NONE) < 0) {
+    if (dp->latchEn) {
+        amiSetMux(cp, dp->muxPort, dp->latchEn);
+    }
+
+    if (amiSetMux(cp, MUXPORT_NONE, dp->latchEn) < 0) {
         return -1;
     }
 
@@ -403,8 +426,10 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
     dp = &deviceTable[deviceIndex];
     cp = &controllers[controllerIndex];
 
-    if (amiSetMux(cp, dp->muxPort) < 0) {
-        return -1;
+    if (!dp->latchEn) {
+        if (amiSetMux(cp, dp->muxPort, dp->latchEn) < 0) {
+            return -1;
+        }
     }
 
     /*
@@ -414,7 +439,11 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
             dp->cpha, 1);
     spiStatus = genericSPIRead(&cp->spi, data, buf);
 
-    if (amiSetMux(cp, MUXPORT_NONE) < 0) {
+    if (dp->latchEn) {
+        amiSetMux(cp, dp->muxPort, dp->latchEn);
+    }
+
+    if (amiSetMux(cp, MUXPORT_NONE, dp->latchEn) < 0) {
         return -1;
     }
 
