@@ -19,6 +19,15 @@
 
 #define SPI_R_BUSY          0x80000000
 
+enum genericSPIErr {
+    GSPI_SUCCESS,
+    GSPI_ERR,
+    GSPI_EAGAIN,
+    GSPI_EINPROGRESS,
+};
+
+typedef enum genericSPIErr gspiErr;
+
 struct genericSPI {
     uint32_t gpioIdx;
     uint8_t lsbFirst;
@@ -31,11 +40,11 @@ struct genericSPI {
 
 void genericSPISetOptions(struct genericSPI *spip, int wordSize24,
         int lsbFirst, int cpol, int cpha, int channel);
-int genericSPIIsBusy(struct genericSPI* spip);
-int genericSPIWrite(struct genericSPI* spip, uint32_t value);
-int genericSPIRead(struct genericSPI* spip, uint32_t value, uint32_t *buf);
+gspiErr genericSPIIsBusy(struct genericSPI* spip);
+gspiErr genericSPIWrite(struct genericSPI* spip, uint32_t value);
+gspiErr genericSPIRead(struct genericSPI* spip, uint32_t value, uint32_t *buf);
 
-int genericSPIReadAsync(struct genericSPI* spip, uint32_t value);
-int genericSPITryRead(struct genericSPI* spip, uint32_t *buf);
+gspiErr genericSPITryStartTransaction(struct genericSPI* spip, uint32_t value);
+gspiErr genericSPITryRead(struct genericSPI *spip, uint32_t *buf);
 
 #endif /* _AFE_SPI_H_ */

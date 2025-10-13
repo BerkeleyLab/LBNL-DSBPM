@@ -134,7 +134,7 @@ void
 amiInit(void)
 {
     struct controller *cp = NULL;
-    int ret = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
     uint32_t data = 0;
 
     initController();
@@ -158,9 +158,9 @@ amiInit(void)
         data = MCP23S08_REG_ADDR << 16;
         data |= 0x00 << 8;
         data |= 0xC0;
-        ret = genericSPIWrite(&cp->spi, data);
+        spiStatus = genericSPIWrite(&cp->spi, data);
 
-        if (ret != 3) {
+        if (spiStatus != GSPI_SUCCESS) {
             warn("Configure MCP23S08 %d", cp->controllerIndex);
         }
 
@@ -171,9 +171,9 @@ amiInit(void)
         data = MCP23S08_REG_ADDR << 16;
         data |= 0x09 << 8;
         data |= 0xFF;
-        ret = genericSPIWrite(&cp->spi, data);
+        spiStatus = genericSPIWrite(&cp->spi, data);
 
-        if (ret != 3) {
+        if (spiStatus != GSPI_SUCCESS) {
             warn("Configure MCP23S08 %d", cp->controllerIndex);
         }
     }
@@ -186,6 +186,7 @@ static int
 amiSetMcp23s08(struct controller *cp, unsigned int muxPort)
 {
     uint32_t data = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
 
     /*
      * 24-bit transaction
@@ -199,13 +200,18 @@ amiSetMcp23s08(struct controller *cp, unsigned int muxPort)
     data |= 0x09 << 8;
     data |= muxPort & 0xFF;
 
-    return genericSPIWrite(&cp->spi, data);
+    spiStatus = genericSPIWrite(&cp->spi, data);
+    if(spiStatus != GSPI_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
 }
 
 static int
 amiSetMux(struct controller *cp, unsigned int muxPort)
 {
-    int bytesWritten = 0;
+    int status = 0;
 
     if (muxPort == MUXPORT_NONE) {
         muxPort = 0xFF;
@@ -215,24 +221,22 @@ amiSetMux(struct controller *cp, unsigned int muxPort)
         muxPort = ~(1 << muxPort) & 0xFF;
     }
 
-    bytesWritten = amiSetMcp23s08(cp, muxPort);
-
-    if (bytesWritten == 3) {
-        cp->muxPort = muxPort;
-    }
-    else {
+    status = amiSetMcp23s08(cp, muxPort);
+    if (status < 0) {
         cp->muxPort = MUXPORT_UNKNOWN;
         return -1;
     }
 
-    return bytesWritten;
+    cp->muxPort = muxPort;
+
+    return 0;
 }
 
 static int
 amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
         uint32_t data)
 {
-    int bytesWritten = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
     const struct deviceInfo *dp;
     struct controller *cp;
 
@@ -256,20 +260,24 @@ amiSPIWrite(unsigned int controllerIndex, unsigned int deviceIndex,
      */
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
             dp->cpha, 1);
-    bytesWritten = genericSPIWrite(&cp->spi, data);
+    spiStatus = genericSPIWrite(&cp->spi, data);
 
     if (amiSetMux(cp, MUXPORT_NONE) < 0) {
         return -1;
     }
 
-    return bytesWritten;
+    if (spiStatus != GSPI_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
 }
 
 static int
 amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
         uint32_t data, uint32_t *buf)
 {
-    int bytesWritten = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
     const struct deviceInfo *dp;
     struct controller *cp;
 
@@ -293,13 +301,17 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
      */
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
             dp->cpha, 1);
-    bytesWritten = genericSPIRead(&cp->spi, data, buf);
+    spiStatus = genericSPIRead(&cp->spi, data, buf);
 
     if (amiSetMux(cp, MUXPORT_NONE) < 0) {
         return -1;
     }
 
-    return bytesWritten;
+    if (spiStatus != GSPI_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /*
@@ -309,6 +321,7 @@ static int
 amiAttenSet(unsigned int controllerIndex, unsigned int channel,
         int address, unsigned int mdB)
 {
+    gspiErr spiStatus = GSPI_SUCCESS;
     unsigned int deviceIndex = AMI_SPI_INDEX_AFE_ATT_ALL;
 
     /*
@@ -322,7 +335,12 @@ amiAttenSet(unsigned int controllerIndex, unsigned int channel,
     int v = attSteps;
     v |= address << 8;
 
-    return amiSPIWrite(controllerIndex, deviceIndex, v);
+    spiStatus = amiSPIWrite(controllerIndex, deviceIndex, v);
+    if (spiStatus != GSPI_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
 }
 
 int
@@ -330,7 +348,7 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
         unsigned int mdB)
 {
     const int address = 0x7;
-    int bytesWritten = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
 
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
@@ -342,20 +360,22 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
 
     // All channels are wired together
     channel = 0;
-    bytesWritten = amiAttenSet(bpm, channel, address, mdB);
+    spiStatus = amiAttenSet(bpm, channel, address, mdB);
 
-    if (bytesWritten >= 0) {
-        amiAfeAttenuation[bpm][channel] = mdB;
+    if (spiStatus != GSPI_SUCCESS) {
+        return -1;
     }
 
-    return bytesWritten;
+    amiAfeAttenuation[bpm][channel] = mdB;
+
+    return 0;
 }
 
 int
 amiPtmAttenSet(unsigned int bpm, unsigned int mdB)
 {
     const int address = 0x3;
-    int bytesWritten = 0;
+    gspiErr spiStatus = GSPI_SUCCESS;
 
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
@@ -363,13 +383,15 @@ amiPtmAttenSet(unsigned int bpm, unsigned int mdB)
 
     // Only a single PTM module
     unsigned int channel = 0;
-    bytesWritten = amiAttenSet(bpm, channel, address, mdB);
+    spiStatus = amiAttenSet(bpm, channel, address, mdB);
 
-    if (bytesWritten >= 0) {
-        amiPtmAttenuation[bpm] = mdB;
+    if (spiStatus != GSPI_SUCCESS) {
+        return -1;
     }
 
-    return bytesWritten;
+    amiPtmAttenuation[bpm] = mdB;
+
+    return 0;
 }
 
 /*
