@@ -105,19 +105,51 @@ static struct controller controllers[] = {
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
 static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
+#define NUM_PS_SENSORS                  5
+#define INA239_AMPS_PER_VOLT            9 /* 1/Rshunt */
+
 static struct {
-    int     deviceIndex;
-    int     ampsPerVolt; /* 1/Rshunt */
+    int         deviceIndex;
     const char *name;
-} const psInfo[] = {
-    { AMI_SPI_INDEX_AFE_0,              9,         "AFE_0"          },
-    { AMI_SPI_INDEX_AFE_1,              9,         "AFE_1"          },
-    { AMI_SPI_INDEX_AFE_2,              9,         "AFE_2"          },
-    { AMI_SPI_INDEX_AFE_3,              9,         "AFE_3"          },
-    { AMI_SPI_INDEX_PTM_0,              9,         "PTM_0"          },
+} const psInfo[NUM_PS_SENSORS] = {
+    { AMI_SPI_INDEX_AFE_0,       "AFE_0"          },
+    { AMI_SPI_INDEX_AFE_1,       "AFE_1"          },
+    { AMI_SPI_INDEX_AFE_2,       "AFE_2"          },
+    { AMI_SPI_INDEX_AFE_3,       "AFE_3"          },
+    { AMI_SPI_INDEX_PTM_0,       "PTM_0"          },
 };
 
-#define NUM_SENSORS ARRAY_SIZE(psInfo)
+struct psReading {
+    int         deviceIndex;
+    uint32_t    vshunt;
+    uint32_t    vbus;
+    uint32_t    current;
+    uint32_t    temp;
+};
+
+static struct psReading psReadings[CFG_DSBPM_COUNT][NUM_PS_SENSORS] = {
+    {
+        { AMI_SPI_INDEX_AFE_0 },
+        { AMI_SPI_INDEX_AFE_1 },
+        { AMI_SPI_INDEX_AFE_2 },
+        { AMI_SPI_INDEX_AFE_3 },
+        { AMI_SPI_INDEX_PTM_0 },
+    },
+    {
+        { AMI_SPI_INDEX_AFE_0 },
+        { AMI_SPI_INDEX_AFE_1 },
+        { AMI_SPI_INDEX_AFE_2 },
+        { AMI_SPI_INDEX_AFE_3 },
+        { AMI_SPI_INDEX_PTM_0 },
+    },
+};
+
+#define NUM_PS_READINGS ARRAY_SIZE(psReadings[0])
+
+static int fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf);
+static int fetchTempRaw(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *tbuf);
 
 int
 amiAfeGetSerialNumber(void)
@@ -175,6 +207,27 @@ amiInit(void)
 
         if (spiStatus != GSPI_SUCCESS) {
             warn("Configure MCP23S08 %d", cp->controllerIndex);
+        }
+    }
+
+    /*
+     * Read one set of sensors so we can display them as soon as
+     * we exit this
+     */
+    int controllerIndex = 0, channel = 0;
+    int status = 0;
+    for (controllerIndex = 0 ; controllerIndex < NUM_CONTROLLERS; controllerIndex++) {
+        for (channel = 0 ; channel < NUM_PS_SENSORS; channel++) {
+            status = fetchVIRaw(controllerIndex, channel,
+                    &psReadings[controllerIndex][channel].vbus,
+                    &psReadings[controllerIndex][channel].vshunt,
+                    &psReadings[controllerIndex][channel].current);
+            status |= fetchTempRaw(controllerIndex, channel,
+                    &psReadings[controllerIndex][channel].temp);
+
+            if (status < 0) {
+                warn("Read AFE sensors from Controller %d", controllerIndex);
+            }
         }
     }
 }
@@ -467,7 +520,7 @@ amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    if (channel >= NUM_SENSORS) {
+    if (channel >= NUM_PS_SENSORS) {
         return -1;
     }
 
@@ -491,7 +544,7 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    if (channel >= NUM_SENSORS) {
+    if (channel >= NUM_PS_SENSORS) {
         return -1;
     }
 
@@ -506,28 +559,29 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
 }
 
 static int
-fetchVI(unsigned int controllerIndex, unsigned int channel,
-        float *vp, float *vsp, float *ip)
+fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf)
 {
     int status = 0;
-    uint32_t vbuf = 0, vsbuf = 0, ibuf = 0;
-    int curr = 0;
-
-    if (channel >= NUM_SENSORS) {
-        return -1;
-    }
 
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
-            AMI_INA239_INDEX_V_BUS, &vbuf);
+            AMI_INA239_INDEX_V_BUS, vbuf);
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
-            AMI_INA239_INDEX_V_SHUNT, &vsbuf);
+            AMI_INA239_INDEX_V_SHUNT, vsbuf);
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
-            AMI_INA239_INDEX_CURRENT, &ibuf);
+            AMI_INA239_INDEX_CURRENT, ibuf);
 
     if (status < 0) {
         return status;
     }
 
+    return 0;
+}
+
+static int
+convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
+        float *vp, float *vsp, float *ip)
+{
     // 3.125mV / LSB
     *vp = vbuf / 320.0;
 
@@ -542,42 +596,42 @@ fetchVI(unsigned int controllerIndex, unsigned int channel,
     // SHUNT_CAL = 0x1000
     // RSHUNT = 115mOHM
     // CURRENT_LSB * RSHUNT = 5uV per count
-    curr = ibuf;
+    int curr = ibuf;
     if (curr & 0x8000) {
         curr -= 0x10000;
     }
 
     // 5uV per count
     curr *= 5;
-    curr *= psInfo[channel].ampsPerVolt;
+    curr *= INA239_AMPS_PER_VOLT;
     *ip = curr / 1.0e6;
 
     return 0;
 }
 
 static int
-fetchTemp(unsigned int controllerIndex, unsigned int channel,
-        float *tp)
+fetchTempRaw(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *tbuf)
 {
     int status = 0;
-    uint32_t tbuf;
-    int temp = 0;
-
-    if (channel >= NUM_SENSORS) {
-        return -1;
-    }
 
     status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
-            AMI_INA239_INDEX_DIETEMP, &tbuf);
+            AMI_INA239_INDEX_DIETEMP, tbuf);
 
     if (status < 0) {
         return status;
     }
 
+    return 0;
+}
+
+static int
+convertTemp(uint32_t tbuf, float *tp)
+{
     // 4 LSB are reserved
     tbuf >>= 4;
 
-    temp = tbuf;
+    int temp = tbuf;
     if (temp & 0x8000) {
         temp -= 0x10000;
     }
@@ -588,10 +642,50 @@ fetchTemp(unsigned int controllerIndex, unsigned int channel,
     return 0;
 }
 
-void amiPSinfoDisplay(unsigned int bpm)
+/*
+ * SPI can take ms to conclude, so probe a new sensro every xxx ms.
+ */
+void
+amiCrank()
+{
+    int status = 0;
+    int sensorRead = 0;
+    static uint32_t whenEntered;
+    static int bpm;
+    static int sensor;
+
+    if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 100000) {
+        if (sensor >= NUM_PS_READINGS) {
+            sensor = 0;
+            bpm++;
+        }
+
+        if (bpm >= CFG_DSBPM_COUNT) {
+            bpm = 0;
+        }
+
+        status = fetchVIRaw(bpm, sensor,
+                &psReadings[bpm][sensor].vbus, &psReadings[bpm][sensor].vshunt,
+                &psReadings[bpm][sensor].current);
+        status |= fetchTempRaw(bpm, sensor, &psReadings[bpm][sensor].temp);
+
+        sensor++;
+        sensorRead = 1;
+    }
+
+    if (sensorRead) {
+        whenEntered = MICROSECONDS_SINCE_BOOT();
+    }
+}
+
+/*
+ * This doesn't do any SPI readings, only gets the cached
+ * values, convert and display them.
+ */
+void
+amiPSinfoDisplay(unsigned int bpm)
 {
     unsigned int channel = 0;
-    int mfrId = 0, devId = 0;
     int status = 0;
 
     if (bpm >= CFG_DSBPM_COUNT) {
@@ -600,25 +694,21 @@ void amiPSinfoDisplay(unsigned int bpm)
 
     printf("BPM%u:\n", bpm);
 
-    for (channel = 0 ; channel < NUM_SENSORS; channel++) {
-        int idMismatch = 0;
-        mfrId = amiIna239MfrIdGet(bpm, channel);
-        devId = amiIna239DevIdGet(bpm, channel);
-
-        if (mfrId != AMI_INA239_MFR || devId != AMI_INA239_DEVID) {
-            idMismatch = 1;
-        }
-
+    for (channel = 0 ; channel < NUM_PS_SENSORS; channel++) {
         float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
-        status = fetchVI(bpm, channel, &v, &vs, &i);
-        status |= fetchTemp(bpm, channel, &t);
+
+        status = convertVI(psReadings[bpm][channel].vbus,
+                psReadings[bpm][channel].vshunt,
+                psReadings[bpm][channel].current,
+                &v, &vs, &i);
+        status |= convertTemp(psReadings[bpm][channel].temp, &t);
         if (status < 0) {
-            printf("%8s%s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
-                    psInfo[channel].name, idMismatch? "(ID!)":"");
+            printf("%8s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
+                    psInfo[channel].name);
         }
         else {
-            printf("%8s%s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
-                    psInfo[channel].name, idMismatch? "(ID!)":"", v, vs, i, t);
+            printf("%8s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
+                    psInfo[channel].name, v, vs, i, t);
         }
     }
 }

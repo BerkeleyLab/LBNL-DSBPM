@@ -34,6 +34,8 @@ unsigned int amiPtmAttenGet(unsigned int bpm);
 
 int amiIna239MfrIdGet(unsigned int bpm, unsigned int channel);
 int amiIna239DevIdGet(unsigned int bpm, unsigned int channel);
-void amiPSinfoDisplay();
+
+void amiCrank();
+void amiPSinfoDisplay(unsigned int bpm);
 
 #endif /* _AMI_SPI_H_ */
