@@ -8,8 +8,7 @@
 #include "systemParameters.h"
 
 /*
- * AdcOperand selection
- * Dividend = (OP0 + OP1) - (OP2 + OP3)
+ * ADC mapping
  */
 #define OP0_SHIFT 0
 #define OP1_SHIFT 3
@@ -31,14 +30,14 @@
 void
 adcMappingInit()
 {
-    int ADC_0 = ((systemParameters.adcOrder / 10000000) % 10) & 0x7;
-    int ADC_1 = ((systemParameters.adcOrder / 1000000 ) % 10) & 0x7;
-    int ADC_2 = ((systemParameters.adcOrder / 100000  ) % 10) & 0x7;
-    int ADC_3 = ((systemParameters.adcOrder / 10000   ) % 10) & 0x7;
-    int ADC_4 = ((systemParameters.adcOrder / 1000    ) % 10) & 0x7;
-    int ADC_5 = ((systemParameters.adcOrder / 100     ) % 10) & 0x7;
-    int ADC_6 = ((systemParameters.adcOrder / 10      ) % 10) & 0x7;
-    int ADC_7 = ((systemParameters.adcOrder / 1       ) % 10) & 0x7;
+    int ADC_0 = ((systemParameters.adcPhysToLogical / 10000000) % 10) & 0x7;
+    int ADC_1 = ((systemParameters.adcPhysToLogical / 1000000 ) % 10) & 0x7;
+    int ADC_2 = ((systemParameters.adcPhysToLogical / 100000  ) % 10) & 0x7;
+    int ADC_3 = ((systemParameters.adcPhysToLogical / 10000   ) % 10) & 0x7;
+    int ADC_4 = ((systemParameters.adcPhysToLogical / 1000    ) % 10) & 0x7;
+    int ADC_5 = ((systemParameters.adcPhysToLogical / 100     ) % 10) & 0x7;
+    int ADC_6 = ((systemParameters.adcPhysToLogical / 10      ) % 10) & 0x7;
+    int ADC_7 = ((systemParameters.adcPhysToLogical / 1       ) % 10) & 0x7;
     uint32_t adcMapping =
         OP7(ADC_7) | OP6(ADC_6) | OP5(ADC_5) | OP4(ADC_4) |
         OP3(ADC_3) | OP2(ADC_2) | OP1(ADC_1) | OP0(ADC_0);
