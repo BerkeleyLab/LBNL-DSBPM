@@ -108,43 +108,101 @@ static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 #define NUM_PS_SENSORS                  5
 #define INA239_AMPS_PER_VOLT            9 /* 1/Rshunt */
 
-static struct {
-    int         deviceIndex;
-    const char *name;
-} const psInfo[NUM_PS_SENSORS] = {
-    { AMI_SPI_INDEX_AFE_0,       "AFE_0"          },
-    { AMI_SPI_INDEX_AFE_1,       "AFE_1"          },
-    { AMI_SPI_INDEX_AFE_2,       "AFE_2"          },
-    { AMI_SPI_INDEX_AFE_3,       "AFE_3"          },
-    { AMI_SPI_INDEX_PTM_0,       "PTM_0"          },
-};
-
-struct psReading {
+struct psInfo {
     int         deviceIndex;
     uint32_t    vshunt;
     uint32_t    vbus;
     uint32_t    current;
     uint32_t    temp;
+    const char *name;
 };
 
-static struct psReading psReadings[CFG_DSBPM_COUNT][NUM_PS_SENSORS] = {
+static struct psInfo psInfos[CFG_DSBPM_COUNT][NUM_PS_SENSORS] = {
     {
-        { AMI_SPI_INDEX_AFE_0 },
-        { AMI_SPI_INDEX_AFE_1 },
-        { AMI_SPI_INDEX_AFE_2 },
-        { AMI_SPI_INDEX_AFE_3 },
-        { AMI_SPI_INDEX_PTM_0 },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_0,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_0"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_1,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_1"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_2,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_2"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_3,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_3"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_PTM_0,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "PTM_0"
+        },
     },
     {
-        { AMI_SPI_INDEX_AFE_0 },
-        { AMI_SPI_INDEX_AFE_1 },
-        { AMI_SPI_INDEX_AFE_2 },
-        { AMI_SPI_INDEX_AFE_3 },
-        { AMI_SPI_INDEX_PTM_0 },
-    },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_0,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_0"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_1,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_1"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_2,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_2"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_AFE_3,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "AFE_3"
+        },
+        {
+            .deviceIndex = AMI_SPI_INDEX_PTM_0,
+            .vshunt = 0,
+            .vbus = 0,
+            .current = 0,
+            .temp = 0,
+            .name = "PTM_0"
+        },
+    }
 };
-
-#define NUM_PS_READINGS ARRAY_SIZE(psReadings[0])
 
 static int fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
         uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf);
@@ -214,16 +272,16 @@ amiInit(void)
      * Read one set of sensors so we can display them as soon as
      * we exit this
      */
-    int controllerIndex = 0, channel = 0;
+    int controllerIndex = 0, sensor = 0;
     int status = 0;
     for (controllerIndex = 0 ; controllerIndex < NUM_CONTROLLERS; controllerIndex++) {
-        for (channel = 0 ; channel < NUM_PS_SENSORS; channel++) {
-            status = fetchVIRaw(controllerIndex, channel,
-                    &psReadings[controllerIndex][channel].vbus,
-                    &psReadings[controllerIndex][channel].vshunt,
-                    &psReadings[controllerIndex][channel].current);
-            status |= fetchTempRaw(controllerIndex, channel,
-                    &psReadings[controllerIndex][channel].temp);
+        for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
+            status = fetchVIRaw(controllerIndex, sensor,
+                    &psInfos[controllerIndex][sensor].vbus,
+                    &psInfos[controllerIndex][sensor].vshunt,
+                    &psInfos[controllerIndex][sensor].current);
+            status |= fetchTempRaw(controllerIndex, sensor,
+                    &psInfos[controllerIndex][sensor].temp);
 
             if (status < 0) {
                 warn("Read AFE sensors from Controller %d", controllerIndex);
@@ -524,7 +582,7 @@ amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    status = amiGetIna239Reading(bpm, psInfo[channel].deviceIndex,
+    status = amiGetIna239Reading(bpm, psInfos[bpm][channel].deviceIndex,
         AMI_INA239_INDEX_MFR, &buf);
 
     if (status < 0) {
@@ -548,7 +606,7 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    status = amiGetIna239Reading(bpm, psInfo[channel].deviceIndex,
+    status = amiGetIna239Reading(bpm, psInfos[bpm][channel].deviceIndex,
         AMI_INA239_INDEX_DEVID, &buf);
 
     if (status < 0) {
@@ -564,11 +622,11 @@ fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
 {
     int status = 0;
 
-    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+    status |= amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
             AMI_INA239_INDEX_V_BUS, vbuf);
-    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+    status |= amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
             AMI_INA239_INDEX_V_SHUNT, vsbuf);
-    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+    status |= amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
             AMI_INA239_INDEX_CURRENT, ibuf);
 
     if (status < 0) {
@@ -615,7 +673,7 @@ fetchTempRaw(unsigned int controllerIndex, unsigned int channel,
 {
     int status = 0;
 
-    status |= amiGetIna239Reading(controllerIndex, psInfo[channel].deviceIndex,
+    status |= amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
             AMI_INA239_INDEX_DIETEMP, tbuf);
 
     if (status < 0) {
@@ -655,7 +713,7 @@ amiCrank()
     static int sensor;
 
     if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 100000) {
-        if (sensor >= NUM_PS_READINGS) {
+        if (sensor >= NUM_PS_SENSORS) {
             sensor = 0;
             bpm++;
         }
@@ -665,9 +723,9 @@ amiCrank()
         }
 
         status = fetchVIRaw(bpm, sensor,
-                &psReadings[bpm][sensor].vbus, &psReadings[bpm][sensor].vshunt,
-                &psReadings[bpm][sensor].current);
-        status |= fetchTempRaw(bpm, sensor, &psReadings[bpm][sensor].temp);
+                &psInfos[bpm][sensor].vbus, &psInfos[bpm][sensor].vshunt,
+                &psInfos[bpm][sensor].current);
+        status |= fetchTempRaw(bpm, sensor, &psInfos[bpm][sensor].temp);
 
         sensor++;
         sensorRead = 1;
@@ -685,7 +743,7 @@ amiCrank()
 void
 amiPSinfoDisplay(unsigned int bpm)
 {
-    unsigned int channel = 0;
+    unsigned int sensor = 0;
     int status = 0;
 
     if (bpm >= CFG_DSBPM_COUNT) {
@@ -694,21 +752,21 @@ amiPSinfoDisplay(unsigned int bpm)
 
     printf("BPM%u:\n", bpm);
 
-    for (channel = 0 ; channel < NUM_PS_SENSORS; channel++) {
+    for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
         float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
 
-        status = convertVI(psReadings[bpm][channel].vbus,
-                psReadings[bpm][channel].vshunt,
-                psReadings[bpm][channel].current,
+        status = convertVI(psInfos[bpm][sensor].vbus,
+                psInfos[bpm][sensor].vshunt,
+                psInfos[bpm][sensor].current,
                 &v, &vs, &i);
-        status |= convertTemp(psReadings[bpm][channel].temp, &t);
+        status |= convertTemp(psInfos[bpm][sensor].temp, &t);
         if (status < 0) {
             printf("%8s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
-                    psInfo[channel].name);
+                    psInfos[bpm][sensor].name);
         }
         else {
             printf("%8s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
-                    psInfo[channel].name, v, vs, i, t);
+                    psInfos[bpm][sensor].name, v, vs, i, t);
         }
     }
 }
