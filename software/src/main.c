@@ -133,7 +133,7 @@ main(void)
     rfDCsync();
 
     /*
-     * Test AFE module communication
+     * Show AFE sensors
      */
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         amiPSinfoDisplay(bpm);
@@ -185,6 +185,7 @@ main(void)
         checkForReset();
         mgtCrankRxAligner();
         cellCommCrank();
+        amiCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();
