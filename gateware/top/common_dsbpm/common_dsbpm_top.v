@@ -1,4 +1,5 @@
 module common_dsbpm_top #(
+    parameter SWAP_ADC_DAC_SETS         = "TRUE",
     parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
@@ -1174,9 +1175,63 @@ wire                    [BD_ADC_CHANNEL_COUNT-1:0] adcsPhysicalTVALID;
 wire [(BD_ADC_CHANNEL_COUNT*ADC_SAMPLE_WIDTH)-1:0] adcsTDATA;
 wire                    [BD_ADC_CHANNEL_COUNT-1:0] adcsTVALID;
 
+wire [(BD_DAC_CHANNEL_COUNT*AXIS_DAC_SAMPLE_WIDTH)-1:0] dacsPhysicalTDATA;
+wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsPhysicalTVALID;
+wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsPhysicalTREADY;
 wire [(BD_DAC_CHANNEL_COUNT*AXIS_DAC_SAMPLE_WIDTH)-1:0] dacsTDATA;
 wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTVALID;
 wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTREADY;
+
+generate
+if (SWAP_ADC_DAC_SETS != "TRUE" && SWAP_ADC_DAC_SETS != "FALSE") begin
+    SWAP_ADC_DAC_SETS_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
+
+localparam ADC_SET_OFFSET = 8;
+localparam DAC_SET_OFFSET = 4;
+
+generate
+if (SWAP_ADC_DAC_SETS == "TRUE") begin
+
+    for (i = 0; i < BD_ADC_CHANNEL_COUNT; i = i + 1) begin
+        assign adcsTVALID[(i+ADC_SET_OFFSET) % BD_ADC_CHANNEL_COUNT] = adcsPhysicalTVALID[i];
+        assign adcsTDATA[((i+ADC_SET_OFFSET) % BD_ADC_CHANNEL_COUNT)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
+            adcsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+    end
+
+
+    for (i = 0; i < BD_DAC_CHANNEL_COUNT; i = i + 1) begin
+        assign dacsTREADY[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT] = dacsPhysicalTREADY[i];
+
+        assign dacsPhysicalTVALID[i] = dacsTVALID[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT];
+        assign dacsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
+            dacsTDATA[((i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+    end
+
+end
+endgenerate
+
+generate
+if (SWAP_ADC_DAC_SETS == "FALSE") begin
+
+    for (i = 0; i < BD_ADC_CHANNEL_COUNT; i = i + 1) begin
+        assign adcsTVALID[i] = adcsPhysicalTVALID[i];
+        assign adcsTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
+            adcsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+    end
+
+
+    for (i = 0; i < BD_DAC_CHANNEL_COUNT; i = i + 1) begin
+        assign dacsTREADY[i] = dacsPhysicalTREADY[i];
+
+        assign dacsPhysicalTVALID[i] = dacsTVALID[i];
+        assign dacsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
+            dacsTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+    end
+
+end
+endgenerate
 
 // Make this a black box for simulation
 `ifndef SIMULATE
@@ -1338,30 +1393,30 @@ system
     .adc6Qstream_tready(1'b1),
     .adc7Qstream_tready(1'b1),
 
-    .dac0stream_tdata(dacsTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac1stream_tdata(dacsTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac2stream_tdata(dacsTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac3stream_tdata(dacsTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac4stream_tdata(dacsTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac5stream_tdata(dacsTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac6stream_tdata(dacsTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac7stream_tdata(dacsTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac0stream_tvalid(dacsTVALID[0]),
-    .dac1stream_tvalid(dacsTVALID[1]),
-    .dac2stream_tvalid(dacsTVALID[2]),
-    .dac3stream_tvalid(dacsTVALID[3]),
-    .dac4stream_tvalid(dacsTVALID[4]),
-    .dac5stream_tvalid(dacsTVALID[5]),
-    .dac6stream_tvalid(dacsTVALID[6]),
-    .dac7stream_tvalid(dacsTVALID[7]),
-    .dac0stream_tready(dacsTREADY[0]),
-    .dac1stream_tready(dacsTREADY[1]),
-    .dac2stream_tready(dacsTREADY[2]),
-    .dac3stream_tready(dacsTREADY[3]),
-    .dac4stream_tready(dacsTREADY[4]),
-    .dac5stream_tready(dacsTREADY[5]),
-    .dac6stream_tready(dacsTREADY[6]),
-    .dac7stream_tready(dacsTREADY[7]),
+    .dac0stream_tdata(dacsPhysicalTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac1stream_tdata(dacsPhysicalTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac2stream_tdata(dacsPhysicalTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac3stream_tdata(dacsPhysicalTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac4stream_tdata(dacsPhysicalTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac5stream_tdata(dacsPhysicalTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac6stream_tdata(dacsPhysicalTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac7stream_tdata(dacsPhysicalTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac0stream_tvalid(dacsPhysicalTVALID[0]),
+    .dac1stream_tvalid(dacsPhysicalTVALID[1]),
+    .dac2stream_tvalid(dacsPhysicalTVALID[2]),
+    .dac3stream_tvalid(dacsPhysicalTVALID[3]),
+    .dac4stream_tvalid(dacsPhysicalTVALID[4]),
+    .dac5stream_tvalid(dacsPhysicalTVALID[5]),
+    .dac6stream_tvalid(dacsPhysicalTVALID[6]),
+    .dac7stream_tvalid(dacsPhysicalTVALID[7]),
+    .dac0stream_tready(dacsPhysicalTREADY[0]),
+    .dac1stream_tready(dacsPhysicalTREADY[1]),
+    .dac2stream_tready(dacsPhysicalTREADY[2]),
+    .dac3stream_tready(dacsPhysicalTREADY[3]),
+    .dac4stream_tready(dacsPhysicalTREADY[4]),
+    .dac5stream_tready(dacsPhysicalTREADY[5]),
+    .dac6stream_tready(dacsPhysicalTREADY[6]),
+    .dac7stream_tready(dacsPhysicalTREADY[7]),
 
     .vout0_v_n(RFMC_DAC_00_N),
     .vout0_v_p(RFMC_DAC_00_P),
@@ -1804,30 +1859,30 @@ system
     .adc6Qstream_tready(1'b1),
     .adc7Qstream_tready(1'b1),
 
-    .dac0stream_tdata(dacsTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac1stream_tdata(dacsTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac2stream_tdata(dacsTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac3stream_tdata(dacsTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac4stream_tdata(dacsTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac5stream_tdata(dacsTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac6stream_tdata(dacsTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac7stream_tdata(dacsTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac0stream_tvalid(dacsTVALID[0]),
-    .dac1stream_tvalid(dacsTVALID[1]),
-    .dac2stream_tvalid(dacsTVALID[2]),
-    .dac3stream_tvalid(dacsTVALID[3]),
-    .dac4stream_tvalid(dacsTVALID[4]),
-    .dac5stream_tvalid(dacsTVALID[5]),
-    .dac6stream_tvalid(dacsTVALID[6]),
-    .dac7stream_tvalid(dacsTVALID[7]),
-    .dac0stream_tready(dacsTREADY[0]),
-    .dac1stream_tready(dacsTREADY[1]),
-    .dac2stream_tready(dacsTREADY[2]),
-    .dac3stream_tready(dacsTREADY[3]),
-    .dac4stream_tready(dacsTREADY[4]),
-    .dac5stream_tready(dacsTREADY[5]),
-    .dac6stream_tready(dacsTREADY[6]),
-    .dac7stream_tready(dacsTREADY[7]),
+    .dac0stream_tdata(dacsPhysicalTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac1stream_tdata(dacsPhysicalTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac2stream_tdata(dacsPhysicalTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac3stream_tdata(dacsPhysicalTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac4stream_tdata(dacsPhysicalTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac5stream_tdata(dacsPhysicalTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac6stream_tdata(dacsPhysicalTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac7stream_tdata(dacsPhysicalTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
+    .dac0stream_tvalid(dacsPhysicalTVALID[0]),
+    .dac1stream_tvalid(dacsPhysicalTVALID[1]),
+    .dac2stream_tvalid(dacsPhysicalTVALID[2]),
+    .dac3stream_tvalid(dacsPhysicalTVALID[3]),
+    .dac4stream_tvalid(dacsPhysicalTVALID[4]),
+    .dac5stream_tvalid(dacsPhysicalTVALID[5]),
+    .dac6stream_tvalid(dacsPhysicalTVALID[6]),
+    .dac7stream_tvalid(dacsPhysicalTVALID[7]),
+    .dac0stream_tready(dacsPhysicalTREADY[0]),
+    .dac1stream_tready(dacsPhysicalTREADY[1]),
+    .dac2stream_tready(dacsPhysicalTREADY[2]),
+    .dac3stream_tready(dacsPhysicalTREADY[3]),
+    .dac4stream_tready(dacsPhysicalTREADY[4]),
+    .dac5stream_tready(dacsPhysicalTREADY[5]),
+    .dac6stream_tready(dacsPhysicalTREADY[6]),
+    .dac7stream_tready(dacsPhysicalTREADY[7]),
 
     .vout0_v_n(RFMC_DAC_00_N),
     .vout0_v_p(RFMC_DAC_00_P),
@@ -1916,26 +1971,6 @@ end // end if
 endgenerate
 
 `endif // `ifndef SIMULATE
-
-
-channelMapping #(
-    .NUM_CHANNELS(CFG_ADC_PHYSICAL_COUNT),
-    // I and Q together
-    .CHANNEL_WIDTH(2*ADC_SAMPLE_WIDTH))
-  adcMapping (
-    .sysClk(sysClk),
-    .csrStrobe(GPIO_STROBES[GPIO_IDX_ADC_MAPPING]),
-    .GPIO_OUT(GPIO_OUT),
-    .csr(GPIO_IN[GPIO_IDX_ADC_MAPPING]),
-
-    .clk(adcClk),
-    // I and Q together
-    .physicalData(adcsPhysicalTDATA),
-    .physicalValid(adcsPhysicalValid),
-
-    .logicalData(adcsTDATA),
-    .logicalValid(adcsTVALID)
-);
 
 //
 // Create slow (SA) and fast (FA) acquistion triggers
