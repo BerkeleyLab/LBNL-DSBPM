@@ -670,6 +670,9 @@ rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
 
+    // BPM hardware assignments are swapped
+    bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+
     att = ((float) mDbAtt) / 1000;
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     rfADCSetDSA(ch, att);
@@ -681,6 +684,9 @@ rfADCGetDSADSBPM(unsigned int bpm, int channel)
     float att;
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    // BPM hardware assignments are swapped
+    bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
 
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     att = rfADCGetDSA(ch);
@@ -732,6 +738,9 @@ rfDACGetVOPDSBPM(unsigned int bpm, int channel)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
 
+    // BPM hardware assignments are swapped
+    bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     return rfDACGetVOP(ch);
 }
@@ -741,6 +750,9 @@ rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent)
 {
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
+
+    // BPM hardware assignments are swapped
+    bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDACSetVOP(ch, ucurrent);
