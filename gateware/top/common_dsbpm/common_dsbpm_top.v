@@ -1205,8 +1205,8 @@ if (SWAP_ADC_DAC_SETS == "TRUE") begin
         assign dacsTREADY[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT] = dacsPhysicalTREADY[i];
 
         assign dacsPhysicalTVALID[i] = dacsTVALID[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT];
-        assign dacsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
-            dacsTDATA[((i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+        assign dacsPhysicalTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
+            dacsTDATA[((i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
     end
 
 end
@@ -1226,8 +1226,8 @@ if (SWAP_ADC_DAC_SETS == "FALSE") begin
         assign dacsTREADY[i] = dacsPhysicalTREADY[i];
 
         assign dacsPhysicalTVALID[i] = dacsTVALID[i];
-        assign dacsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
-            dacsTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+        assign dacsPhysicalTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
+            dacsTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
     end
 
 end
