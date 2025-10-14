@@ -76,7 +76,6 @@ systemParametersSetDefaults(void)
     // ADC logical order:
     //   ADC_0 = 4, ADC_1 = 5, ADC_2 = 6, ADC_3 = 7
     //   ADC_4 = 0, ADC_5 = 1, ADC_6 = 2, ADC_7 = 3
-    systemParametersDefault.adcPhysToLogical = 45670123;
     systemParametersDefault.xCalibration = 16.0;
     systemParametersDefault.yCalibration = 16.0;
     systemParametersDefault.qCalibration = 16.0;
@@ -280,13 +279,6 @@ formatInt4(const void *val)
     return cbuf;
 }
 
-static char *
-formatInt8(const void *val)
-{
-    sprintf(cbuf, "%08d", *(const int *)val);
-    return cbuf;
-}
-
 static int
 parseHex(const char *str, void *val)
 {
@@ -334,8 +326,6 @@ static struct conv {
                        offsetof(struct systemParameters, evrPerSaMarker),  formatInt,  parseInt},
   {"ADC for button ABCD",
                        offsetof(struct systemParameters, adcOrder),       formatInt4,  parseInt},
-  {"Physical ADC to logical ADC",
-                       offsetof(struct systemParameters, adcPhysToLogical),     formatInt8,  parseInt},
   {"X calibration (mm p.u.)",
                        offsetof(struct systemParameters, xCalibration),  formatFloat,parseFloat},
   {"Y calibration (mm p.u.)",
