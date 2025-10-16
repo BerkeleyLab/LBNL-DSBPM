@@ -13,6 +13,16 @@
 
 #define IIC_MAX_TRIES   4
 
+// LMK values
+static const uint32_t lmk04828BDefaults[] = {
+#include "lmk04828B.h"
+};
+
+#define LMK04828B_SIZE (sizeof lmk04828BDefaults/sizeof lmk04828BDefaults[0])
+
+const uint32_t *lmk04828BValues;
+uint32_t lmk04828BSizes;
+
 const unsigned int lmx2594MuxSel[LMX2594_MUX_SEL_SIZE] = {
     SPI_MUX_2594_A_ADC,  // Tile 224, 225, 226, 227 (ADC 0, 1, 2, 3, 4, 5, 6, 7)
     SPI_MUX_2594_B_DAC,  // Tile 228, 229, 230, 231 (DAC 0, 1, 2, 3, 4, 5, 6, 7)
@@ -151,6 +161,9 @@ iicInit(void)
     lmx2594Values[1] = lmx2594DACDefaults;
     lmx2594Sizes[0] = LMX2594ADC_SIZE;
     lmx2594Sizes[1] = LMX2594DAC_SIZE;
+
+    lmk04828BValues = lmk04828BDefaults;
+    lmk04828BSizes = LMK04828B_SIZE;
 
     /*
      * Configure port expander 0_1 as output and drive low -- this works

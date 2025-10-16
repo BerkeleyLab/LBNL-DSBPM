@@ -78,6 +78,9 @@
 
 #define LMX2594_MUX_SEL_SIZE  2
 
+extern const uint32_t *lmk04828BValues;
+extern uint32_t lmk04828BSizes;
+
 extern const unsigned int lmx2594MuxSel[];
 extern const uint32_t *lmx2594Values[];
 extern uint32_t lmx2594Sizes[];
