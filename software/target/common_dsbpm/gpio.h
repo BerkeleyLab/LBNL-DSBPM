@@ -156,6 +156,26 @@
 #define EVR_SYNC_CSR_PPS_GOOD   0x4
 
 /*
+ * If ADC sets are swapped
+ */
+#define CFG_SWAP_ADC_SETS             1
+
+/*
+ * If ADC signals are reversed within a set
+ */
+#define CFG_REVERSE_ADC_SET_ORDER     1
+
+/*
+ * If DAC sets are swapped
+ */
+#define CFG_SWAP_DAC_SETS             1
+
+/*
+ * If DAC signals are reversed within a set
+ */
+#define CFG_REVERSE_DAC_SET_ORDER     0
+
+/*
  * Number of ADC streams required by application
  */
 #define CFG_ADC_CHANNEL_COUNT    16 // I/Q

@@ -1,8 +1,4 @@
 module common_dsbpm_top #(
-    parameter SWAP_ADC_SETS             = "TRUE",
-    parameter REVERSE_ADC_SET_ORDER     = "TRUE",
-    parameter SWAP_DAC_SETS             = "TRUE",
-    parameter REVERSE_DAC_SET_ORDER     = "FALSE",
     parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
@@ -1188,26 +1184,26 @@ wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTVALID;
 wire                         [BD_DAC_CHANNEL_COUNT-1:0] dacsTREADY;
 
 generate
-if (SWAP_ADC_SETS != "TRUE" && SWAP_ADC_SETS != "FALSE") begin
-    SWAP_ADC_SETS_only_TRUE_or_FALSE_SUPPORTED();
+if (CFG_SWAP_ADC_SETS != 1 && CFG_SWAP_ADC_SETS != 0) begin
+    CFG_SWAP_ADC_SETS_only_TRUE_or_FALSE_SUPPORTED();
 end
 endgenerate
 
 generate
-if (REVERSE_ADC_SET_ORDER != "TRUE" && REVERSE_ADC_SET_ORDER != "FALSE") begin
-    REVERSE_ADC_SET_ORDER_only_TRUE_or_FALSE_SUPPORTED();
+if (CFG_REVERSE_ADC_SET_ORDER != 1 && CFG_REVERSE_ADC_SET_ORDER != 0) begin
+    CFG_REVERSE_ADC_SET_ORDER_only_TRUE_or_FALSE_SUPPORTED();
 end
 endgenerate
 
 generate
-if (SWAP_DAC_SETS != "TRUE" && SWAP_DAC_SETS != "FALSE") begin
-    SWAP_DAC_SETS_only_TRUE_or_FALSE_SUPPORTED();
+if (CFG_SWAP_DAC_SETS != 1 && CFG_SWAP_DAC_SETS != 0) begin
+    CFG_SWAP_DAC_SETS_only_TRUE_or_FALSE_SUPPORTED();
 end
 endgenerate
 
 generate
-if (REVERSE_DAC_SET_ORDER != "TRUE" && REVERSE_DAC_SET_ORDER != "FALSE") begin
-    REVERSE_DAC_SET_ORDER_only_TRUE_or_FALSE_SUPPORTED();
+if (CFG_REVERSE_DAC_SET_ORDER != 1 && CFG_REVERSE_DAC_SET_ORDER != 0) begin
+    CFG_REVERSE_DAC_SET_ORDER_only_TRUE_or_FALSE_SUPPORTED();
 end
 endgenerate
 
@@ -1216,12 +1212,12 @@ generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin
     for (channel = 0 ; channel < CFG_ADC_PER_BPM_COUNT ; channel = channel + 1) begin
 
-        localparam OFFSET_REMAP = (SWAP_ADC_SETS == "TRUE")?
+        localparam OFFSET_REMAP = (CFG_SWAP_ADC_SETS == 1)?
             CFG_ADC_PER_BPM_COUNT : 0;
 
         localparam integer adc = dsbpm*CFG_ADC_PER_BPM_COUNT + channel;
 
-        localparam integer adcRev = (REVERSE_ADC_SET_ORDER == "TRUE")?
+        localparam integer adcRev = (CFG_REVERSE_ADC_SET_ORDER == 1)?
             dsbpm*CFG_ADC_PER_BPM_COUNT + (CFG_ADC_PER_BPM_COUNT-1 - channel) :
             dsbpm*CFG_ADC_PER_BPM_COUNT + channel;
 
@@ -1239,12 +1235,12 @@ generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin
     for (channel = 0 ; channel < CFG_DAC_PER_BPM_COUNT ; channel = channel + 1) begin
 
-        localparam OFFSET_REMAP = (SWAP_DAC_SETS == "TRUE")?
+        localparam OFFSET_REMAP = (CFG_SWAP_DAC_SETS == 1)?
             CFG_DAC_PER_BPM_COUNT : 0;
 
         localparam integer dac = dsbpm*CFG_DAC_PER_BPM_COUNT + channel;
 
-        localparam integer dacRev = (REVERSE_DAC_SET_ORDER == "TRUE")?
+        localparam integer dacRev = (CFG_REVERSE_DAC_SET_ORDER == 1)?
             dsbpm*CFG_DAC_PER_BPM_COUNT + (CFG_DAC_PER_BPM_COUNT-1 - channel) :
             dsbpm*CFG_DAC_PER_BPM_COUNT + channel;
 
