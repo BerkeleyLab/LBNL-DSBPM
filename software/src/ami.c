@@ -111,7 +111,6 @@ static struct controller controllers[] = {
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
 static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
-#define NUM_PS_SENSORS                  5
 #define INA239_AMPS_PER_VOLT            9 /* 1/Rshunt */
 
 struct psInfo {
@@ -123,7 +122,7 @@ struct psInfo {
     const char *name;
 };
 
-static struct psInfo psInfos[CFG_DSBPM_COUNT][NUM_PS_SENSORS] = {
+static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
     {
         {
             .deviceIndex = AMI_SPI_INDEX_AFE_0,
@@ -289,7 +288,7 @@ amiInit(void)
     int controllerIndex = 0, sensor = 0;
     int status = 0;
     for (controllerIndex = 0 ; controllerIndex < NUM_CONTROLLERS; controllerIndex++) {
-        for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
+        for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
             status = fetchVIRaw(controllerIndex, sensor,
                     &psInfos[controllerIndex][sensor].vbus,
                     &psInfos[controllerIndex][sensor].vshunt,
@@ -608,7 +607,7 @@ amiIna239MfrIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    if (channel >= NUM_PS_SENSORS) {
+    if (channel >= AMI_NUM_PS_SENSORS) {
         return -1;
     }
 
@@ -632,7 +631,7 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
         return -1;
     }
 
-    if (channel >= NUM_PS_SENSORS) {
+    if (channel >= AMI_NUM_PS_SENSORS) {
         return -1;
     }
 
@@ -743,7 +742,7 @@ amiCrank()
     static int sensor;
 
     if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 100000) {
-        if (sensor >= NUM_PS_SENSORS) {
+        if (sensor >= AMI_NUM_PS_SENSORS) {
             sensor = 0;
             bpm++;
         }
@@ -778,7 +777,7 @@ amiFetch(uint32_t *args)
     args[aIndex++] = now.fraction;
 
     for (bpm = 0 ; bpm < CFG_DSBPM_COUNT; bpm++) {
-        for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
+        for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
             args[aIndex++] = (psInfos[bpm][sensor].vshunt << 16) |
                                 psInfos[bpm][sensor].vbus;
             args[aIndex++] = (psInfos[bpm][sensor].current << 16) |
@@ -805,7 +804,7 @@ amiPSinfoDisplay(unsigned int bpm)
 
     printf("BPM%u:\n", bpm);
 
-    for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
+    for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
         float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
 
         status = convertVI(psInfos[bpm][sensor].vbus,

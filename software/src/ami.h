@@ -25,6 +25,8 @@
 #define AMI_INA239_MFR                  0x5449
 #define AMI_INA239_DEVID                0x2391
 
+#define AMI_NUM_PS_SENSORS              5
+
 void amiInit(void);
 int amiAfeGetSerialNumber(void);
 int amiAfeAttenSet(unsigned int bpm, unsigned int channel, unsigned int mdB);
