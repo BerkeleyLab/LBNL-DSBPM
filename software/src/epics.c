@@ -191,6 +191,11 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
                                                                   powerUpStatus;
         break;
 
+    case DSBPM_PROTOCOL_CMD_HI_SYSMON2:
+        if (commandArgCount != 0) return -1;
+        replyArgCount = amiFetch(replyp->args);
+        break;
+
     case DSBPM_PROTOCOL_CMD_HI_PLL_CONFIG:
         switch (lo) {
         case DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_SET:

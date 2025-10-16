@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <xparameters.h>
 #include <limits.h>
+#include "evr.h"
 #include "genericSPI.h"
 #include "ami.h"
 #include "gpio.h"
@@ -763,6 +764,29 @@ amiCrank()
     if (sensorRead) {
         whenEntered = MICROSECONDS_SINCE_BOOT();
     }
+}
+
+int
+amiFetch(uint32_t *args)
+{
+    int bpm, sensor;
+    int aIndex = 0;
+    evrTimestamp now;
+
+    evrCurrentTime(&now);
+    args[aIndex++] = now.secPastEpoch;
+    args[aIndex++] = now.fraction;
+
+    for (bpm = 0 ; bpm < CFG_DSBPM_COUNT; bpm++) {
+        for (sensor = 0 ; sensor < NUM_PS_SENSORS; sensor++) {
+            args[aIndex++] = (psInfos[bpm][sensor].vshunt << 16) |
+                                psInfos[bpm][sensor].vbus;
+            args[aIndex++] = (psInfos[bpm][sensor].current << 16) |
+                                psInfos[bpm][sensor].temp;
+        }
+    }
+
+    return aIndex;
 }
 
 /*

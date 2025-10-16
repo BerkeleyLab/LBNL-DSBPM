@@ -35,6 +35,7 @@ unsigned int amiPtmAttenGet(unsigned int bpm);
 int amiIna239MfrIdGet(unsigned int bpm, unsigned int channel);
 int amiIna239DevIdGet(unsigned int bpm, unsigned int channel);
 
+int amiFetch(uint32_t *args);
 void amiCrank();
 void amiPSinfoDisplay(unsigned int bpm);
 
