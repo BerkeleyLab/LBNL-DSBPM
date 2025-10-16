@@ -1,5 +1,6 @@
 module dsbpm_lbl208 #(
     parameter SWAP_ADC_DAC_SETS         = "TRUE",
+    parameter REVERSE_ADC_DAC_SET_ORDER = "TRUE",
     parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
@@ -109,6 +110,7 @@ module dsbpm_lbl208 #(
 
 common_dsbpm_top #(
     .SWAP_ADC_DAC_SETS(SWAP_ADC_DAC_SETS),
+    .REVERSE_ADC_DAC_SET_ORDER(REVERSE_ADC_DAC_SET_ORDER),
     .FPGA_FAMILY(FPGA_FAMILY),
     .TEST_BYPASS_RECORDERS(TEST_BYPASS_RECORDERS),
     .TEST_BYPASS_PRELIM_PROC(TEST_BYPASS_PRELIM_PROC),

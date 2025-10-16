@@ -1,5 +1,6 @@
 module common_dsbpm_top #(
     parameter SWAP_ADC_DAC_SETS         = "TRUE",
+    parameter REVERSE_ADC_DAC_SET_ORDER = "TRUE",
     parameter FPGA_FAMILY               = "ultrascaleplus",
     parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
@@ -573,6 +574,8 @@ localparam ADC_SAMPLE_WIDTH    = CFG_ADC_AXI_SAMPLES_PER_CLOCK * AXI_ADC_SAMPLE_
 localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
 
 // I and Q interleaved
+localparam AXIS_ADC_WORDS_PER_SAMPLE = (IQ_DATA == "TRUE")? 2 : 1;
+localparam AXIS_ADC_SAMPLE_WIDTH = AXIS_ADC_WORDS_PER_SAMPLE * CFG_ADC_AXI_SAMPLES_PER_CLOCK * AXI_ADC_SAMPLE_WIDTH;
 localparam AXIS_DAC_SAMPLE_WIDTH = CFG_DAC_AXI_SAMPLES_PER_CLOCK * DAC_SAMPLE_WIDTH;
 
 // FIFO sizes
@@ -1188,48 +1191,56 @@ if (SWAP_ADC_DAC_SETS != "TRUE" && SWAP_ADC_DAC_SETS != "FALSE") begin
 end
 endgenerate
 
-localparam ADC_SET_OFFSET = 8;
-localparam DAC_SET_OFFSET = 4;
-
 generate
-if (SWAP_ADC_DAC_SETS == "TRUE") begin
+if (REVERSE_ADC_DAC_SET_ORDER != "TRUE" && REVERSE_ADC_DAC_SET_ORDER != "FALSE") begin
+    REVERSE_ADC_DAC_SET_ORDER_only_TRUE_or_FALSE_SUPPORTED();
+end
+endgenerate
 
-    for (i = 0; i < BD_ADC_CHANNEL_COUNT; i = i + 1) begin
-        assign adcsTVALID[(i+ADC_SET_OFFSET) % BD_ADC_CHANNEL_COUNT] = adcsPhysicalTVALID[i];
-        assign adcsTDATA[((i+ADC_SET_OFFSET) % BD_ADC_CHANNEL_COUNT)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
-            adcsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+genvar channel;
+generate
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin
+    for (channel = 0 ; channel < CFG_ADC_PER_BPM_COUNT ; channel = channel + 1) begin
+
+        localparam OFFSET_REMAP = (SWAP_ADC_DAC_SETS == "TRUE")?
+            CFG_ADC_PER_BPM_COUNT : 0;
+
+        localparam integer adc = dsbpm*CFG_ADC_PER_BPM_COUNT + channel;
+
+        localparam integer adcRev = (REVERSE_ADC_DAC_SET_ORDER == "TRUE")?
+            dsbpm*CFG_ADC_PER_BPM_COUNT + (CFG_ADC_PER_BPM_COUNT-1 - channel) :
+            dsbpm*CFG_ADC_PER_BPM_COUNT + channel;
+
+        localparam integer adcRemap = (adcRev + OFFSET_REMAP) % (CFG_DSBPM_COUNT*CFG_ADC_PER_BPM_COUNT);
+
+        assign adcsTVALID[adcRemap*AXIS_ADC_WORDS_PER_SAMPLE+:AXIS_ADC_WORDS_PER_SAMPLE] =
+            adcsPhysicalTVALID[adc*AXIS_ADC_WORDS_PER_SAMPLE+:AXIS_ADC_WORDS_PER_SAMPLE];
+        assign adcsTDATA[adcRemap*AXIS_ADC_SAMPLE_WIDTH+:AXIS_ADC_SAMPLE_WIDTH] =
+            adcsPhysicalTDATA[adc*AXIS_ADC_SAMPLE_WIDTH+:AXIS_ADC_SAMPLE_WIDTH];
     end
-
-
-    for (i = 0; i < BD_DAC_CHANNEL_COUNT; i = i + 1) begin
-        assign dacsTREADY[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT] = dacsPhysicalTREADY[i];
-
-        assign dacsPhysicalTVALID[i] = dacsTVALID[(i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT];
-        assign dacsPhysicalTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
-            dacsTDATA[((i+DAC_SET_OFFSET) % BD_DAC_CHANNEL_COUNT)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
-    end
-
 end
 endgenerate
 
 generate
-if (SWAP_ADC_DAC_SETS == "FALSE") begin
+for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin
+    for (channel = 0 ; channel < CFG_DAC_PER_BPM_COUNT ; channel = channel + 1) begin
 
-    for (i = 0; i < BD_ADC_CHANNEL_COUNT; i = i + 1) begin
-        assign adcsTVALID[i] = adcsPhysicalTVALID[i];
-        assign adcsTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH] =
-            adcsPhysicalTDATA[i*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH];
+        localparam OFFSET_REMAP = (SWAP_ADC_DAC_SETS == "TRUE")?
+            CFG_DAC_PER_BPM_COUNT : 0;
+
+        localparam integer dac = dsbpm*CFG_DAC_PER_BPM_COUNT + channel;
+
+        localparam integer dacRev = (REVERSE_ADC_DAC_SET_ORDER == "TRUE")?
+            dsbpm*CFG_DAC_PER_BPM_COUNT + (CFG_DAC_PER_BPM_COUNT-1 - channel) :
+            dsbpm*CFG_DAC_PER_BPM_COUNT + channel;
+
+        localparam integer dacRemap = (dacRev + OFFSET_REMAP) % (CFG_DSBPM_COUNT*CFG_DAC_PER_BPM_COUNT);
+
+        assign dacsTREADY[dacRemap] = dacsPhysicalTREADY[dac];
+        assign dacsPhysicalTVALID[dac] = dacsTVALID[dacRemap];
+        assign dacsPhysicalTDATA[dac*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
+            dacsTDATA[dacRemap*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
     end
-
-
-    for (i = 0; i < BD_DAC_CHANNEL_COUNT; i = i + 1) begin
-        assign dacsTREADY[i] = dacsPhysicalTREADY[i];
-
-        assign dacsPhysicalTVALID[i] = dacsTVALID[i];
-        assign dacsPhysicalTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
-            dacsTDATA[i*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
-    end
-
 end
 endgenerate
 
