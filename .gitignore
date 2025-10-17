@@ -84,6 +84,7 @@ work/
 
 # NCO tables
 *csv
+!/software/scripts/sysParms.csv
 
 # generated from TICS files
 *lmk04208.h

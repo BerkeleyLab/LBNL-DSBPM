@@ -670,6 +670,14 @@ rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
 
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
     att = ((float) mDbAtt) / 1000;
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     rfADCSetDSA(ch, att);
@@ -681,6 +689,14 @@ rfADCGetDSADSBPM(unsigned int bpm, int channel)
     float att;
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
 
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     att = rfADCGetDSA(ch);
@@ -732,6 +748,14 @@ rfDACGetVOPDSBPM(unsigned int bpm, int channel)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
 
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     return rfDACGetVOP(ch);
 }
@@ -741,6 +765,14 @@ rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent)
 {
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDACSetVOP(ch, ucurrent);

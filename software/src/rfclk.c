@@ -11,20 +11,24 @@
 /*
  * Configure LMK04208/LMK04828B jitter cleaner.
  */
-void
-rfClkInitLMK04xx(void)
+static void
+initLmk04xx(const uint32_t *values, int n)
 {
     int i;
-#if defined (__TARGET_DSBPM_ZCU208__) || defined(__TARGET_DSBPM_LBL208__)
-    static const uint32_t lmk04828B[] = {
-#include "lmk04828B.h"
-    };
-    for (i = 0 ; i < sizeof lmk04828B / sizeof lmk04828B[0] ; i++) {
-        lmk04828Bwrite(lmk04828B[i]);
+
+    /*
+     * Write registers with values from TICS Pro.
+     */
+    for (i = 0 ; i < n ; i++) {
+        uint32_t v = values[i];
+        lmk04828Bwrite(v);
     }
-#else
-#   error "Unrecognized __TARGET_XXX__ macro"
-#endif
+}
+
+void
+lmk04xxConfig(const uint32_t *values, int n)
+{
+    initLmk04xx(values, n);
 }
 
 /*
@@ -155,7 +159,8 @@ lmx2594ReadbackFirst(uint32_t *values, int capacity)
 void
 rfClkInit(void)
 {
-    rfClkInitLMK04xx();
+    lmk04xxConfig(lmk04828BValues, lmk04828BSizes);
+
     int i;
     for (i = 0 ; i < LMX2594_MUX_SEL_SIZE ; i++) {
         lmx2594Config(lmx2594MuxSel[i], lmx2594Values[i],

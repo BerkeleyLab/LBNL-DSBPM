@@ -354,8 +354,8 @@ set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filt
 
 # Set max delay path between EVR clock and DDR clock,
 # only used for monitoring and debug
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] $clk_ddr_ui_period
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *gtye4_channel_gen.gen_gtye4_channel_inst[0].GTYE4_CHANNEL_PRIM_INST_1}]] $clk_mgt_rx_period
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrClk}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] $clk_ddr_ui_period
+set_max_delay -datapath_only -from [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *ddr4_0/inst/u_ddr4_infrastructure/gen_mmcme4.u_mmcme_adv_inst/CLKOUT0}]] -to [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *evrGTYwrapper/evrClk}]] $clk_mgt_rx_period
 
 # Ignore warnings
 create_waiver -internal -user DDR4 -tags "1010162" -scope -type METHODOLOGY -id CLKC-55 -description "Clocking Primitives will be Auto-Placed" -objects [ \

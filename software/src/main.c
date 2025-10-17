@@ -4,6 +4,7 @@
 #include <lwip/inet.h>
 #include <netif/xadapter.h>
 #include "afe.h"
+#include "ami.h"
 #include "console.h"
 #include "display.h"
 #include "epics.h"
@@ -125,9 +126,17 @@ main(void)
     sysrefShow(1);
     rfDCinit();
     afeInit();
+    amiInit();
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
+
+    /*
+     * Show AFE sensors
+     */
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
 
     /* Start network */
     lwip_init();
@@ -174,6 +183,7 @@ main(void)
         checkForReset();
         mgtCrankRxAligner();
         cellCommCrank();
+        amiCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();

@@ -6,6 +6,7 @@
 #include <lwip/udp.h>
 #include "adcProcessing.h"
 #include "afe.h"
+#include "ami.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "epics.h"
@@ -187,6 +188,13 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         replyArgCount += mgtFetch(replyp->args+replyArgCount);
         replyArgCount += afeFetchADCextents(replyp->args+replyArgCount);
         replyp->args[replyArgCount++] = (CFG_ADC_PHYSICAL_COUNT << 16) |
+                                                                  powerUpStatus;
+        break;
+
+    case DSBPM_PROTOCOL_CMD_HI_SYSMON2:
+        if (commandArgCount != 0) return -1;
+        replyArgCount = amiFetch(replyp->args);
+        replyp->args[replyArgCount++] = (CFG_DSBPM_COUNT*AMI_NUM_PS_SENSORS << 16) |
                                                                   powerUpStatus;
         break;
 

@@ -95,6 +95,13 @@ module dsbpm_zcu208 #(
     output wire [1:0] AFE_SPI_SDI,
     output wire [1:0] AFE_SPI_LE,
 
+    output wire  [1:0] AMI_SPI_CLK,
+    output wire  [1:0] AMI_SPI_SDI,
+    input  wire  [1:0] AMI_SPI_SDO,
+    output wire  [1:0] AMI_SPI_CSB,
+    output wire        AMI_BUCK_EN,
+    output wire [15:10] DACIO,
+
     output wire       CLK_SPI_MUX_SEL0,
     output wire       CLK_SPI_MUX_SEL1
 );
@@ -222,6 +229,13 @@ common_dsbpm_top #(
     .AFE_SPI_CLK(AFE_SPI_CLK),
     .AFE_SPI_SDI(AFE_SPI_SDI),
     .AFE_SPI_LE(AFE_SPI_LE),
+
+    .AMI_SPI_CLK(AMI_SPI_CLK),
+    .AMI_SPI_SDI(AMI_SPI_SDI),
+    .AMI_SPI_SDO(AMI_SPI_SDO),
+    .AMI_SPI_CSB(AMI_SPI_CSB),
+    .AMI_BUCK_EN(AMI_BUCK_EN),
+    .DACIO(DACIO),
 
     .CLK_SPI_MUX_SEL0(CLK_SPI_MUX_SEL0),
     .CLK_SPI_MUX_SEL1(CLK_SPI_MUX_SEL1)

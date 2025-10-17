@@ -9,6 +9,7 @@
 #include <lwip/udp.h>
 #include <xparameters.h>
 #include <xuartps_hw.h>
+#include "ami.h"
 #include "afe.h"
 #include "cellComm.h"
 #include "display.h"
@@ -174,6 +175,8 @@ cellCommFakeDataToggle(void)
 
         GPIO_WRITE(REG(GPIO_IDX_CELL_COMM_TEST, i), csr);
     }
+
+    return 0;
 }
 
 static int
@@ -401,6 +404,28 @@ cmdSYSMON(int argc, char **argv)
 }
 
 static int
+cmdAMIMON(int argc, char **argv)
+{
+    char *endp;
+    int bpm;
+
+    if (argc > 1) {
+        bpm = strtol(argv[1], &endp, 0);
+        if (*endp != '\0')
+            return 1;
+
+        amiPSinfoDisplay(bpm);
+        return 0;
+    }
+
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
+
+    return 0;
+}
+
+static int
 cmdREG(int argc, char **argv)
 {
     char *endp;
@@ -562,6 +587,7 @@ static struct commandInfo commandTable[] = {
   { "tlog",   cmdTLOG,  "Timing system event logger"         },
   { "userMGT",cmdUMGT,  "User MGT reference clock adjustment"},
   { "values", cmdSYSMON,"Show system monitor values"         },
+  { "amiValues", cmdAMIMON, "Show AMI monitor values"        },
   { "xcvr",   eyescanCommand,"Perform transceiver eye scan"  },
 };
 static void

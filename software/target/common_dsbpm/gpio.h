@@ -94,8 +94,9 @@
 #define GPIO_IDX_PH_GAIN_FACTOR_3        86 // ADC 3 high freq pilot tone gain
 #define GPIO_IDX_CLOCK_STATUS            87 // BPM Sync/Clock status
 #define GPIO_IDX_CELL_COMM_TEST          88 // Cell Comm test
+#define GPIO_IDX_AMI_SPI_CSR             89 // AMI SPI devices (R/W)
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_CELL_COMM_TEST-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_AMI_SPI_CSR-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
 // For compatibility
@@ -153,6 +154,26 @@
 
 #define EVR_SYNC_CSR_HB_GOOD    0x2
 #define EVR_SYNC_CSR_PPS_GOOD   0x4
+
+/*
+ * If ADC sets are swapped
+ */
+#define CFG_SWAP_ADC_SETS             1
+
+/*
+ * If ADC signals are reversed within a set
+ */
+#define CFG_REVERSE_ADC_SET_ORDER     1
+
+/*
+ * If DAC sets are swapped
+ */
+#define CFG_SWAP_DAC_SETS             1
+
+/*
+ * If DAC signals are reversed within a set
+ */
+#define CFG_REVERSE_DAC_SET_ORDER     0
 
 /*
  * Number of ADC streams required by application
