@@ -3,10 +3,15 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #include <xil_assert.h>
+#include "ffs.h"
 #include "iic.h"
 #include "rfclk.h"
 #include "util.h"
+#include "gpio.h"
 
 /*
  * Configure LMK04208/LMK04828B jitter cleaner.
@@ -110,6 +115,24 @@ void
 lmx2594Config(int muxSelect, const uint32_t *values, int n)
 {
     Xil_AssertVoid(muxSelect < LMX2594_MUX_SEL_SIZE);
+
+    init2594(muxSelect, values, n);
+    start2594(muxSelect);
+}
+
+void
+lmx2594ADCConfig(const uint32_t *values, int n)
+{
+    int muxSelect =  SPI_MUX_2594_A_ADC;
+
+    init2594(muxSelect, values, n);
+    start2594(muxSelect);
+}
+
+void
+lmx2594DACConfig(const uint32_t *values, int n)
+{
+    int muxSelect =  SPI_MUX_2594_B_DAC;
 
     init2594(muxSelect, values, n);
     start2594(muxSelect);
@@ -257,4 +280,284 @@ lmx2594Status(void)
         lmx2594write(m, v0 | 0x4);
     }
     return v;
+}
+
+/*
+ * Copy file to Local Oscillator EEPROM
+ */
+#define RFCLK_TABLE_CAPACITY                512
+#define RFCLK_TABLE_BUF_SIZE                (2+RFCLK_TABLE_CAPACITY)
+
+static int32_t rfClkTableBuf[RFCLK_TABLE_BUF_SIZE];
+
+struct rfClkTable {
+    int32_t     table[RFCLK_TABLE_BUF_SIZE];
+    void        (*writeToChip)(const uint32_t *, int);
+    const char  *name;
+};
+
+static struct rfClkTable rfClkTables[RFCLK_TABLE_NUM_DEVICES] = {
+    {
+        .name = "/"LMK04XX_TABLE_EEPROM_NAME,
+        .writeToChip = lmk04xxConfig,
+    },
+    {
+        .name = "/"LMX2594_ADC_TABLE_EEPROM_NAME,
+        .writeToChip = lmx2594ADCConfig,
+    },
+    {
+        .name = "/"LMX2594_DAC_TABLE_EEPROM_NAME,
+        .writeToChip = lmx2594DACConfig,
+    },
+};
+
+/*
+ * Form checksum
+ */
+static int32_t
+checkSum(const int32_t *ip, int rowCount)
+{
+    int r;
+    int32_t sum = 0xF00D8421;
+
+    sum += *ip++;
+    ip++;
+    for (r = 0 ; r < rowCount ; r++) {
+        sum += *ip++ + r;
+    }
+    return sum;
+}
+
+/*
+ * Commit table to FPGA
+ */
+static void
+rfClkGenWrite(unsigned int index, int32_t *dst, const int32_t *src, int capacity)
+{
+    int rowCount;
+    size_t hdrSizeWords = 2; // Row count and checksum
+
+    rowCount = src[0];
+    if ((rowCount >= 10)
+     && (rowCount < capacity)
+     && (src[1] == checkSum(src, rowCount))) {
+        if (dst) {
+            memcpy(dst, src, hdrSizeWords*sizeof(*src));
+            dst+=hdrSizeWords;
+        }
+        src+=hdrSizeWords;
+
+        void (*funcp)(const uint32_t *, int) = rfClkTables[index].writeToChip;
+        if (funcp) {
+            (*funcp)((const uint32_t *)src, rowCount);
+        }
+
+        if (dst) {
+            memcpy(dst, src, rowCount);
+        }
+    }
+    else {
+        printf("rfClkGen: CORRUPT RFCLK GENERATION TABLE\n");
+    }
+}
+
+static void
+rfClkGenCommit(unsigned int index)
+{
+    Xil_AssertVoid(index < RFCLK_TABLE_NUM_DEVICES);
+
+    int32_t *src = rfClkTables[index].table;
+    int capacity = RFCLK_TABLE_CAPACITY;
+
+    rfClkGenWrite(index, NULL, src, capacity);
+}
+
+void
+rfClkLMK04xxCommit()
+{
+    rfClkGenCommit(RFCLK_TABLE_LMK04XX_INDEX);
+}
+
+void
+rfClkLMX2594ADCCommit()
+{
+    rfClkGenCommit(RFCLK_TABLE_LMX2594ADC_INDEX);
+}
+
+void
+rfClkLMX2594DACCommit()
+{
+    rfClkGenCommit(RFCLK_TABLE_LMX2594DAC_INDEX);
+}
+
+/*
+ * Called when complete file has been uploaded to the TFTP server
+ */
+static int
+rfClkSetTable(unsigned char *buf, int size, unsigned int index)
+{
+    int r;
+    int capacity = RFCLK_TABLE_CAPACITY;
+    int32_t *table = rfClkTables[index].table;
+    int32_t *ip = &table[2];
+    int byteCount;
+    unsigned char *cp = buf;
+
+    for (r = 0 ; r < capacity ; r++) {
+       char expectedEnd = '\n';
+       char *endp;
+       int x;
+
+       x = strtol((char *)cp, &endp, 0);
+       if ((*endp != expectedEnd)
+        && ((expectedEnd == '\n') && (*endp != '\r'))) {
+           sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
+                   r + 1, *endp, expectedEnd);
+           printf("rfClkSetTable: Unexpected characters on line %d: %c (expected %c)\n",
+                   r + 1, *endp, expectedEnd);
+           return -1;
+       }
+
+       *ip++ = x;
+       cp = (unsigned char *)endp + 1;
+       if ((cp - buf) >= size) {
+           if (r < 10) {
+               sprintf((char *)buf, "Too short at line %d", r + 1);
+               printf("rfClkSetTable: Too short at line %d, size = %d\n", r + 1, size);
+               return -1;
+           }
+           table[0] = r + 1;
+           table[1] = checkSum(&table[0], r + 1);
+           byteCount = (ip - table) * sizeof(*ip);
+           memcpy(buf, table, byteCount);
+           return byteCount;
+       }
+    }
+
+    sprintf((char *)buf, "Too long at line %d", r + 1);
+    printf("rfClkSetTable: Too long at line %d\n", r + 1);
+    return -1;
+}
+
+/*
+ * Called when table is to be downloaded from the TFTP server
+ */
+static int
+rfClkGetTable(unsigned char *buf, unsigned int index)
+{
+    int r, rowCount;
+    int32_t *table = rfClkTables[index].table;
+    unsigned char *cp = buf;
+
+    rowCount = table[0];
+    table += 2;
+    for (r = 0 ; r < rowCount ; r++) {
+        int i;
+        char sep = '\n';
+        int x = *table++;
+        i = sprintf((char *)cp, "%u%c", x, sep);
+        cp += i;
+    }
+    return cp - buf;
+}
+
+int
+rfClkFetchEEPROM(unsigned int index)
+{
+    Xil_AssertNonvoid(index < RFCLK_TABLE_NUM_DEVICES);
+
+    const char *name = rfClkTables[index].name;
+    int nRead;
+    FRESULT fr;
+    FIL fil;
+    UINT nWritten;
+
+    fr = f_open(&fil, name, FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr != FR_OK) {
+        return -1;
+    }
+
+    nRead = rfClkGetTable((unsigned char *)rfClkTableBuf, index);
+    if (nRead <= 0) {
+        f_close(&fil);
+        return -1;
+    }
+
+    fr = f_write(&fil, rfClkTableBuf, nRead, &nWritten);
+    if (fr != FR_OK) {
+        f_close(&fil);
+        return -1;
+    }
+
+    f_close(&fil);
+    return nWritten;
+}
+
+int
+rfClkFetchLMK04xxEEPROM()
+{
+    return rfClkFetchEEPROM(RFCLK_TABLE_LMK04XX_INDEX);
+}
+
+int
+rfClkFetchLMX2594ADCEEPROM()
+{
+    return rfClkFetchEEPROM(RFCLK_TABLE_LMX2594ADC_INDEX);
+}
+
+int
+rfClkFetchLMX2594DACEEPROM()
+{
+    return rfClkFetchEEPROM(RFCLK_TABLE_LMX2594DAC_INDEX);
+}
+
+int
+rfClkStashEEPROM(unsigned int index)
+{
+    Xil_AssertNonvoid(index < RFCLK_TABLE_NUM_DEVICES);
+
+    const char *name = rfClkTables[index].name;
+    int nWrite;
+    FRESULT fr;
+    FIL fil;
+    UINT nRead;
+
+    fr = f_open(&fil, name, FA_READ);
+    if (fr != FR_OK) {
+        return -1;
+    }
+
+    fr = f_read(&fil, rfClkTableBuf, sizeof(rfClkTableBuf), &nRead);
+    if (fr != FR_OK) {
+        printf("rfClkStashEEPROM: register file (%s) read failed\n", name);
+        f_close(&fil);
+        return -1;
+    }
+    if (nRead == 0) {
+        f_close(&fil);
+        return 0;
+    }
+
+    nWrite = rfClkSetTable((unsigned char *)rfClkTableBuf, nRead, index);
+    f_close(&fil);
+
+    return nWrite;
+}
+
+int
+rfClkStashLMK04xxEEPROM()
+{
+    return rfClkStashEEPROM(RFCLK_TABLE_LMK04XX_INDEX);
+}
+
+int
+rfClkStashLMX2594ADCEEPROM()
+{
+    return rfClkStashEEPROM(RFCLK_TABLE_LMX2594ADC_INDEX);
+}
+
+int
+rfClkStashLMX2594DACEEPROM()
+{
+    return rfClkStashEEPROM(RFCLK_TABLE_LMX2594DAC_INDEX);
 }
