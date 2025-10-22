@@ -92,6 +92,8 @@ struct rfClkInfo {
 #define SPI_MUX_2594_B_DAC    1
 #define SPI_MUX_04828B        2
 
+#define SPI_MUX_2594_A_ADC_NEW 3
+
 static const struct rfClkInfo rfClkInfos[RFCLK_INFO_NUM_DEVICES] = {
     {.muxSelect = SPI_MUX_04828B, .type = RFCLK_LMK04XXX},     // RFCLK_INFO_LMK04XXX_INDEX
     {.muxSelect = SPI_MUX_2594_A_ADC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_ADC_INDEX
@@ -448,6 +450,14 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 
     if ((muxSelect >= 4) || (n >= sizeof iicBuf)) return 0;
     iicBuf[0] = 0x8 >> muxSelect;
+
+    // Depending on the CLk104 version, LMX ADC could be on
+    // either GPIO3 or GPIO0, so select both to increase
+    // compatibility
+    if (muxSelect == SPI_MUX_2594_A_ADC) {
+        iicBuf[0] |= 0x8 >> SPI_MUX_2594_A_ADC_NEW;
+    }
+
     memcpy(&iicBuf[1], buf, n);
     if (!iicWrite(IIC_INDEX_I2C2SPI, iicBuf, n + 1)) return 0;
 
