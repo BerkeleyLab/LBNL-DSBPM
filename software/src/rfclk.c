@@ -466,10 +466,11 @@ formatValuesToTable(uint32_t *table, unsigned int tableCapacity,
         return -1;
     }
 
-    table[0] = valuesSize;
-    table[1] = checkSum((const int32_t *)&table[0], valuesSize);
     int byteCount = valuesSize * sizeof(*values);
     memcpy(&table[2], values, byteCount);
+
+    table[0] = valuesSize;
+    table[1] = checkSum((const int32_t *)&table[0], valuesSize);
 
     return byteCount + 2*sizeof(*table);
 }
