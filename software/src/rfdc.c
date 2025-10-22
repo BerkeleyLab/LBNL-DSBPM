@@ -598,28 +598,76 @@ rfADCfreezeCalibration(int channel, int freeze)
     }
 }
 
+void
+rfADCfreezeCalibrationBPM(unsigned int bpm, int channel, int freeze)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
+    rfADCfreezeCalibration(ch, freeze);
+}
+
+unsigned int
+rfADCGetStatus(int channel)
+{
+    int tile = channel / CFG_ADC_PER_TILE;
+    int adc = channel % CFG_ADC_PER_TILE;
+    uint32_t v;
+    int b = 0;
+
+    XRFdc_GetIntrStatus(&rfDC, XRFDC_ADC_TILE, tile, adc, &v);
+    if (v) {
+        b |= (v & XRFDC_ADC_OVR_RANGE_MASK) ? 0x1 : 0;
+        b |= (v & XRFDC_ADC_OVR_VOLTAGE_MASK)  ? 0x2 : 0;
+        XRFdc_IntrClr(&rfDC, XRFDC_ADC_TILE, tile, adc, v);
+    }
+
+    return b;
+}
+
+unsigned int
+rfADCGetStatusBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return 0;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
+    return rfADCGetStatus(ch);
+}
+
 unsigned int
 rfADCstatus(void)
 {
+    int bpm;
+    int channel;
     int status = 0;
-    int tile, adc;
     int statusShift = 0;
-    uint32_t v;
 
-    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
-            int b = 0;
-            if (((tile * CFG_ADC_PER_TILE) + adc) >= CFG_ADC_PHYSICAL_COUNT) break;
-            XRFdc_GetIntrStatus(&rfDC, XRFDC_ADC_TILE, tile, adc, &v);
-            if (v) {
-                b |= (v & XRFDC_ADC_OVR_RANGE_MASK) ? 0x1 : 0;
-                b |= (v & XRFDC_ADC_OVR_VOLTAGE_MASK)  ? 0x2 : 0;
-                XRFdc_IntrClr(&rfDC, XRFDC_ADC_TILE, tile, adc, v);
-            }
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        for (channel = 0 ; channel < CFG_ADC_PER_BPM_COUNT; channel++) {
+            int b = rfADCGetStatusBPM(bpm, channel);
             status |= b << statusShift;
             statusShift += 2;
         }
     }
+
     return status;
 }
 

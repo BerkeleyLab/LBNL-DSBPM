@@ -13,10 +13,15 @@ void rfDCinit(void);
 void rfDCsync(void);
 void rfDCsyncType(int type);
 void rfADCrestart(void);
-void rfADCfreezeCalibration(int channel, int freeze);
 void rfADCshow(void);
-unsigned int rfADCstatus(void);
 int rfADClinkCouplingIsAC(void);
+
+void rfADCfreezeCalibration(int channel, int freeze);
+void rfADCfreezeCalibrationBPM(unsigned int bpm, int channel, int freeze);
+
+unsigned int rfADCGetStatus(int channel);
+unsigned int rfADCGetStatusBPM(unsigned int bpm, int channel);
+unsigned int rfADCstatus(void);
 
 float rfADCGetDSA(int channel);
 void rfADCSetDSA(int channel, float att);

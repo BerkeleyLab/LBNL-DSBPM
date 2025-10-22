@@ -121,12 +121,16 @@ afeAttenGet(unsigned int bpm, unsigned int channel)
 void
 afeADCrestart(void)
 {
-    int i;
+    unsigned int bpm;
+    int channel;
 
     // Unfreeze all ADCs
-    for (i = 0 ; i < CFG_ADC_PHYSICAL_COUNT ; i++) {
-        rfADCfreezeCalibration(i, 0);
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        for (channel = 0; channel < CFG_ADC_PER_BPM_COUNT; channel++) {
+            rfADCfreezeCalibrationBPM(bpm, channel, 0);
+        }
     }
+
     // Perform ADC restart (foreground calibration)
     rfADCrestart();
     // Perform ADC synchronization
