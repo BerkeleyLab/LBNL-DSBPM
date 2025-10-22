@@ -45,30 +45,26 @@ struct rfClkConfig {
     uint32_t        table[RFCLK_TABLE_BUF_SIZE];
     const uint32_t  *defaultValues;
     int             defaultSize;
-    int             muxSel;
     void            (*writeToChip)(const uint32_t *, int);
     const char      *name;
 };
 
-static struct rfClkConfig rfClkConfigs[RFCLK_TABLE_NUM_DEVICES] = {
-    {
+static struct rfClkConfig rfClkConfigs[RFCLK_INFO_NUM_DEVICES] = {
+    [RFCLK_INFO_LMK04XXX_INDEX] = {
         .defaultValues = lmk04828BDefaults,
         .defaultSize = LMK04828B_SIZE,
-        .muxSel = SPI_MUX_04828B,
         .writeToChip = lmk04xxConfig,
         .name = "/"LMK04XX_TABLE_EEPROM_NAME,
     },
-    {
+    [RFCLK_INFO_LMX2594_ADC_INDEX] = {
         .defaultValues = lmx2594ADCDefaults,
         .defaultSize = LMX2594ADC_SIZE,
-        .muxSel = SPI_MUX_2594_A_ADC,
         .writeToChip = lmx2594ADCConfig,
         .name = "/"LMX2594_ADC_TABLE_EEPROM_NAME,
     },
-    {
+    [RFCLK_INFO_LMX2594_DAC_INDEX] = {
         .defaultValues = lmx2594DACDefaults,
         .defaultSize = LMX2594DAC_SIZE,
-        .muxSel = SPI_MUX_2594_B_DAC,
         .writeToChip = lmx2594DACConfig,
         .name = "/"LMX2594_DAC_TABLE_EEPROM_NAME,
     },
@@ -92,19 +88,6 @@ checkSum(const int32_t *ip, int rowCount)
 }
 
 static int
-muxSelToIndex(unsigned int muxSel)
-{
-    int i;
-    for (i = 0; i < RFCLK_TABLE_NUM_DEVICES; i++) {
-        if (muxSel == rfClkConfigs[i].muxSel) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-static int
 tableGetRowCount(const int32_t *src, int capacity)
 {
     int rowCount = src[0];
@@ -124,6 +107,7 @@ tableGetRowCount(const int32_t *src, int capacity)
 static void
 initLmk04xx(const uint32_t *values, int n)
 {
+    unsigned int index = RFCLK_INFO_LMK04XXX_INDEX;
     int i;
 
     /*
@@ -131,7 +115,7 @@ initLmk04xx(const uint32_t *values, int n)
      */
     for (i = 0 ; i < n ; i++) {
         uint32_t v = values[i];
-        lmk04828Bwrite(v);
+        rfClkWrite(index, v);
     }
 }
 
@@ -146,20 +130,24 @@ lmk04xxConfig(const uint32_t *values, int n)
  */
 static const char * const vTuneNames[4] =
                              { "Vtune Low", "Invalid", "Locked", "Vtune High" };
-static int lmx2594v0InitValues[LMX2594_MUX_SEL_SIZE];
+static int lmx2594v0InitValues[RFCLK_INFO_NUM_DEVICES];
 
 static void
-init2594(int muxSelect, const uint32_t *values, int n)
+init2594(unsigned int index, const uint32_t *values, int n)
 {
-    Xil_AssertVoid(muxSelect < LMX2594_MUX_SEL_SIZE);
+    Xil_AssertVoid(index < RFCLK_INFO_NUM_DEVICES);
+
+    if (rfClkGetType(index) != RFCLK_LMX2594) {
+        return;
+    }
 
     int i;
 
     /*
      * Apply and remove RESET
      */
-    lmx2594write(muxSelect, 0x002412);
-    lmx2594write(muxSelect, 0x002410);
+    rfClkWrite(index, 0x002412);
+    rfClkWrite(index, 0x002410);
 
     /*
      * Write registers with values from TICS Pro.
@@ -172,9 +160,9 @@ init2594(int muxSelect, const uint32_t *values, int n)
 
             // Don't initilize VCO calibration and force readback
             // for the default value
-            lmx2594v0InitValues[muxSelect] = v & ~(0x8 | 0x4);
+            lmx2594v0InitValues[index] = v & ~(0x8 | 0x4);
         }
-        lmx2594write(muxSelect, v);
+        rfClkWrite(index, v);
     }
 }
 
@@ -184,17 +172,21 @@ init2594(int muxSelect, const uint32_t *values, int n)
  * the device doesn't seem to lock unless this is done.
  */
 static void
-start2594(int muxSelect)
+start2594(unsigned int index)
 {
-    Xil_AssertVoid(muxSelect < LMX2594_MUX_SEL_SIZE);
+    Xil_AssertVoid(index < RFCLK_INFO_NUM_DEVICES);
+
+    if (rfClkGetType(index) != RFCLK_LMX2594) {
+        return;
+    }
 
     int vTuneCode;
-    uint32_t v0 = lmx2594read(muxSelect, 0);
+    uint32_t v0 = rfClkRead(index, 0);
 
     /*
      * Initiate VCO calibration
      */
-    lmx2594write(muxSelect, v0 | 0x8);
+    rfClkWrite(index, v0 | 0x8);
 
     /*
      * Provide some time for things to settle down
@@ -204,70 +196,62 @@ start2594(int muxSelect)
     /*
      * See if clock locked
      */
-    vTuneCode = (lmx2594read(muxSelect, 110) >> 9) & 0x3;
+    vTuneCode = (rfClkRead(index, 110) >> 9) & 0x3;
     if (vTuneCode != 2) {
         warn("LMX2594 (SPI MUX CHAN %d) -- VCO status: %s",
-                                             muxSelect, vTuneNames[vTuneCode]);
+                                             index, vTuneNames[vTuneCode]);
     }
 
     /*
      * Configure STATUS pin to lock detect
      */
-    lmx2594write(muxSelect, v0 | 0x4);
+    rfClkWrite(index, v0 | 0x4);
 }
 
-void
-lmx2594Config(int muxSelect, const uint32_t *values, int n)
+static void
+lmx2594Config(unsigned int index, const uint32_t *values, int n)
 {
-    Xil_AssertVoid(muxSelect < LMX2594_MUX_SEL_SIZE);
-
-    init2594(muxSelect, values, n);
-    start2594(muxSelect);
+    init2594(index, values, n);
+    start2594(index);
 }
 
 void
 lmx2594ADCConfig(const uint32_t *values, int n)
 {
-    int muxSelect = SPI_MUX_2594_A_ADC;
+    unsigned int index = RFCLK_INFO_LMX2594_ADC_INDEX;
 
-    init2594(muxSelect, values, n);
-    start2594(muxSelect);
+    init2594(index, values, n);
+    start2594(index);
 }
 
 void
 lmx2594DACConfig(const uint32_t *values, int n)
 {
-    int muxSelect = SPI_MUX_2594_B_DAC;
+    unsigned int index = RFCLK_INFO_LMX2594_DAC_INDEX;
 
-    init2594(muxSelect, values, n);
-    start2594(muxSelect);
+    init2594(index, values, n);
+    start2594(index);
 }
 
 void
 lmx2594ConfigAllSame(const uint32_t *values, int n)
 {
-    int i;
-    for (i = 0 ; i < LMX2594_MUX_SEL_SIZE; i++) {
-        lmx2594Config(lmx2594MuxSel[i], values, n);
+    unsigned int index;
+    for (index = 0 ; index < RFCLK_INFO_NUM_DEVICES; index++) {
+        lmx2594Config(index, values, n);
     }
 }
 
 int
-lmx2594Readback(int muxSelect, uint32_t *values, int capacity)
+lmx2594Readback(unsigned int index, uint32_t *values, int capacity)
 {
-    Xil_AssertNonvoid(muxSelect < LMX2594_MUX_SEL_SIZE);
+    Xil_AssertNonvoid(index < RFCLK_INFO_NUM_DEVICES);
 
     /*
      * Configure STATUS pin to readback
      */
-    int v0 = lmx2594v0InitValues[muxSelect];
-    lmx2594write(muxSelect, v0 & ~0x4);
-
-    int index = muxSelToIndex(muxSelect);
-
-    if (index < 0) {
-        return -1;
-    }
+    int v0 = lmx2594v0InitValues[index];
+    rfClkWrite(index, v0 & ~0x4);
 
     const uint32_t *table = rfClkConfigs[index].table;
     int tableCapacity = RFCLK_TABLE_BUF_SIZE;
@@ -280,21 +264,21 @@ lmx2594Readback(int muxSelect, uint32_t *values, int capacity)
     int i;
     for (i = 0 ; (i < n) && (i < capacity) ; i++) {
         int r = n - i - 1;
-        int v = lmx2594read(muxSelect, r);
+        int v = rfClkRead(index, r);
         *values++ = (r << 16) | (v & 0xFFFF);
     }
 
     /*
      * Configure STATUS pin to lock detect
      */
-    lmx2594write(muxSelect, v0 | 0x4);
+    rfClkWrite(index, v0 | 0x4);
     return n;
 }
 
 int
 lmx2594ReadbackFirst(uint32_t *values, int capacity)
 {
-    return lmx2594Readback(lmx2594MuxSel[0], values, capacity);
+    return lmx2594Readback(RFCLK_INFO_LMX2594_ADC_INDEX, values, capacity);
 }
 
 /*
@@ -310,48 +294,51 @@ rfClkInit(void)
 void
 rfClkShow(void)
 {
-    int i, m, r, v;
+    unsigned int index;
+    int r, v;
     static uint16_t chDiv[32] = {
      2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 72, 96, 128, 192, 256, 384, 512, 768};
 
-    for (i = 0 ; i < LMX2594_MUX_SEL_SIZE ; i++) {
-        m = lmx2594MuxSel[i];
+    for (index = 0 ; index < RFCLK_INFO_NUM_DEVICES ; index++) {
+        if (rfClkGetType(index) != RFCLK_LMX2594) {
+            continue;
+        }
 
         /*
          * Configure STATUS pin to readback
          */
-        int v0 = lmx2594v0InitValues[m];
-        lmx2594write(m, v0 & ~0x4);
+        int v0 = lmx2594v0InitValues[index];
+        rfClkWrite(index, v0 & ~0x4);
 
-        r = lmx2594read(m, 110);
-        printf("LMX2594 %c:\n", i + 'A');
+        r = rfClkRead(index, 110);
+        printf("LMX2594 %c:\n", index + 'A');
         printf("       rb_VCO_SEL: %d\n", (r >> 5) & 0x7);
         v = (r >> 9) & 0x3;
         printf("      rb_LD_VTUNE: %s\n", vTuneNames[v]);
-        r = lmx2594read(m, 111);
+        r = rfClkRead(index, 111);
         printf("   rb_VCO_CAPCTRL: %d\n", r & 0xFF);
-        r = lmx2594read(m, 112);
+        r = rfClkRead(index, 112);
         printf("   rb_VCO_DACISET: %d\n", r & 0x1FF);
-        r = lmx2594read(m, 9);
+        r = rfClkRead(index, 9);
         printf("           OSC_2X: %d\n", (r >> 12) & 0x1);
-        r = lmx2594read(m, 10);
+        r = rfClkRead(index, 10);
         printf("             MULT: %d\n", (r >> 7) & 0x1F);
-        r = lmx2594read(m, 11);
+        r = rfClkRead(index, 11);
         printf("            PLL_R: %d\n", (r >> 4) & 0xFF);
-        r = lmx2594read(m, 12);
+        r = rfClkRead(index, 12);
         printf("        PLL_R_PRE: %d\n", r & 0xFFF);
-        r = lmx2594read(m, 34);
-        v = lmx2594read(m, 36);
+        r = rfClkRead(index, 34);
+        v = rfClkRead(index, 36);
         printf("            PLL_N: %d\n", ((r & 0x7) << 16) | v);
-        r = lmx2594read(m, 42);
-        v = lmx2594read(m, 43);
+        r = rfClkRead(index, 42);
+        v = rfClkRead(index, 43);
         if (r || v) {
             printf("          PLL_NUM: %d\n", (r << 16) | v);
-            r = lmx2594read(m, 38);
-            v = lmx2594read(m, 39);
+            r = rfClkRead(index, 38);
+            v = rfClkRead(index, 39);
             printf("          PLL_DEN: %d\n", (r << 16) | v);
         }
-        r = (lmx2594read(m, 75) >> 6) & 0x1F;
+        r = (rfClkRead(index, 75) >> 6) & 0x1F;
         v = chDiv[r];
         if (v) {
             printf("            CHDIV: %d\n", v);
@@ -359,39 +346,42 @@ rfClkShow(void)
         else {
             printf("            CHDIV: %#x\n", r);
         }
-        r = lmx2594read(m, 31);
+        r = rfClkRead(index, 31);
         printf("       CHDIV_DIV2: %#x\n", (r >> 14) & 0x1);
-        r = lmx2594read(m, 44);
+        r = rfClkRead(index, 44);
         printf("          OUTA_PD: %x\n", (r >> 6) & 0x1);
         printf("          OUTB_PD: %x\n", (r >> 7) & 0x1);
 
         /*
          * Configure STATUS pin to lock detect
          */
-        lmx2594write(m, v0 | 0x4);
+        rfClkWrite(index, v0 | 0x4);
     }
 }
 
 int
 lmx2594Status(void)
 {
-    int i, m;
+    unsigned int index;
     int v = 0;
 
-    for (i = 0 ; i < LMX2594_MUX_SEL_SIZE ; i++) {
-        m = lmx2594MuxSel[i];
+    for (index = 0 ; index < RFCLK_INFO_NUM_DEVICES ; index++) {
+        if (rfClkGetType(index) != RFCLK_LMX2594) {
+            continue;
+        }
+
         /*
          * Configure STATUS pin to readback
          */
-        int v0 = lmx2594v0InitValues[m];
-        lmx2594write(m, v0 & ~0x4);
+        int v0 = lmx2594v0InitValues[index];
+        rfClkWrite(index, v0 & ~0x4);
 
-        v |= ((lmx2594read(m, 110) >> 9) & 0x3) << (i * 4);
+        v |= ((rfClkRead(index, 110) >> 9) & 0x3) << (index * 4);
 
         /*
          * Configure STATUS pin to lock detect
          */
-        lmx2594write(m, v0 | 0x4);
+        rfClkWrite(index, v0 | 0x4);
     }
     return v;
 }
@@ -430,7 +420,7 @@ rfClkGenWrite(unsigned int index, uint32_t *dst, const uint32_t *src, int capaci
 static void
 rfClkGenCommit(unsigned int index)
 {
-    Xil_AssertVoid(index < RFCLK_TABLE_NUM_DEVICES);
+    Xil_AssertVoid(index < RFCLK_INFO_NUM_DEVICES);
 
     uint32_t *src = rfClkConfigs[index].table;
     int capacity = RFCLK_TABLE_CAPACITY;
@@ -443,19 +433,19 @@ rfClkGenCommit(unsigned int index)
 void
 rfClkLMK04xxCommit()
 {
-    rfClkGenCommit(RFCLK_TABLE_LMK04XX_INDEX);
+    rfClkGenCommit(RFCLK_INFO_LMK04XXX_INDEX);
 }
 
 void
 rfClkLMX2594ADCCommit()
 {
-    rfClkGenCommit(RFCLK_TABLE_LMX2594ADC_INDEX);
+    rfClkGenCommit(RFCLK_INFO_LMX2594_ADC_INDEX);
 }
 
 void
 rfClkLMX2594DACCommit()
 {
-    rfClkGenCommit(RFCLK_TABLE_LMX2594DAC_INDEX);
+    rfClkGenCommit(RFCLK_INFO_LMX2594_DAC_INDEX);
 }
 
 static int
@@ -549,7 +539,7 @@ rfClkGetTable(unsigned int index, unsigned char *buf)
 int
 rfClkFetchEEPROM(unsigned int index)
 {
-    Xil_AssertNonvoid(index < RFCLK_TABLE_NUM_DEVICES);
+    Xil_AssertNonvoid(index < RFCLK_INFO_NUM_DEVICES);
 
     const char *name = rfClkConfigs[index].name;
     int nRead;
@@ -581,25 +571,25 @@ rfClkFetchEEPROM(unsigned int index)
 int
 rfClkFetchLMK04xxEEPROM()
 {
-    return rfClkFetchEEPROM(RFCLK_TABLE_LMK04XX_INDEX);
+    return rfClkFetchEEPROM(RFCLK_INFO_LMK04XXX_INDEX);
 }
 
 int
 rfClkFetchLMX2594ADCEEPROM()
 {
-    return rfClkFetchEEPROM(RFCLK_TABLE_LMX2594ADC_INDEX);
+    return rfClkFetchEEPROM(RFCLK_INFO_LMX2594_ADC_INDEX);
 }
 
 int
 rfClkFetchLMX2594DACEEPROM()
 {
-    return rfClkFetchEEPROM(RFCLK_TABLE_LMX2594DAC_INDEX);
+    return rfClkFetchEEPROM(RFCLK_INFO_LMX2594_DAC_INDEX);
 }
 
 int
 rfClkStashEEPROM(unsigned int index)
 {
-    Xil_AssertNonvoid(index < RFCLK_TABLE_NUM_DEVICES);
+    Xil_AssertNonvoid(index < RFCLK_INFO_NUM_DEVICES);
 
     const char *name = rfClkConfigs[index].name;
     int nWrite;
@@ -632,25 +622,25 @@ rfClkStashEEPROM(unsigned int index)
 int
 rfClkStashLMK04xxEEPROM()
 {
-    return rfClkStashEEPROM(RFCLK_TABLE_LMK04XX_INDEX);
+    return rfClkStashEEPROM(RFCLK_INFO_LMK04XXX_INDEX);
 }
 
 int
 rfClkStashLMX2594ADCEEPROM()
 {
-    return rfClkStashEEPROM(RFCLK_TABLE_LMX2594ADC_INDEX);
+    return rfClkStashEEPROM(RFCLK_INFO_LMX2594_ADC_INDEX);
 }
 
 int
 rfClkStashLMX2594DACEEPROM()
 {
-    return rfClkStashEEPROM(RFCLK_TABLE_LMX2594DAC_INDEX);
+    return rfClkStashEEPROM(RFCLK_INFO_LMX2594_DAC_INDEX);
 }
 
 void
 rfClkDefaults(unsigned int index)
 {
-    Xil_AssertVoid(index < RFCLK_TABLE_NUM_DEVICES);
+    Xil_AssertVoid(index < RFCLK_INFO_NUM_DEVICES);
 
     const uint32_t *values = rfClkConfigs[index].defaultValues;
     int size = rfClkConfigs[index].defaultSize;
@@ -673,17 +663,17 @@ rfClkDefaults(unsigned int index)
 void
 rfClkLMK04xxDefaults()
 {
-    rfClkDefaults(RFCLK_TABLE_LMK04XX_INDEX);
+    rfClkDefaults(RFCLK_INFO_LMK04XXX_INDEX);
 }
 
 void
 rfClkLMX2594ADCDefaults()
 {
-    rfClkDefaults(RFCLK_TABLE_LMX2594ADC_INDEX);
+    rfClkDefaults(RFCLK_INFO_LMX2594_ADC_INDEX);
 }
 
 void
 rfClkLMX2594DACDefaults()
 {
-    rfClkDefaults(RFCLK_TABLE_LMX2594DAC_INDEX);
+    rfClkDefaults(RFCLK_INFO_LMX2594_DAC_INDEX);
 }
