@@ -13,36 +13,10 @@
 
 #define IIC_MAX_TRIES   4
 
-// LMK values
-static const uint32_t lmk04828BDefaults[] = {
-#include "lmk04828B.h"
-};
-
-#define LMK04828B_SIZE (sizeof lmk04828BDefaults/sizeof lmk04828BDefaults[0])
-
-const uint32_t *lmk04828BValues;
-uint32_t lmk04828BSizes;
-
 const unsigned int lmx2594MuxSel[LMX2594_MUX_SEL_SIZE] = {
     SPI_MUX_2594_A_ADC,  // Tile 224, 225, 226, 227 (ADC 0, 1, 2, 3, 4, 5, 6, 7)
     SPI_MUX_2594_B_DAC,  // Tile 228, 229, 230, 231 (DAC 0, 1, 2, 3, 4, 5, 6, 7)
 };
-
-// ADC values
-static const uint32_t lmx2594ADCDefaults[] = {
-#include "lmx2594ADC.h"
-};
-
-// DAC values
-const uint32_t lmx2594DACDefaults[] = {
-#include "lmx2594DAC.h"
-};
-
-#define LMX2594ADC_SIZE (sizeof lmx2594ADCDefaults/sizeof lmx2594ADCDefaults[0])
-#define LMX2594DAC_SIZE (sizeof lmx2594DACDefaults/sizeof lmx2594DACDefaults[0])
-
-const uint32_t *lmx2594Values[LMX2594_MUX_SEL_SIZE];
-uint32_t lmx2594Sizes[LMX2594_MUX_SEL_SIZE];
 
 #define C0_M_IIC_ADDRESS  0x75   /* Address of controller 0 multiplexer */
 #define C1_M0_IIC_ADDRESS 0x74   /* Address of controller 1 multiplexer 0 */
@@ -155,15 +129,6 @@ iicInit(void)
         cp->muxPort[0] = i == 0 ? MUXPORT_NONE : MUXPORT_UNKNOWN;
         cp->muxPort[1] = MUXPORT_UNKNOWN;
     }
-
-    // LMX and LMK init values
-    lmx2594Values[0] = lmx2594ADCDefaults;
-    lmx2594Values[1] = lmx2594DACDefaults;
-    lmx2594Sizes[0] = LMX2594ADC_SIZE;
-    lmx2594Sizes[1] = LMX2594DAC_SIZE;
-
-    lmk04828BValues = lmk04828BDefaults;
-    lmk04828BSizes = LMK04828B_SIZE;
 
     /*
      * Configure port expander 0_1 as output and drive low -- this works
