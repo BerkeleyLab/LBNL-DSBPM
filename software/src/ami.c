@@ -14,6 +14,9 @@
 #include "systemParameters.h"
 #include "util.h"
 
+#define ATT_STEPS_TO_MDB(steps)     (steps*1000/4)
+#define ATT_MDB_TO_STEPS(mdB)       ((mdB*4)/1000)
+
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 #define NUM_MCP23S08                2
@@ -459,21 +462,14 @@ amiSPIRead(unsigned int controllerIndex, unsigned int deviceIndex,
  */
 static int
 amiAttenSet(unsigned int controllerIndex, unsigned int channel,
-        int address, unsigned int mdB)
+        unsigned int address, unsigned int attSteps)
 {
     gspiErr spiStatus = GSPI_SUCCESS;
     unsigned int deviceIndex = AMI_SPI_INDEX_AFE_ATT_ALL;
 
-    /*
-     * Write trimmed value
-     */
-    int attSteps = (mdB * 4)/1000;
-    if (attSteps > 127) attSteps = 127;
-    else if (attSteps < 0) attSteps = 0;
-
     // SPI data: 8-bit address | 8-bit data
-    int v = attSteps;
-    v |= address << 8;
+    uint32_t v = attSteps & 0xFF;
+    v |= (address & 0xFF) << 8;
 
     spiStatus = amiSPIWrite(controllerIndex, deviceIndex, v);
     if (spiStatus != GSPI_SUCCESS) {
@@ -487,7 +483,7 @@ int
 amiAfeAttenSet(unsigned int bpm, unsigned int channel,
         unsigned int mdB)
 {
-    const int address = 0x7;
+    const unsigned int address = 0x7;
     gspiErr spiStatus = GSPI_SUCCESS;
 
     if (bpm >= CFG_DSBPM_COUNT) {
@@ -500,13 +496,23 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
 
     // All channels are wired together
     channel = 0;
-    spiStatus = amiAttenSet(bpm, channel, address, mdB);
+    // mdB to steps
+    unsigned int attSteps = ATT_MDB_TO_STEPS(mdB);
+    if (attSteps > 127) {
+        return -1;
+    }
 
+    // No need to write the same value
+    if (amiAfeAttenuation[bpm][channel] == ATT_STEPS_TO_MDB(attSteps)) {
+        return 0;
+    }
+
+    spiStatus = amiAttenSet(bpm, channel, address, attSteps);
     if (spiStatus != GSPI_SUCCESS) {
         return -1;
     }
 
-    amiAfeAttenuation[bpm][channel] = mdB;
+    amiAfeAttenuation[bpm][channel] = ATT_STEPS_TO_MDB(attSteps);
 
     return 0;
 }
@@ -514,22 +520,32 @@ amiAfeAttenSet(unsigned int bpm, unsigned int channel,
 int
 amiPtmAttenSet(unsigned int bpm, unsigned int mdB)
 {
-    const int address = 0x3;
+    const unsigned int address = 0x3;
     gspiErr spiStatus = GSPI_SUCCESS;
 
     if (bpm >= CFG_DSBPM_COUNT) {
         return -1;
     }
 
+    // mdB to steps
+    unsigned int attSteps = ATT_MDB_TO_STEPS(mdB);
+    if (attSteps > 127) {
+        return -1;
+    }
+
+    // No need to write the same value
+    if (amiPtmAttenuation[bpm] == ATT_STEPS_TO_MDB(attSteps)) {
+        return 0;
+    }
+
     // Only a single PTM module
     unsigned int channel = 0;
-    spiStatus = amiAttenSet(bpm, channel, address, mdB);
-
+    spiStatus = amiAttenSet(bpm, channel, address, attSteps);
     if (spiStatus != GSPI_SUCCESS) {
         return -1;
     }
 
-    amiPtmAttenuation[bpm] = mdB;
+    amiPtmAttenuation[bpm] = ATT_STEPS_TO_MDB(attSteps);
 
     return 0;
 }
