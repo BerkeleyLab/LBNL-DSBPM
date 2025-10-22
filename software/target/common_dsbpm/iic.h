@@ -72,13 +72,16 @@
 #define INA226_ADC_AVCCAUX_AMPS_PER_VOLT      200
 #define INA226_DAC_AVCC_AMPS_PER_VOLT         200
 
-#define SPI_MUX_2594_A_ADC    0
-#define SPI_MUX_2594_B_DAC    1
-#define SPI_MUX_04828B        2
+enum rfClkType {
+    RFCLK_LMK04XXX,
+    RFCLK_LMX2594,
+    RFCLK_UNKNOWN
+};
 
-#define LMX2594_MUX_SEL_SIZE  2
-
-extern const unsigned int lmx2594MuxSel[];
+#define RFCLK_INFO_LMK04XXX_INDEX          0
+#define RFCLK_INFO_LMX2594_ADC_INDEX       1
+#define RFCLK_INFO_LMX2594_DAC_INDEX       2
+#define RFCLK_INFO_NUM_DEVICES             3
 
 void iicInit(void);
 int iicRead(unsigned int deviceIndex, int subAddress, uint8_t *buf, int n);
@@ -89,10 +92,9 @@ int eepromWrite(int address, const void *buf, int n);
 
 int pmbusRead(unsigned int deviceIndex, unsigned int page, int reg);
 
-uint32_t lmk04828Bread(int reg);
-int lmk04828Bwrite(uint32_t value);
-int lmx2594read(int muxSelect, int reg);
-int lmx2594write(int muxSelect, uint32_t value);
+enum rfClkType rfClkGetType(unsigned int index);
+int rfClkRead(unsigned int index, uint32_t value);
+int rfClkWrite(unsigned int index, uint32_t value);
 
 int sfpGetStatus(uint32_t *buf);
 int sfpGetTemperature(void);

@@ -13,11 +13,6 @@
 
 #define IIC_MAX_TRIES   4
 
-const unsigned int lmx2594MuxSel[LMX2594_MUX_SEL_SIZE] = {
-    SPI_MUX_2594_A_ADC,  // Tile 224, 225, 226, 227 (ADC 0, 1, 2, 3, 4, 5, 6, 7)
-    SPI_MUX_2594_B_DAC,  // Tile 228, 229, 230, 231 (DAC 0, 1, 2, 3, 4, 5, 6, 7)
-};
-
 #define C0_M_IIC_ADDRESS  0x75   /* Address of controller 0 multiplexer */
 #define C1_M0_IIC_ADDRESS 0x74   /* Address of controller 1 multiplexer 0 */
 
@@ -87,6 +82,21 @@ struct controller {
 };
 
 static struct controller controllers[CONTROLLER_COUNT];
+
+struct rfClkInfo {
+    unsigned int muxSelect;
+    enum rfClkType type;
+};
+
+#define SPI_MUX_2594_A_ADC    0
+#define SPI_MUX_2594_B_DAC    1
+#define SPI_MUX_04828B        2
+
+static const struct rfClkInfo rfClkInfos[RFCLK_INFO_NUM_DEVICES] = {
+    {.muxSelect = SPI_MUX_04828B, .type = RFCLK_LMK04XXX},     // RFCLK_INFO_LMK04XXX_INDEX
+    {.muxSelect = SPI_MUX_2594_A_ADC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_ADC_INDEX
+    {.muxSelect = SPI_MUX_2594_B_DAC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_DAC_INDEX
+};
 
 /*
  * Initialize IIC controllers
@@ -431,7 +441,7 @@ spiSDOMuxSelect(unsigned int muxSelect)
  * Note that the I2C to SPI adapter chip enable lines are connected to
  * the SPI devices in reverse order to the MUX channel selection (!!!)
  */
-int
+static int
 spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 {
     uint8_t iicBuf[20];
@@ -448,7 +458,7 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 /*
  * Send and receive
  */
-int
+static int
 spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
 {
     /*
@@ -475,8 +485,8 @@ spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
 /*
  * LMK04828B Jitter Cleaner
  */
-uint32_t
-lmk04828Bread(int reg)
+static uint32_t
+lmk04828Bread(unsigned int muxSelect, int reg)
 {
     uint8_t buf[3];
 
@@ -488,27 +498,27 @@ lmk04828Bread(int reg)
     // A7 - A0
     buf[1] = (reg & 0xFF);
     buf[2] = 0;
-    if (!spiTransfer(SPI_MUX_04828B, buf, 3)) return 0;
+    if (!spiTransfer(muxSelect, buf, 3)) return 0;
     return buf[2];
 }
 
-int
-lmk04828Bwrite(uint32_t value)
+static int
+lmk04828Bwrite(unsigned int muxSelect, uint32_t value)
 {
     uint8_t buf[3];
 
     buf[0] = value >> 16;
     buf[1] = value >> 8;
     buf[2] = value;
-    if (!spiSend(SPI_MUX_04828B, buf, 3)) return 0;
+    if (!spiSend(muxSelect, buf, 3)) return 0;
     return 1;
 }
 
 /*
  * LMX2594 RF synthesizer
  */
-int
-lmx2594read(int muxSelect, int reg)
+static int
+lmx2594read(unsigned int muxSelect, int reg)
 {
     uint8_t buf[3];
 
@@ -519,8 +529,8 @@ lmx2594read(int muxSelect, int reg)
     return (buf[1] << 8) | buf[2];
 }
 
-int
-lmx2594write(int muxSelect, uint32_t value)
+static int
+lmx2594write(unsigned int muxSelect, uint32_t value)
 {
     uint8_t buf[3];
 
@@ -529,6 +539,83 @@ lmx2594write(int muxSelect, uint32_t value)
     buf[2] = value;
     if (!spiSend(muxSelect, buf, 3)) return 0;
     return 1;
+}
+
+enum rfClkType
+rfClkGetType(unsigned int index)
+{
+    if (index >= RFCLK_INFO_NUM_DEVICES) {
+        return RFCLK_UNKNOWN;
+    }
+
+    const struct rfClkInfo *info = &rfClkInfos[index];
+    return info->type;
+}
+
+enum opRW {
+    OP_READ,
+    OP_WRITE
+};
+
+static int
+rfClkOp(unsigned int index, uint32_t value, enum opRW op)
+{
+    if (index >= RFCLK_INFO_NUM_DEVICES) {
+        return -1;
+    }
+
+    const struct rfClkInfo *info = &rfClkInfos[index];
+    int ret = 0;
+
+    switch (op) {
+    case OP_WRITE:
+        switch (info->type) {
+        case RFCLK_LMK04XXX:
+            ret = lmk04828Bwrite(info->muxSelect, value);
+            break;
+
+        case RFCLK_LMX2594:
+            ret = lmx2594write(info->muxSelect, value);
+            break;
+
+        default:
+            ret = -1;
+        }
+        break;
+
+    case OP_READ:
+        switch (info->type) {
+        case RFCLK_LMK04XXX:
+            ret = lmk04828Bread(info->muxSelect, value);
+            break;
+
+        case RFCLK_LMX2594:
+            ret = lmx2594read(info->muxSelect, value);
+            break;
+
+        default:
+            ret = -1;
+        }
+        break;
+
+    default:
+        ret = -1;
+        break;
+    }
+
+    return ret;
+}
+
+int
+rfClkRead(unsigned int index, uint32_t value)
+{
+    return rfClkOp(index, value, OP_READ);
+}
+
+int
+rfClkWrite(unsigned int index, uint32_t value)
+{
+    return rfClkOp(index, value, OP_WRITE);
 }
 
 int
