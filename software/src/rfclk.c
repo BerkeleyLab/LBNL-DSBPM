@@ -273,7 +273,7 @@ lmx2594Readback(int muxSelect, uint32_t *values, int capacity)
     int tableCapacity = RFCLK_TABLE_BUF_SIZE;
 
     int n = tableGetRowCount((const int32_t *)table, tableCapacity);
-    if (n == 0) {
+    if (n <= 0) {
         return -1;
     }
 
@@ -405,7 +405,7 @@ rfClkGenWrite(unsigned int index, uint32_t *dst, const uint32_t *src, int capaci
     int rowCount = tableGetRowCount((const int32_t *)src, capacity);
     size_t hdrSizeWords = 2; // Row count and checksum
 
-    if (rowCount == 0) {
+    if (rowCount <= 0) {
         return -1;
     }
 
