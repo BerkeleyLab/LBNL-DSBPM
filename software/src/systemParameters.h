@@ -34,7 +34,6 @@ extern struct systemParameters {
     int                 evrPerFaMarker;
     int                 evrPerSaMarker;
     int                 adcOrder;
-    int                 adcPhysToLogical;
     float               xCalibration;
     float               yCalibration;
     float               qCalibration;
