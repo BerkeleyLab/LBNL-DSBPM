@@ -72,7 +72,7 @@ systemParametersSetDefaults(void)
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
     // position calc order:
     //   A = 3, B = 1, C = 2, D = 0
-    systemParametersDefault.adcOrder = 3120;
+    systemParametersDefault.adcOrder = 123;
     systemParametersDefault.xCalibration = 16.0;
     systemParametersDefault.yCalibration = 16.0;
     systemParametersDefault.qCalibration = 16.0;
