@@ -70,6 +70,9 @@ systemParametersSetDefaults(void)
     systemParametersDefault.adcHeartbeatMarker = 152 * 81 * 1000 * 10;
     systemParametersDefault.evrPerFaMarker = 152 * 82;
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
+    systemParametersDefault.rfdcMMCMDivClkDivider = ADC_CLK_MMCM_DIVCLK_DIVIDER;
+    systemParametersDefault.rfdcMMCMMultiplier = ADC_CLK_MMCM_MULTIPLIER;
+    systemParametersDefault.rfdcMMCMClk0Divider = ADC_CLK_MMCM_CLK0_DIVIDER;
     // position calc order:
     //   A = 3, B = 1, C = 2, D = 0
     systemParametersDefault.adcOrder = 123;
@@ -323,6 +326,12 @@ static struct conv {
                        offsetof(struct systemParameters, evrPerSaMarker),  formatInt,  parseInt},
   {"ADC for button ABCD",
                        offsetof(struct systemParameters, adcOrder),       formatInt4,  parseInt},
+  {"RFDC MMCM DivClk Divider",
+                       offsetof(struct systemParameters, rfdcMMCMDivClkDivider),  formatInt,  parseInt},
+  {"RFDC MMCM Clk Multiplier",
+                       offsetof(struct systemParameters, rfdcMMCMMultiplier),  formatInt,  parseInt},
+  {"RFDC MMCM Clk0 Divider",
+                       offsetof(struct systemParameters, rfdcMMCMClk0Divider),  formatInt,  parseInt},
   {"X calibration (mm p.u.)",
                        offsetof(struct systemParameters, xCalibration),  formatFloat,parseFloat},
   {"Y calibration (mm p.u.)",
@@ -442,6 +451,12 @@ systemParametersSetTable(struct systemParameters *sysParams,
     if ((sysParams->buttonRotation != 0)
      && (sysParams->buttonRotation != 45)) {
         printf("Bad button rotation (must be 0 or 45)\n");
+        return -1;
+    }
+    if ((sysParams->rfdcMMCMDivClkDivider < 1000)
+     || (sysParams->rfdcMMCMMultiplier < 1000)
+     || (sysParams->rfdcMMCMClk0Divider < 1000)) {
+        printf("Bad RF MMCM parameters (must be >= 1000)\n");
         return -1;
     }
     systemParametersUpdateChecksum(sysParams);

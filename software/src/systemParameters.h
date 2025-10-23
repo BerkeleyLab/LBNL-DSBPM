@@ -37,6 +37,9 @@ extern struct systemParameters {
     float               xCalibration;
     float               yCalibration;
     float               qCalibration;
+    int                 rfdcMMCMDivClkDivider;
+    int                 rfdcMMCMMultiplier;
+    int                 rfdcMMCMClk0Divider;
     int                 buttonRotation;
     int                 afeTrim[4]; /* Per-channel trims in units of 0.25 dB */
     uint32_t            checksum;

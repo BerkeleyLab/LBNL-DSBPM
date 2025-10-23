@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "mmcm.h"
 #include "util.h"
+#include "systemParameters.h"
 
 #define RD(b,o) Xil_In32((b)+(o))
 #define WR(b,o,v) Xil_Out32((b)+(o), (v))
@@ -136,9 +137,9 @@ void
 mmcmInit(void)
 {
     showRFDCClk("Old ");
-    mmcmSetRFDCDivClkDivider(ADC_CLK_MMCM_DIVCLK_DIVIDER);
-    mmcmSetRFDCClkMultiplier(ADC_CLK_MMCM_MULTIPLIER);
-    mmcmSetRFDCClk0Divider(ADC_CLK_MMCM_CLK0_DIVIDER);
+    mmcmSetRFDCDivClkDivider(systemParameters.rfdcMMCMDivClkDivider);
+    mmcmSetRFDCClkMultiplier(systemParameters.rfdcMMCMMultiplier);
+    mmcmSetRFDCClk0Divider(systemParameters.rfdcMMCMClk0Divider);
     mmcmStartReconfig();
     showRFDCClk("");
 }
