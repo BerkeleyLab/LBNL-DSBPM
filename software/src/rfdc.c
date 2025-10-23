@@ -198,7 +198,7 @@ static void rfADCCfgStaticDefaults(void)
                                           ADC_REF_CLK_FREQ,
                                           ADC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS)
-            fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+            warn("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
 
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             i = XRFdc_SetDither(&rfDC, tile, adc, 1);
@@ -297,7 +297,7 @@ static void rfDACCfgStaticDefaults(void)
                                           XRFDC_EXTERNAL_CLK,
                                           DAC_REF_CLK_FREQ,
                                           DAC_SAMPLING_CLK_FREQ);
-        if (i != XST_SUCCESS) fatal("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+        if (i != XST_SUCCESS) warn("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
     }
 }
 
@@ -394,15 +394,15 @@ rfDCinit(void)
     static struct metal_init_params init_param = METAL_INIT_DEFAULTS;
 
     if (metal_init(&init_param)) {
-        fatal("metal_init failed");
+        warn("metal_init failed");
     }
     metal_set_log_handler(myLogHandler);
     metal_set_log_level(METAL_LOG_INFO);
 
     configp = XRFdc_LookupConfig(XPAR_XRFDC_0_DEVICE_ID);
-    if (!configp) fatal("XRFdc_LookupConfig");
+    if (!configp) warn("XRFdc_LookupConfig");
     i = XRFdc_CfgInitialize(&rfDC, configp);
-    if (i != XST_SUCCESS) fatal("XRFdc_CfgInitialize=%d", i);
+    if (i != XST_SUCCESS) warn("XRFdc_CfgInitialize=%d", i);
 
     initDone = 1;
 
