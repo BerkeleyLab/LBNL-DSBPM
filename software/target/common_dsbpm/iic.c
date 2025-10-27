@@ -11,26 +11,7 @@
 #include "util.h"
 #include "gpio.h"
 
-const unsigned int lmx2594MuxSel[LMX2594_MUX_SEL_SIZE] = {
-    SPI_MUX_2594_A_ADC,  // Tile 224, 225, 226, 227 (ADC 0, 1, 2, 3, 4, 5, 6, 7)
-    SPI_MUX_2594_B_DAC,  // Tile 228, 229, 230, 231 (DAC 0, 1, 2, 3, 4, 5, 6, 7)
-};
-
-// ADC values
-static const uint32_t lmx2594ADCDefaults[] = {
-#include "lmx2594ADC.h"
-};
-
-// DAC values
-const uint32_t lmx2594DACDefaults[] = {
-#include "lmx2594DAC.h"
-};
-
-#define LMX2594ADC_SIZE (sizeof lmx2594ADCDefaults/sizeof lmx2594ADCDefaults[0])
-#define LMX2594DAC_SIZE (sizeof lmx2594DACDefaults/sizeof lmx2594DACDefaults[0])
-
-const uint32_t *lmx2594Values[LMX2594_MUX_SEL_SIZE];
-uint32_t lmx2594Sizes[LMX2594_MUX_SEL_SIZE];
+#define IIC_MAX_TRIES   4
 
 #define C0_M_IIC_ADDRESS  0x75   /* Address of controller 0 multiplexer */
 #define C1_M0_IIC_ADDRESS 0x74   /* Address of controller 1 multiplexer 0 */
@@ -99,7 +80,25 @@ struct controller {
     uint8_t controllerIndex;
     uint8_t muxPort[2];
 };
-    static struct controller controllers[CONTROLLER_COUNT];
+
+static struct controller controllers[CONTROLLER_COUNT];
+
+struct rfClkInfo {
+    unsigned int muxSelect;
+    enum rfClkType type;
+};
+
+#define SPI_MUX_2594_A_ADC    0
+#define SPI_MUX_2594_B_DAC    1
+#define SPI_MUX_04828B        2
+
+#define SPI_MUX_2594_A_ADC_NEW 3
+
+static const struct rfClkInfo rfClkInfos[RFCLK_INFO_NUM_DEVICES] = {
+    {.muxSelect = SPI_MUX_04828B, .type = RFCLK_LMK04XXX},     // RFCLK_INFO_LMK04XXX_INDEX
+    {.muxSelect = SPI_MUX_2594_A_ADC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_ADC_INDEX
+    {.muxSelect = SPI_MUX_2594_B_DAC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_DAC_INDEX
+};
 
 /*
  * Initialize IIC controllers
@@ -122,8 +121,10 @@ initController(struct controller *cp, int deviceId)
 
 	/*
 	 * Set the IIC serial clock rate.
+     * Use 80kHz because there might be a bug with the driver:
+     * https://adaptivesupport.amd.com/s/article/59366?language=en_US
 	 */
-	XIicPs_SetSClk(&cp->Iic, 100000);
+	XIicPs_SetSClk(&cp->Iic, 80000);
 
 }
 
@@ -140,12 +141,6 @@ iicInit(void)
         cp->muxPort[0] = i == 0 ? MUXPORT_NONE : MUXPORT_UNKNOWN;
         cp->muxPort[1] = MUXPORT_UNKNOWN;
     }
-
-    // LMX and LMK init values
-    lmx2594Values[0] = lmx2594ADCDefaults;
-    lmx2594Values[1] = lmx2594DACDefaults;
-    lmx2594Sizes[0] = LMX2594ADC_SIZE;
-    lmx2594Sizes[1] = LMX2594DAC_SIZE;
 
     /*
      * Configure port expander 0_1 as output and drive low -- this works
@@ -179,27 +174,35 @@ iicInit(void)
 static int
 iicSend(struct controller *cp, int address, const uint8_t *buf, int n)
 {
+    int i = 0;
+    int isBusy = 1;
     int status;
 
     if (debugFlags & DEBUGFLAG_IIC) {
-        int i;
         printf("IIC %d:0x%02X <-", cp->controllerIndex, address);
         for (i = 0 ; i < n ; i++) printf(" %02X", buf[i]);
     }
-    if (XIicPs_BusIsBusy(&cp->Iic)) {
+
+    for (i = 0; i < IIC_MAX_TRIES; ++i) {
+        if (!XIicPs_BusIsBusy(&cp->Iic)) {
+            isBusy = 0;
+            break;
+        }
         microsecondSpin(100);
+    }
+
+    if (isBusy) {
+        if (debugFlags & DEBUGFLAG_IIC) {
+            printf(" == reset ==");
+        }
+        XIicPs_Reset(&cp->Iic);
+        microsecondSpin(10000);
         if (XIicPs_BusIsBusy(&cp->Iic)) {
-            if (debugFlags & DEBUGFLAG_IIC) {
-                printf(" == reset ==");
-            }
-            XIicPs_Reset(&cp->Iic);
-            microsecondSpin(10000);
-            if (XIicPs_BusIsBusy(&cp->Iic)) {
-                printf("===== IIC %d reset failed ====\n", cp->controllerIndex);
-                return 0;
-            }
+            printf("===== IIC %d reset failed ====\n", cp->controllerIndex);
+            return 0;
         }
     }
+
     status = XIicPs_MasterSendPolled(&cp->Iic, (uint8_t *)buf, n, address);
     if (debugFlags & DEBUGFLAG_IIC) {
         if (status != XST_SUCCESS) printf(" FAILED");
@@ -440,13 +443,21 @@ spiSDOMuxSelect(unsigned int muxSelect)
  * Note that the I2C to SPI adapter chip enable lines are connected to
  * the SPI devices in reverse order to the MUX channel selection (!!!)
  */
-int
+static int
 spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 {
     uint8_t iicBuf[20];
 
     if ((muxSelect >= 4) || (n >= sizeof iicBuf)) return 0;
     iicBuf[0] = 0x8 >> muxSelect;
+
+    // Depending on the CLk104 version, LMX ADC could be on
+    // either GPIO3 or GPIO0, so select both to increase
+    // compatibility
+    if (muxSelect == SPI_MUX_2594_A_ADC) {
+        iicBuf[0] |= 0x8 >> SPI_MUX_2594_A_ADC_NEW;
+    }
+
     memcpy(&iicBuf[1], buf, n);
     if (!iicWrite(IIC_INDEX_I2C2SPI, iicBuf, n + 1)) return 0;
 
@@ -457,7 +468,7 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 /*
  * Send and receive
  */
-int
+static int
 spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
 {
     /*
@@ -484,8 +495,8 @@ spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
 /*
  * LMK04828B Jitter Cleaner
  */
-uint32_t
-lmk04828Bread(int reg)
+static uint32_t
+lmk04828Bread(unsigned int muxSelect, int reg)
 {
     uint8_t buf[3];
 
@@ -497,27 +508,27 @@ lmk04828Bread(int reg)
     // A7 - A0
     buf[1] = (reg & 0xFF);
     buf[2] = 0;
-    if (!spiTransfer(SPI_MUX_04828B, buf, 3)) return 0;
+    if (!spiTransfer(muxSelect, buf, 3)) return 0;
     return buf[2];
 }
 
-int
-lmk04828Bwrite(uint32_t value)
+static int
+lmk04828Bwrite(unsigned int muxSelect, uint32_t value)
 {
     uint8_t buf[3];
 
     buf[0] = value >> 16;
     buf[1] = value >> 8;
     buf[2] = value;
-    if (!spiSend(SPI_MUX_04828B, buf, 3)) return 0;
+    if (!spiSend(muxSelect, buf, 3)) return 0;
     return 1;
 }
 
 /*
  * LMX2594 RF synthesizer
  */
-int
-lmx2594read(int muxSelect, int reg)
+static int
+lmx2594read(unsigned int muxSelect, int reg)
 {
     uint8_t buf[3];
 
@@ -528,8 +539,8 @@ lmx2594read(int muxSelect, int reg)
     return (buf[1] << 8) | buf[2];
 }
 
-int
-lmx2594write(int muxSelect, uint32_t value)
+static int
+lmx2594write(unsigned int muxSelect, uint32_t value)
 {
     uint8_t buf[3];
 
@@ -538,6 +549,83 @@ lmx2594write(int muxSelect, uint32_t value)
     buf[2] = value;
     if (!spiSend(muxSelect, buf, 3)) return 0;
     return 1;
+}
+
+enum rfClkType
+rfClkGetType(unsigned int index)
+{
+    if (index >= RFCLK_INFO_NUM_DEVICES) {
+        return RFCLK_UNKNOWN;
+    }
+
+    const struct rfClkInfo *info = &rfClkInfos[index];
+    return info->type;
+}
+
+enum opRW {
+    OP_READ,
+    OP_WRITE
+};
+
+static int
+rfClkOp(unsigned int index, uint32_t value, enum opRW op)
+{
+    if (index >= RFCLK_INFO_NUM_DEVICES) {
+        return -1;
+    }
+
+    const struct rfClkInfo *info = &rfClkInfos[index];
+    int ret = 0;
+
+    switch (op) {
+    case OP_WRITE:
+        switch (info->type) {
+        case RFCLK_LMK04XXX:
+            ret = lmk04828Bwrite(info->muxSelect, value);
+            break;
+
+        case RFCLK_LMX2594:
+            ret = lmx2594write(info->muxSelect, value);
+            break;
+
+        default:
+            ret = -1;
+        }
+        break;
+
+    case OP_READ:
+        switch (info->type) {
+        case RFCLK_LMK04XXX:
+            ret = lmk04828Bread(info->muxSelect, value);
+            break;
+
+        case RFCLK_LMX2594:
+            ret = lmx2594read(info->muxSelect, value);
+            break;
+
+        default:
+            ret = -1;
+        }
+        break;
+
+    default:
+        ret = -1;
+        break;
+    }
+
+    return ret;
+}
+
+int
+rfClkRead(unsigned int index, uint32_t value)
+{
+    return rfClkOp(index, value, OP_READ);
+}
+
+int
+rfClkWrite(unsigned int index, uint32_t value)
+{
+    return rfClkOp(index, value, OP_WRITE);
 }
 
 int

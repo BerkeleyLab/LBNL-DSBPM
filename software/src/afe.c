@@ -12,6 +12,9 @@
 #include "systemParameters.h"
 #include "util.h"
 
+#define ATT_STEPS_TO_MDB(steps)     (steps*1000/4)
+#define ATT_MDB_TO_STEPS(mdB)       ((mdB*4)/1000)
+
 #define SPI_DEVSEL_SHIFT    24
 #define SPI_DEVSEL_MASK     0x07000000
 
@@ -56,9 +59,14 @@ afeAttenSet(unsigned int bpm, unsigned int channel,
     /*
      * Write trimmed value
      */
-    int attSteps = (mdB * 4)/1000;
+    int attSteps = ATT_MDB_TO_STEPS(mdB);
     if (attSteps > 127) attSteps = 127;
     else if (attSteps < 0) attSteps = 0;
+
+    // No need to write the same value
+    if (afeAttenuation[bpm][channel] == ATT_STEPS_TO_MDB(attSteps)) {
+        return;
+    }
 
     int v = attSteps;
     // SPI data: 8-bit address | 8-bit data
@@ -73,35 +81,11 @@ afeAttenSet(unsigned int bpm, unsigned int channel,
     }
     GPIO_WRITE(REG(GPIO_IDX_AFE_SPI_CSR, bpm), v);
 
-#if 0
-    /*
-     * Write trimmed value
-     */
-    do {
-        int pass = 0;
-        int v = (mdB * 4)/1000 + systemParameters.afeTrim[i];
-        if (v > 127) v = 127;
-        else if (v < 0) v = 0;
-        // SPI data: 8-bit address | 8-bit data
-        v |= address << 8;
-        // SPI module options
-        v |= SPI_W_LSB_FIRST | ((channel << SPI_DEVSEL_SHIFT) & SPI_DEVSEL_MASK);
-        while  (GPIO_READ(REG(GPIO_IDX_AFE_SPI_CSR, bpm)) & SPI_R_BUSY) {
-            if (++pass >= 100) {
-                warn("ATTENUATOR UPDATE FAILED TO COMPLETE");
-                break;
-            }
-        }
-        GPIO_WRITE(REG(GPIO_IDX_AFE_SPI_CSR, bpm), v);
-    } while (++i < sizeof systemParameters.afeTrim /
-                                            sizeof systemParameters.afeTrim[0]);
-#endif
-
     /*
      * Update attenuator compenstation coefficients in FPGA.
      * Step is 0.25
      */
-    afeAttenuation[bpm][channel] = attSteps*1000/4;
+    afeAttenuation[bpm][channel] = ATT_STEPS_TO_MDB(attSteps);
 }
 
 /*
@@ -121,12 +105,16 @@ afeAttenGet(unsigned int bpm, unsigned int channel)
 void
 afeADCrestart(void)
 {
-    int i;
+    unsigned int bpm;
+    int channel;
 
     // Unfreeze all ADCs
-    for (i = 0 ; i < CFG_ADC_PHYSICAL_COUNT ; i++) {
-        rfADCfreezeCalibration(i, 0);
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        for (channel = 0; channel < CFG_ADC_PER_BPM_COUNT; channel++) {
+            rfADCfreezeCalibrationBPM(bpm, channel, 0);
+        }
     }
+
     // Perform ADC restart (foreground calibration)
     rfADCrestart();
     // Perform ADC synchronization

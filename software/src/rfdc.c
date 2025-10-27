@@ -198,7 +198,7 @@ static void rfADCCfgStaticDefaults(void)
                                           ADC_REF_CLK_FREQ,
                                           ADC_SAMPLING_CLK_FREQ);
         if (i != XST_SUCCESS)
-            fatal("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+            warn("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
 
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             i = XRFdc_SetDither(&rfDC, tile, adc, 1);
@@ -297,7 +297,7 @@ static void rfDACCfgStaticDefaults(void)
                                           XRFDC_EXTERNAL_CLK,
                                           DAC_REF_CLK_FREQ,
                                           DAC_SAMPLING_CLK_FREQ);
-        if (i != XST_SUCCESS) fatal("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+        if (i != XST_SUCCESS) warn("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
     }
 }
 
@@ -394,15 +394,15 @@ rfDCinit(void)
     static struct metal_init_params init_param = METAL_INIT_DEFAULTS;
 
     if (metal_init(&init_param)) {
-        fatal("metal_init failed");
+        warn("metal_init failed");
     }
     metal_set_log_handler(myLogHandler);
     metal_set_log_level(METAL_LOG_INFO);
 
     configp = XRFdc_LookupConfig(XPAR_XRFDC_0_DEVICE_ID);
-    if (!configp) fatal("XRFdc_LookupConfig");
+    if (!configp) warn("XRFdc_LookupConfig");
     i = XRFdc_CfgInitialize(&rfDC, configp);
-    if (i != XST_SUCCESS) fatal("XRFdc_CfgInitialize=%d", i);
+    if (i != XST_SUCCESS) warn("XRFdc_CfgInitialize=%d", i);
 
     initDone = 1;
 
@@ -598,28 +598,76 @@ rfADCfreezeCalibration(int channel, int freeze)
     }
 }
 
+void
+rfADCfreezeCalibrationBPM(unsigned int bpm, int channel, int freeze)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
+    rfADCfreezeCalibration(ch, freeze);
+}
+
+unsigned int
+rfADCGetStatus(int channel)
+{
+    int tile = channel / CFG_ADC_PER_TILE;
+    int adc = channel % CFG_ADC_PER_TILE;
+    uint32_t v;
+    int b = 0;
+
+    XRFdc_GetIntrStatus(&rfDC, XRFDC_ADC_TILE, tile, adc, &v);
+    if (v) {
+        b |= (v & XRFDC_ADC_OVR_RANGE_MASK) ? 0x1 : 0;
+        b |= (v & XRFDC_ADC_OVR_VOLTAGE_MASK)  ? 0x2 : 0;
+        XRFdc_IntrClr(&rfDC, XRFDC_ADC_TILE, tile, adc, v);
+    }
+
+    return b;
+}
+
+unsigned int
+rfADCGetStatusBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return 0;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
+    return rfADCGetStatus(ch);
+}
+
 unsigned int
 rfADCstatus(void)
 {
+    int bpm;
+    int channel;
     int status = 0;
-    int tile, adc;
     int statusShift = 0;
-    uint32_t v;
 
-    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
-            int b = 0;
-            if (((tile * CFG_ADC_PER_TILE) + adc) >= CFG_ADC_PHYSICAL_COUNT) break;
-            XRFdc_GetIntrStatus(&rfDC, XRFDC_ADC_TILE, tile, adc, &v);
-            if (v) {
-                b |= (v & XRFDC_ADC_OVR_RANGE_MASK) ? 0x1 : 0;
-                b |= (v & XRFDC_ADC_OVR_VOLTAGE_MASK)  ? 0x2 : 0;
-                XRFdc_IntrClr(&rfDC, XRFDC_ADC_TILE, tile, adc, v);
-            }
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        for (channel = 0 ; channel < CFG_ADC_PER_BPM_COUNT; channel++) {
+            int b = rfADCGetStatusBPM(bpm, channel);
             status |= b << statusShift;
             statusShift += 2;
         }
     }
+
     return status;
 }
 
@@ -670,6 +718,14 @@ rfADCSetDSADSBPM(unsigned int bpm, int channel, int mDbAtt)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
 
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
+
     att = ((float) mDbAtt) / 1000;
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     rfADCSetDSA(ch, att);
@@ -681,6 +737,14 @@ rfADCGetDSADSBPM(unsigned int bpm, int channel)
     float att;
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    if (CFG_SWAP_ADC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_ADC_SET_ORDER) {
+        channel = CFG_ADC_PER_BPM_COUNT-1 - channel;
+    }
 
     ch = bpm * CFG_ADC_PER_BPM_COUNT + channel;
     att = rfADCGetDSA(ch);
@@ -732,6 +796,14 @@ rfDACGetVOPDSBPM(unsigned int bpm, int channel)
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return -1;
 
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     return rfDACGetVOP(ch);
 }
@@ -741,6 +813,14 @@ rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent)
 {
     int ch;
     if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDACSetVOP(ch, ucurrent);

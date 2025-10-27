@@ -6,6 +6,7 @@
 #include <lwip/udp.h>
 #include "autotrim.h"
 #include "afe.h"
+#include "ami.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "cellComm.h"
@@ -18,6 +19,7 @@
 #include "util.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
+#include "bpmComm.h"
 
 #define MAX_ADC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
 #define MAX_DAC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_DAC_COUNT/CFG_DSBPM_COUNT)
@@ -87,8 +89,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->calibPHFactor[i] = GPIO_READ(REG(GPIO_IDX_PH_GAIN_FACTOR_0 +
                 adcChannel, chainNumber));
         pk->rfADCDSA[i] = rfADCGetDSADSBPM(chainNumber, adcChannel);
-        pk->afeAtt[i] = afeAttenGet(chainNumber, adcChannel);
-
+        pk->afeAtt[i] = amiAfeAttenGet(chainNumber, adcChannel);
     }
 
     for (i = 0 ; i < DSBPM_PROTOCOL_DAC_COUNT ; i++) {
@@ -96,6 +97,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         chainNumber = i / MAX_DAC_CHANNELS_PER_CHAIN;
         pk->dacCurrent[i] = rfDACGetVOPDSBPM(chainNumber, dacChannel);
         pk->dacCtl[i] = isPtGenRun(chainNumber);
+        pk->ptmAtt[i] = amiPtmAttenGet(chainNumber);
     }
 
 
@@ -176,8 +178,20 @@ static void
 publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                    const ip_addr_t *fromAddr, u16_t fromPort)
 {
+    int i = 0;
     const char *cp = p->payload;
-    static epicsInt16 fofbIndex = -1000;
+    static epicsInt16 fofbIndex[CFG_DSBPM_COUNT];
+    static int beenHere;
+
+    /*
+     * Initialize static with negative values
+     */
+    if (!beenHere) {
+        for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+            fofbIndex[i] = -1000;
+        }
+        beenHere = 1;
+    }
 
     /*
      * Must copy payload rather than just using payload area
@@ -196,11 +210,14 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                                                 fromPort);
     }
     if (p->len == sizeof fofbIndex) {
-        epicsInt16 newIndex;
+        epicsInt16 newIndex[CFG_DSBPM_COUNT];
         memcpy(&newIndex, p->payload, sizeof newIndex);
-        if (newIndex != fofbIndex) {
-            fofbIndex = newIndex;
-            cellCommSetFOFB(fofbIndex);
+
+        for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+            if (newIndex[i] != fofbIndex[i]) {
+                fofbIndex[i] = newIndex[i];
+                bpmCommSetFOFB(i, fofbIndex[i]);
+            }
         }
         subscriberAddr = *fromAddr;
         subscriberPort = fromPort;

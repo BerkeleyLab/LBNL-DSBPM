@@ -4,6 +4,7 @@
 #include <lwip/inet.h>
 #include <netif/xadapter.h>
 #include "afe.h"
+#include "ami.h"
 #include "console.h"
 #include "display.h"
 #include "epics.h"
@@ -33,6 +34,7 @@
 #include "publisher.h"
 #include "positionCalc.h"
 #include "waveformRecorder.h"
+#include "cellComm.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -115,6 +117,7 @@ main(void)
     eyescanInit();
     mgtInit();
     evrInit();
+    cellCommInit();
     rfClkInit();
     mmcmInit();
     sysrefInit(0);
@@ -123,9 +126,17 @@ main(void)
     sysrefShow(1);
     rfDCinit();
     afeInit();
+    amiInit();
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
+
+    /*
+     * Show AFE sensors
+     */
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
 
     /* Start network */
     lwip_init();
@@ -171,6 +182,8 @@ main(void)
     for (;;) {
         checkForReset();
         mgtCrankRxAligner();
+        cellCommCrank();
+        amiCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();

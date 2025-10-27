@@ -47,45 +47,72 @@ include $(CORDIC_DIR)/rules.mk
 UNISIM_CRAP += -e 'GTYE4_CHANNEL|MMCME4_ADV'
 
 # Top level files for depedency tracking
-SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc $(TARGET)_top_ddr_pins.xdc
-SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc $(TARGET)_top_ddr_tim.xdc
+SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
+SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc $(TARGET)_top_aurora_tim.xdc
 
 # ip_cores generation scripts/names
+include $(CELL_COMM_DIR)/top_rules.mk
+include $(MODULES_DIR)/bpm_comm_rules.mk
 
 # custom ip_cores that requires packaging
 include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
 
-IP_CORES += evrGTY rmsBandSelect positionCalcDivider positionCalcMultiplier adcCordic adcToSysFIFO ila_td256_s4096_cap
+IP_CORES += \
+	evrGTY \
+	rmsBandSelect \
+	positionCalcDivider \
+	positionCalcMultiplier \
+	adcCordic \
+	adcToSysFIFO \
+	ila_td256_s4096_cap
 evrGTY_DIR = $(PLATFORM_TARGET)/evrGTY
-evrGTY_TOP = $(evrGTY_DIR)/synth/evrGTY.v
 rmsBandSelect_DIR = $(PLATFORM_TARGET)/rmsBandSelect
-rmsBandSelect_TOP = $(rmsBandSelect_DIR)/synth/rmsBandSelect.vhd
 positionCalcDivider_DIR = $(PLATFORM_TARGET)/positionCalcDivider
-positionCalcDivider_TOP = $(positionCalcDivider_DIR)/synth/positionCalcDivider.vhd
 positionCalcMultiplier_DIR = $(PLATFORM_TARGET)/positionCalcMultiplier
-positionCalcMultiplier_TOP = $(positionCalcMultiplier_DIR)/synth/positionCalcMultiplier.vhd
 adcCordic_DIR = $(PLATFORM_TARGET)/adcCordic
-adcCordic_TOP = $(adcCordic_DIR)/synth/adcCordic.vhd
 adcToSysFIFO_DIR = $(PLATFORM_TARGET)/adcToSysFIFO
-adcToSysFIFO_TOP = $(adcToSysFIFO_DIR)/synth/adcToSysFIFO.vhd
 ila_td256_s4096_cap_DIR = $(PLATFORM_TARGET)/ila_td256_s4096_cap
-ila_td256_s4096_cap_TOP = $(ila_td256_s4096_cap_DIR)/synth/ila_td256_s4096_cap.v
 
-IP_CORES_TOP_LVL_SRCS += $(evrGTY_TOP) $(rmsBandSelect_TOP) $(positionCalcDivider_TOP) $(positionCalcMultiplier_TOP) $(adcCordic_TOP) $(adcToSysFIFO_TOP) $($(ila_td256_s4096_cap_TOP)
-IP_CORES_DIRS += $(evrGTY_DIR) $(rmsBandSelect_DIR) $(positionCalcDivider_DIR) $(positionCalcMultiplier_DIR) $(adcCordic_DIR) $(adcToSysFIFO_DIR) $(ila_td256_s4096_cap_DIR)
-IP_CORES_XDCS += $(evrGTY_TOP:%.v=%.xdc)
+IP_CORES_DIRS += \
+	$(evrGTY_DIR) \
+	$(rmsBandSelect_DIR) \
+	$(positionCalcDivider_DIR) \
+	$(positionCalcMultiplier_DIR) \
+	$(adcCordic_DIR) \
+	$(adcToSysFIFO_DIR) \
+	$(ila_td256_s4096_cap_DIR)
+
+IP_CORES_XCIS += \
+	evrGTY.xci \
+	rmsBandSelect.xci \
+	positionCalcDivider.xci \
+	positionCalcMultiplier.xci \
+	adcCordic.xci \
+	adcToSysFIFO.xci \
+	ila_td256_s4096_cap.xci
 
 IP_CORES_SRCS_DIRS = $(IP_CORES_DIRS)
 IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
 IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
 
-BD += system
-system_DIR = $(PLATFORM_TARGET)/system
-system_TOP = $(system_DIR)/synth/system.v
+BD_SYSTEM_NAME ?= system
 
+ifeq ($(BD_SYSTEM_NAME),system)
+	system_DIR = $(PLATFORM_TARGET)/system
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
+else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
+	system_DIR = $(PLATFORM_TARGET)/system_without_ddr
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+else
+$(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
+endif
+
+BD = system
+system_TOP = $(system_DIR)/synth/system.v
 BD_TOP_LVL_SRCS += $(system_TOP)
-BD_DIRS += $(system_DIR)
+BD_DIRS = $(system_DIR)
 
 BD_SRCS_DIRS = $(BD_DIRS)
 BD_SRCS_DIRS += $(addsuffix /synth, $(BD_DIRS))
@@ -123,33 +150,8 @@ VFLAGS_DEP += -I$(TOP_LVL_DIR)
 VFLAGS_DEP += $(addprefix -I, $(IP_CORES_SRCS_DIRS))
 VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
 
-# Files to be treated as library files. This is needed if the filename
-# does not match the module name, which is the case for Xilinx ip cores.
-# As we don't exactly know the names of the sources, create a file with
-# the switches that will be consumed by iverilog later
-evrGTY_VFLAGS_COMMAND_FILE = evrGTY_iverilog_cfile.txt
-rmsBandSelect_VFLAGS_COMMAND_FILE = rmsBandSelect_iverilog_cfile.txt
-positionCalcDivider_VFLAGS_COMMAND_FILE = positionCalcDivider_iverilog_cfile.txt
-positionCalcMultiplier_VFLAGS_COMMAND_FILE = positionCalcMultiplier_iverilog_cfile.txt
-adcCordic_VFLAGS_COMMAND_FILE = adcCordic_iverilog_cfile.txt
-adcToSysFIFO_VFLAGS_COMMAND_FILE = adcToSysFIFO_iverilog_cfile.txt
-ila_td256_s4096_cap_VFLAGS_COMMAND_FILE = ila_td256_s4096_cap_iverilog_cfile.txt
-
-VFLAGS_COMMAND_FILE += \
-					  $(evrGTY_VFLAGS_COMMAND_FILE)
-# $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-# $(positionCalcDivider_VFLAGS_COMMAND_FILE)
-# $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
-# $(adcCordic_VFLAGS_COMMAND_FILE)
-# $(adcToSysFIFO_VFLAGS_COMMAND_FILE)
-# using ILA with verilog gives an error:
-# input buffer overflow, can't enlarge buffer because scanner uses REJECT,
-# but we don't need it for iverilog as we only use it when not simulating
-# $(ila_td256_s4096_cap_VFLAGS_COMMAND_FILE)
-
 # additional vflags, our files that have more than 1 top-level module
 EXTRA_VFLAGS_DEP += extra_iverilog_cfile.txt
-
 VFLAGS_DEP += $(addprefix -c, $(VFLAGS_COMMAND_FILE) $(EXTRA_VFLAGS_DEP))
 
 VFLAGS_DEP += -DSIMULATE
@@ -165,8 +167,8 @@ vpath %.sh $(GW_SCRIPTS_DIR)
 # List top level depedencies here. Eveything named .bit will be used as
 # a top-level target in top_rules.mk. .v and .sv files will be used as
 # prerequisites as well as a system_top.xdc file
-$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) rmsBandSelect.xci positionCalcDivider.xci positionCalcMultiplier.xci adcCordic.xci adcToSysFIFO.xci ila_td256_s4096_cap.xci
-$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(IP_CORES_TOP_LVL_SRCS) $(BD_TOP_LVL_SRCS) cordicg_b22.v
+$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) $(IP_CORES_XCIS)
+$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(BD_TOP_LVL_SRCS) cordicg_b22.v
 
 $(EXTRA_VFLAGS_DEP): % : %.in
 	sed -e 's|$$BEDROCK_DIR|$(BEDROCK_DIR:/=)|g' \
@@ -174,7 +176,7 @@ $(EXTRA_VFLAGS_DEP): % : %.in
 
 # Generate bundled .xdc from other .xdc. Don't change the order of the
 # prerequisites as we need constraints in the order specified
-system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(IP_CORES_XDCS) $(SYSTEM_TOP_TIM_XDC)
+system_top.xdc: $(SYSTEM_TOP_PINS_XDC) $(SYSTEM_TOP_TIM_XDC)
 	cat $^ > $@
 
 # Generate firmware date and parameters
@@ -220,10 +222,11 @@ $(BD_TOP_LVL_SRCS): % : $$(basename $$(notdir %)).bd
 
 # clean generate IP cores files, but the source ones (.xci or .bd)
 clean::
-	$(foreach ipcore, $(IP_CORES), find $($(ipcore)_DIR)/ -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
-	$(foreach bd, $(BD), find $($(bd)_DIR)/ -mindepth 1 -not \( -name \*$(bd).xci -o -name \*$(bd).bd \) -delete $(CMD_SEP))
+	$(foreach ipcore, $(IP_CORES), test -f $($(ipcore)_DIR)/$(ipcore).xci && find $($(ipcore)_DIR) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
+	$(foreach bd, $(BD), test -f $($(bd)_DIR)/$(bd).bd && find $($(bd)_DIR) -mindepth 1 -not \( -name \*$(bd).xci -o -name \*$(bd).bd \) -delete $(CMD_SEP))
 
 # Cleaning rules
+include $(CELL_COMM_DIR)/bottom_rules.mk
 include $(BUILD_DIR)/bottom_rules.mk
 
 CLEAN += *.bit
@@ -234,15 +237,6 @@ CLEAN += $(TOP_LVL_DIR)/gitHash.vh
 CLEAN += cordicg_b22.v
 CLEAN += $(IP_CORES_CUSTOM)
 CLEAN += $(VFLAGS_COMMAND_FILE)
-# Not adding it to VFLAGS_COMMAND_FILE because iverilog gives an error:
-# input buffer overflow, can't enlarge buffer because scanner uses REJECT,
-# but we don't need it for iverilog as we only use it when not simulating
-CLEAN += $(ila_td256_s4096_cap_VFLAGS_COMMAND_FILE)
-CLEAN += $(rmsBandSelect_VFLAGS_COMMAND_FILE)
-CLEAN += $(positionCalcDivider_VFLAGS_COMMAND_FILE)
-CLEAN += $(positionCalcMultiplier_VFLAGS_COMMAND_FILE)
-CLEAN += $(adcCordic_VFLAGS_COMMAND_FILE)
-CLEAN += $(adcToSysFIFO_VFLAGS_COMMAND_FILE)
 CLEAN += *.log *.jou *.str
 CLEAN += *.xsa
 CLEAN += psu_init*

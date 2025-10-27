@@ -1,10 +1,30 @@
 # SFPs - MGT 129 - zSFP 2
-set_property PACKAGE_PIN N38        [get_ports SFP2_RX_P]
-set_property PACKAGE_PIN N39        [get_ports SFP2_RX_N]
-set_property PACKAGE_PIN P35        [get_ports SFP2_TX_P]
-set_property PACKAGE_PIN P36        [get_ports SFP2_TX_N]
-set_property PACKAGE_PIN AP18       [get_ports SFP2_TX_ENABLE]
-set_property IOSTANDARD LVCMOS12    [get_ports SFP2_TX_ENABLE]
+set_property PACKAGE_PIN N38        [get_ports {SFP_RX_P[2]}]
+set_property PACKAGE_PIN N39        [get_ports {SFP_RX_N[2]}]
+set_property PACKAGE_PIN P35        [get_ports {SFP_TX_P[2]}]
+set_property PACKAGE_PIN P36        [get_ports {SFP_TX_N[2]}]
+set_property PACKAGE_PIN AP18       [get_ports {SFP_TX_ENABLE[2]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[2]}]
+
+# These are assigned indirectly via the GTYE4 LOC properties.
+# Doing them here causes conflits because we are trying to
+# re-assigning the GTYE4 LOC later
+#
+## SFPs - MGT 128 - zSFP 0
+#set_property PACKAGE_PIN AA38       [get_ports {SFP_RX_P[0]}]
+#set_property PACKAGE_PIN AA39       [get_ports {SFP_RX_N[0]}]
+#set_property PACKAGE_PIN Y35        [get_ports {SFP_TX_P[0]}]
+#set_property PACKAGE_PIN Y36        [get_ports {SFP_TX_N[0]}]
+set_property PACKAGE_PIN AT20       [get_ports {SFP_TX_ENABLE[0]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[0]}]
+#
+## SFPs - MGT 128 - zSFP 1
+#set_property PACKAGE_PIN W38        [get_ports {SFP_RX_P[1]}]
+#set_property PACKAGE_PIN W39        [get_ports {SFP_RX_N[1]}]
+#set_property PACKAGE_PIN V35        [get_ports {SFP_TX_P[1]}]
+#set_property PACKAGE_PIN V36        [get_ports {SFP_TX_N[1]}]
+set_property PACKAGE_PIN AR18       [get_ports {SFP_TX_ENABLE[1]}]
+set_property IOSTANDARD LVCMOS12    [get_ports {SFP_TX_ENABLE[1]}]
 
 # USER_MGT_SI570
 set_property PACKAGE_PIN M32        [get_ports USER_MGT_SI570_CLK_N]
@@ -75,6 +95,57 @@ set_property IOSTANDARD LVCMOS18    [get_ports EVR_HB]
 set_property PACKAGE_PIN AU5        [get_ports EVR_HB_2]
 set_property IOSTANDARD LVCMOS18    [get_ports EVR_HB_2]
 
+# Analog Module Interface card (new AFE set)
+#
+# DACIO_00
+set_property PACKAGE_PIN A9       [get_ports {AMI_SPI_SDI[0]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_SDI[0]}]
+# DACIO_01
+set_property PACKAGE_PIN A10      [get_ports {AMI_SPI_SDO[0]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_SDO[0]}]
+# DACIO_02
+set_property PACKAGE_PIN A6       [get_ports {AMI_SPI_CLK[0]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_CLK[0]}]
+# DACIO_03
+set_property PACKAGE_PIN A7       [get_ports {AMI_SPI_CSB[0]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_CSB[0]}]
+# DACIO_04
+set_property PACKAGE_PIN A5       [get_ports {AMI_SPI_SDI[1]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_SDI[1]}]
+# DACIO_05
+set_property PACKAGE_PIN B5       [get_ports {AMI_SPI_SDO[1]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_SDO[1]}]
+# DACIO_06
+set_property PACKAGE_PIN C5       [get_ports {AMI_SPI_CLK[1]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_CLK[1]}]
+# DACIO_07
+set_property PACKAGE_PIN C6       [get_ports {AMI_SPI_CSB[1]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {AMI_SPI_CSB[1]}]
+# DACIO_08
+set_property PACKAGE_PIN C10      [get_ports AMI_BUCK_EN]
+set_property IOSTANDARD  LVCMOS18 [get_ports AMI_BUCK_EN]
+# DACIO_09
+set_property PACKAGE_PIN D10      [get_ports EVR_FB_CLK]
+set_property IOSTANDARD  LVCMOS18 [get_ports EVR_FB_CLK]
+# DACIO_10
+set_property PACKAGE_PIN D6       [get_ports {DACIO[10]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[10]}]
+# DACIO_11
+set_property PACKAGE_PIN E7       [get_ports {DACIO[11]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[11]}]
+# DACIO_12
+set_property PACKAGE_PIN E8       [get_ports {DACIO[12]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[12]}]
+# DACIO_13
+set_property PACKAGE_PIN E9       [get_ports {DACIO[13]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[13]}]
+# DACIO_14
+set_property PACKAGE_PIN E6       [get_ports {DACIO[14]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[14]}]
+# DACIO_15
+set_property PACKAGE_PIN F6       [get_ports {DACIO[15]}]
+set_property IOSTANDARD  LVCMOS18 [get_ports {DACIO[15]}]
+
 # User push buttons
 set_property PACKAGE_PIN L22 [get_ports GPIO_SW_W]
 set_property PACKAGE_PIN G24 [get_ports GPIO_SW_E]
@@ -113,10 +184,6 @@ set_property PACKAGE_PIN L21  [get_ports SFP_REC_CLK_N]
 set_property PACKAGE_PIN M20  [get_ports SFP_REC_CLK_P]
 set_property IOSTANDARD  LVDS [get_ports SFP_REC_CLK_N]
 set_property IOSTANDARD  LVDS [get_ports SFP_REC_CLK_P]
-
-# DACIO_00
-set_property PACKAGE_PIN A9       [get_ports EVR_FB_CLK]
-set_property IOSTANDARD  LVCMOS18 [get_ports EVR_FB_CLK]
 
 # CLk104_SYNC_IN
 set_property PACKAGE_PIN AU2      [get_ports CLK104_SYNC_IN]

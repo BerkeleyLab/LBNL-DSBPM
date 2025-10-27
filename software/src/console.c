@@ -9,7 +9,9 @@
 #include <lwip/udp.h>
 #include <xparameters.h>
 #include <xuartps_hw.h>
+#include "ami.h"
 #include "afe.h"
+#include "cellComm.h"
 #include "display.h"
 #include "evr.h"
 #include "eyescan.h"
@@ -27,6 +29,11 @@
 #include "systemParameters.h"
 #include "user_mgt_refclk.h"
 #include "util.h"
+
+/* FIXME. MOve this to per-bpm cellComm routine file */
+#define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
+
+#define CELL_COMM_BPM_CSR_TEST_DATA             0x1
 
 enum consoleMode { consoleModeCommand,
                    consoleModeLogReplay,
@@ -151,6 +158,28 @@ cmdBOOT(int argc, char **argv)
 }
 
 static int
+cellCommFakeDataToggle(void)
+{
+    int i = 0;
+    uint32_t csr = 0;
+
+    for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+        csr = GPIO_READ(REG(GPIO_IDX_CELL_COMM_TEST, i));
+
+        if (csr & CELL_COMM_BPM_CSR_TEST_DATA) {
+            csr &= ~CELL_COMM_BPM_CSR_TEST_DATA;
+        }
+        else {
+            csr |= CELL_COMM_BPM_CSR_TEST_DATA;
+        }
+
+        GPIO_WRITE(REG(GPIO_IDX_CELL_COMM_TEST, i), csr);
+    }
+
+    return 0;
+}
+
+static int
 cmdDEBUG(int argc, char **argv)
 {
     char *endp;
@@ -181,6 +210,8 @@ cmdDEBUG(int argc, char **argv)
     if (debugFlags & DEBUGFLAG_SLIDE_MGT) mgtRxBitslide();
     if (debugFlags & DEBUGFLAG_RESTART_AFE_ADC) afeADCrestart();
     if (debugFlags & DEBUGFLAG_RESYNC_ADC) rfDCsync();
+    if (debugFlags & DEBUGFLAG_CELL_COMM) cellCommStatus();
+    if (debugFlags & DEBUGFLAG_CELL_TEST_DATA) cellCommFakeDataToggle();
     if (sFlag) {
         systemParameters.startupDebugFlags = debugFlags;
         systemParametersFetchEEPROM();
@@ -213,7 +244,9 @@ cmdFMON(int argc, char **argv)
                                    "RFDC DAC0",
                                    "DAC AXI",
                                    "User SYSREF ADC",
-                                   "User SYSREF DAC" };
+                                   "User SYSREF DAC",
+                                   "CCW TX Out",
+                                   "Aurora Init" };
 
     if (!usingPPS) {
         printf("Warning -- Pulse-per-second event not seen at power-up.\n");
@@ -367,6 +400,28 @@ static int
 cmdSYSMON(int argc, char **argv)
 {
     sysmonDisplay();
+    return 0;
+}
+
+static int
+cmdAMIMON(int argc, char **argv)
+{
+    char *endp;
+    int bpm;
+
+    if (argc > 1) {
+        bpm = strtol(argv[1], &endp, 0);
+        if (*endp != '\0')
+            return 1;
+
+        amiPSinfoDisplay(bpm);
+        return 0;
+    }
+
+    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        amiPSinfoDisplay(bpm);
+    }
+
     return 0;
 }
 
@@ -532,6 +587,7 @@ static struct commandInfo commandTable[] = {
   { "tlog",   cmdTLOG,  "Timing system event logger"         },
   { "userMGT",cmdUMGT,  "User MGT reference clock adjustment"},
   { "values", cmdSYSMON,"Show system monitor values"         },
+  { "amiValues", cmdAMIMON, "Show AMI monitor values"        },
   { "xcvr",   eyescanCommand,"Perform transceiver eye scan"  },
 };
 static void

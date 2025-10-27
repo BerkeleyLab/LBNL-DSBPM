@@ -10,6 +10,7 @@
 #include <lwip/udp.h>
 #include "localOscillator.h"
 #include "ptGen.h"
+#include "rfclk.h"
 #include "ffs.h"
 #include "st7789v.h"
 #include "tftp.h"
@@ -66,6 +67,21 @@ static struct fileInfo fileTable[] = {
                                                     localOscillatorFetchPtEEPROM,
                                                     localOscillatorStashPtEEPROM,
                                                     localOscPtCommitAll},
+   {LMK04XX_TABLE_EEPROM_NAME, "LMK04XX register table",
+                                                    rfClkFetchLMK04xxEEPROM,
+                                                    rfClkStashLMK04xxEEPROM,
+                                                    rfClkLMK04xxCommit,
+                                                    rfClkLMK04xxDefaults},
+   {LMX2594_ADC_TABLE_EEPROM_NAME, "LMX2594 ADC register table",
+                                                    rfClkFetchLMX2594ADCEEPROM,
+                                                    rfClkStashLMX2594ADCEEPROM,
+                                                    rfClkLMX2594ADCCommit,
+                                                    rfClkLMX2594ADCDefaults},
+   {LMX2594_DAC_TABLE_EEPROM_NAME, "LMX2594 DAC register table",
+                                                    rfClkFetchLMX2594DACEEPROM,
+                                                    rfClkStashLMX2594DACEEPROM,
+                                                    rfClkLMX2594DACCommit,
+                                                    rfClkLMX2594DACDefaults},
    {PT_GEN_TABLE_EEPROM_NAME, "Pilot Tone generation table",
                                                     ptGenFetchEEPROM,
                                                     ptGenStashEEPROM,
