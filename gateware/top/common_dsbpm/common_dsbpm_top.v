@@ -103,7 +103,16 @@ module common_dsbpm_top #(
     output wire [15:10] DACIO,
 
     output wire       CLK_SPI_MUX_SEL0,
-    output wire       CLK_SPI_MUX_SEL1
+    output wire       CLK_SPI_MUX_SEL1,
+
+    output      FMC_PMOD6_0,
+    inout       FMC_PMOD6_1,
+    output      FMC_PMOD6_2,
+    output      FMC_PMOD6_3,
+    output      FMC_PMOD6_4,
+    output      FMC_PMOD6_5,
+    input       FMC_PMOD6_6,
+    input       FMC_PMOD6_7
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -207,8 +216,8 @@ BUFG_GT userMgt128Refclk1Div4Buf (.O(mgt128Refclk1Div4),
 (*ASYNC_REG="TRUE"*) reg Reset_RecoveryModeSwitch_m, Reset_RecoveryModeSwitch;
 (*ASYNC_REG="TRUE"*) reg DisplayModeSwitch_m, DisplayModeSwitch;
 always @(posedge sysClk) begin
-    Reset_RecoveryModeSwitch_m <= GPIO_SW_W;
-    DisplayModeSwitch_m        <= GPIO_SW_E;
+    Reset_RecoveryModeSwitch_m <= !FMC_PMOD6_6 || GPIO_SW_W;
+    DisplayModeSwitch_m        <= !FMC_PMOD6_7 || GPIO_SW_E;
     Reset_RecoveryModeSwitch   <= Reset_RecoveryModeSwitch_m;
     DisplayModeSwitch          <= DisplayModeSwitch_m;
 end
@@ -360,6 +369,33 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrSROCstrobe(),
           .evrCounterHBDbg(adcCounterHB));
 assign GPIO_IN[GPIO_IDX_ADC_SYNC_CSR] = adcSyncStatus;
+
+/////////////////////////////////////////////////////////////////////////////
+// Display
+wire DISPLAY_SPI_SDA_O, DISPLAY_SPI_SDA_T, DISPLAY_SPI_SDA_I;
+
+IOBUF DISPLAY_MOSI_Buf(.IO(FMC_PMOD6_1),
+                       .I(DISPLAY_SPI_SDA_O),
+                       .T(DISPLAY_SPI_SDA_T),
+                       .O(DISPLAY_SPI_SDA_I));
+
+st7789v #(.CLK_RATE(SYSCLK_RATE),
+          .COMMAND_QUEUE_ADDRESS_WIDTH(16),
+          .DEBUG("false"))
+  st7789v (.clk(sysClk),
+           .csrStrobe(GPIO_STROBES[GPIO_IDX_DISPLAY_CSR]),
+           .dataStrobe(GPIO_STROBES[GPIO_IDX_DISPLAY_DATA]),
+           .gpioOut(GPIO_OUT),
+           .status(GPIO_IN[GPIO_IDX_DISPLAY_CSR]),
+           .readData(GPIO_IN[GPIO_IDX_DISPLAY_DATA]),
+           .DISPLAY_BACKLIGHT_ENABLE(FMC_PMOD6_2),
+           .DISPLAY_RESET_N(FMC_PMOD6_4),
+           .DISPLAY_CMD_N(FMC_PMOD6_5),
+           .DISPLAY_CLK(FMC_PMOD6_3),
+           .DISPLAY_CS_N(FMC_PMOD6_0),
+           .DISPLAY_SDA_O(DISPLAY_SPI_SDA_O),
+           .DISPLAY_SDA_T(DISPLAY_SPI_SDA_T),
+           .DISPLAY_SDA_I(DISPLAY_SPI_SDA_I));
 
 /////////////////////////////////////////////////////////////////////////////
 // Generate tile synchronization user_sysref_adc
