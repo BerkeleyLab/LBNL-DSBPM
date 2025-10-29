@@ -134,21 +134,11 @@ include $(TARGET_DIR)/$(TARGET_VARIANT).mk
 
 ST7789V_DIR = $(SW_LIBS_DIR)/st7789v
 __ST7789V_SRC_FILES = \
+	st7789v.c \
 	systemFont.c
 __ST7789V_HDR_FILES =\
 	lv_font.h \
 	st7789v.h
-
-ifeq ($(TARGET),dsbpm_zcu208)
-	__ST7789V_SRC_FILES += \
-		st7789v_stub.c
-else ifeq ($(TARGET),dsbpm_lbl208)
-	__ST7789V_SRC_FILES += \
-		st7789v_stub.c
-#else ifeq ($(TARGET),dsbpm_???)
-#	__ST7789V_SRC_FILES += \
-#		st7789v.c
-endif
 
 ST7789V_SRC_FILES = $(addprefix $(ST7789V_DIR)/, $(__ST7789V_SRC_FILES))
 ST7789V_HDR_FILES = $(addprefix $(ST7789V_DIR)/, $(__ST7789V_HDR_FILES))
