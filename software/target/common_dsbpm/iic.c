@@ -455,7 +455,7 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
     // either GPIO3 or GPIO0, so select both to increase
     // compatibility
     if (muxSelect == SPI_MUX_2594_A_ADC) {
-        iicBuf[0] |= 0x8 >> SPI_MUX_2594_A_ADC_NEW;
+        iicBuf[0] = 0x8 >> SPI_MUX_2594_A_ADC_NEW;
     }
 
     memcpy(&iicBuf[1], buf, n);
