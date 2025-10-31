@@ -18,8 +18,11 @@ set_property LOC GTYE4_CHANNEL_X0Y5 [get_cells -hierarchical -filter {NAME =~ *a
 set clk_auroraCCW_period            [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *cellComm/cellCommAuroraCore/auroraCellCommCCW*RXOUTCLK}]]]
 set clk_auroraCW_period             [get_property PERIOD [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *cellComm/cellCommAuroraCore/auroraCellCommCW*RXOUTCLK}]]]
 
-set clk_aurora_sync_period          [get_property PERIOD [get_clocks sync_clk_i]]
-set clk_aurora_user_period          [get_property PERIOD [get_clocks user_clk_i]]
+set clk_aurora_sync_clk             [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *cellComm/cellCommAuroraCore/auroraCellCommCCW/auroraMGTInst*bufg_gt_sync_clk_inst/O}]]
+set clk_aurora_user_clk             [get_clocks -of_objects [get_pins -hier -filter {NAME =~ *cellComm/cellCommAuroraCore/auroraCellCommCCW/auroraMGTInst*bufg_gt_user_clk_inst/O}]]
+
+set clk_aurora_sync_period          [get_property PERIOD [get_clocks $clk_aurora_sync_clk]]
+set clk_aurora_user_period          [get_property PERIOD [get_clocks $clk_aurora_user_clk]]
 
 # Aurora Init Clock and System clock
 
@@ -41,8 +44,8 @@ set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks -of_obj
 
 # Aurora MMCM Clocks and System clock
 
-set_max_delay -datapath_only -from [get_clocks sync_clk_i] -to [get_clocks clk_pl_0] $clk_pl_0_period
-set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks sync_clk_i] $clk_aurora_sync_period
+set_max_delay -datapath_only -from [get_clocks $clk_aurora_sync_clk] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks $clk_aurora_sync_clk] $clk_aurora_sync_period
 
-set_max_delay -datapath_only -from [get_clocks user_clk_i] -to [get_clocks clk_pl_0] $clk_pl_0_period
-set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks user_clk_i] $clk_aurora_user_period
+set_max_delay -datapath_only -from [get_clocks $clk_aurora_user_clk] -to [get_clocks clk_pl_0] $clk_pl_0_period
+set_max_delay -datapath_only -from [get_clocks clk_pl_0] -to [get_clocks $clk_aurora_user_clk] $clk_aurora_user_period
