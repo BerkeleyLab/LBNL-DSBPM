@@ -20,6 +20,14 @@ module genericSPI #(
     (*mark_debug=DEBUG*) output wire                SPI_SDI,
     (*mark_debug=DEBUG*) input                      SPI_SDO);
 
+localparam DEVSEL_WIDTH = CSB_WIDTH > 1 ? $clog2(CSB_WIDTH) : 1;
+
+generate
+if (DEVSEL_WIDTH > 4) begin
+    ERROR_DEVSEL_WIDTH_bigger_than_4_unsupported();
+end
+endgenerate
+
 localparam BITRATE_DIVISOR = ((CLK_RATE / 2) + BIT_RATE - 1) / BIT_RATE;
 localparam TICK_COUNTER_WIDTH = $clog2(BITRATE_DIVISOR-1)+1;
 localparam TICK_COUNTER_RELOAD = BITRATE_DIVISOR - 2;
@@ -31,6 +39,7 @@ reg [SHIFTREG_WIDTH-1:0] shiftReg;
 reg spiClk_r = 0;
 reg sampleStart = 0, spiClkFirst = 0;
 reg lsbFirst = 0, cpha = 0, cpol = 0;
+reg [DEVSEL_WIDTH-1:0] deviceSelect = 0;
 assign SPI_SDI = lsbFirst ? shiftReg[0] : shiftReg[SHIFTREG_WIDTH-1];
 
 localparam BIT_COUNTER_WIDTH = $clog2(SHIFTREG_WIDTH-1);
@@ -51,15 +60,7 @@ reg busy = 0;
 
 assign status = { busy, {32-1-SHIFTREG_WIDTH{1'b0}}, shiftReg };
 
-localparam DEVSEL_WIDTH = CSB_WIDTH > 1 ? $clog2(CSB_WIDTH) : 1;
-
-generate
-if (DEVSEL_WIDTH > 4) begin
-    ERROR_DEVSEL_WIDTH_bigger_than_4_unsupported();
-end
-endgenerate
-
-wire [DEVSEL_WIDTH-1:0] deviceSelect = gpioOut[SHIFTREG_WIDTH+:DEVSEL_WIDTH];
+wire [DEVSEL_WIDTH-1:0] spiDeviceSelect = gpioOut[SHIFTREG_WIDTH+:DEVSEL_WIDTH];
 wire [SHIFTREG_WIDTH-1:0] spiData = gpioOut[0+:SHIFTREG_WIDTH];
 wire spiLargeTransfer = gpioOut[31];
 wire spiLSBFirst = gpioOut[30];
@@ -84,8 +85,9 @@ always @(posedge clk) begin
             lsbFirst <= spiLSBFirst;
             cpol <= spiCPOL;
             cpha <= spiCPHA;
-            SPI_CSB[deviceSelect] <= 0;
-            SPI_LE[deviceSelect] <= 0;
+            deviceSelect <= spiDeviceSelect;
+            SPI_CSB[spiDeviceSelect] <= 0;
+            SPI_LE <= 0;
             state <= S_TRANSFER;
         end
         else begin
@@ -139,7 +141,7 @@ always @(posedge clk) begin
         end
         S_FINISH: begin
             tickCounter <= TICK_COUNTER_RELOAD;
-            SPI_LE[deviceSelect] <= 0;
+            SPI_LE <= 0;
             state <= S_IDLE;
         end
         default: state <= S_IDLE;
