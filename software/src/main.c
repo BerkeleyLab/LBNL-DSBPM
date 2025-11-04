@@ -118,8 +118,9 @@ main(void)
     mgtInit();
     evrInit();
     cellCommInit();
-    rfClkInit();
+    rfClkPreInit();
     mmcmInit();
+    rfClkInit();
     sysrefInit(0);
     sysrefInit(1);
     sysrefShow(0);

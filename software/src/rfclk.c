@@ -70,6 +70,8 @@ static struct rfClkConfig rfClkConfigs[RFCLK_INFO_NUM_DEVICES] = {
     },
 };
 
+static int rfClkStashEEPROM(unsigned int index);
+static int rfClkFetchEEPROM(unsigned int index);
 static int rfClkGenCommit(unsigned int index);
 static void rfClkDefaults(unsigned int index);
 
@@ -285,6 +287,18 @@ lmx2594ReadbackFirst(uint32_t *values, int capacity)
 }
 
 /*
+ * Configure the defaults so the MMCM locks and then use the correct
+ * values
+ */
+void
+rfClkPreInit(void)
+{
+    rfClkDefaults(RFCLK_INFO_LMK04XXX_INDEX);
+    rfClkDefaults(RFCLK_INFO_LMX2594_ADC_INDEX);
+    rfClkDefaults(RFCLK_INFO_LMX2594_DAC_INDEX);
+}
+
+/*
  * This needs to be called after initializing the tables
  * with the TFTP server. Otherwise, the default tables will
  * be used.
@@ -292,17 +306,20 @@ lmx2594ReadbackFirst(uint32_t *values, int capacity)
 void
 rfClkInit(void)
 {
-    if (rfClkGenCommit(RFCLK_INFO_LMK04XXX_INDEX) < 0) {
+    if ((rfClkStashEEPROM(RFCLK_INFO_LMK04XXX_INDEX) < 0) ||
+            (rfClkGenCommit(RFCLK_INFO_LMK04XXX_INDEX) < 0)) {
         printf("rfClkGenCommit: corrupt LMK04xx table, using default values\n");
         rfClkDefaults(RFCLK_INFO_LMK04XXX_INDEX);
     }
 
-    if (rfClkGenCommit(RFCLK_INFO_LMX2594_ADC_INDEX) < 0) {
+    if ((rfClkStashEEPROM(RFCLK_INFO_LMX2594_ADC_INDEX) < 0) ||
+            (rfClkGenCommit(RFCLK_INFO_LMX2594_ADC_INDEX) < 0)) {
         printf("rfClkGenCommit: corrupt LMX2594 ADC table, using default values\n");
         rfClkDefaults(RFCLK_INFO_LMX2594_ADC_INDEX);
     }
 
-    if (rfClkGenCommit(RFCLK_INFO_LMX2594_DAC_INDEX) < 0) {
+    if ((rfClkStashEEPROM(RFCLK_INFO_LMX2594_DAC_INDEX) < 0) ||
+            (rfClkGenCommit(RFCLK_INFO_LMX2594_DAC_INDEX) < 0)) {
         printf("rfClkGenCommit: corrupt LMX2594 DAC table, using default values\n");
         rfClkDefaults(RFCLK_INFO_LMX2594_DAC_INDEX);
     }
@@ -559,7 +576,7 @@ rfClkGetTable(unsigned int index, unsigned char *buf)
     return cp - buf;
 }
 
-int
+static int
 rfClkFetchEEPROM(unsigned int index)
 {
     Xil_AssertNonvoid(index < RFCLK_INFO_NUM_DEVICES);
@@ -609,7 +626,7 @@ rfClkFetchLMX2594DACEEPROM()
     return rfClkFetchEEPROM(RFCLK_INFO_LMX2594_DAC_INDEX);
 }
 
-int
+static int
 rfClkStashEEPROM(unsigned int index)
 {
     Xil_AssertNonvoid(index < RFCLK_INFO_NUM_DEVICES);
