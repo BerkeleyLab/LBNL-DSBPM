@@ -8,6 +8,7 @@
 #define LMX2594_ADC_TABLE_EEPROM_NAME       "lmxADC.csv"
 #define LMX2594_DAC_TABLE_EEPROM_NAME       "lmxDAC.csv"
 
+void rfClkPreInit(void);
 void rfClkInit(void);
 void rfClkShow(void);
 

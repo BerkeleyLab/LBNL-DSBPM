@@ -133,9 +133,19 @@ mmcmStartReconfig(void)
     printf("ADC MMCM locked after %d uS.\n", MICROSECONDS_SINCE_BOOT() - then);
 }
 
+static void
+mmcmReset(void)
+{
+    WR(XPAR_RFADC_MMCM_BASEADDR, 0x000, 0x0000000A);
+}
+
 void
 mmcmInit(void)
 {
+    /* Input clock might have been disabled */
+    mmcmReset();
+    microsecondSpin(1000);
+
     showRFDCClk("Old ");
     mmcmSetRFDCDivClkDivider(systemParameters.rfdcMMCMDivClkDivider);
     mmcmSetRFDCClkMultiplier(systemParameters.rfdcMMCMMultiplier);
