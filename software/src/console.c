@@ -10,6 +10,7 @@
 #include <xparameters.h>
 #include <xuartps_hw.h>
 #include "ami.h"
+#include "rpb.h"
 #include "afe.h"
 #include "cellComm.h"
 #include "display.h"
@@ -426,6 +427,13 @@ cmdAMIMON(int argc, char **argv)
 }
 
 static int
+cmdRPBMON(int argc, char **argv)
+{
+    rpbPSinfoDisplay();
+    return 0;
+}
+
+static int
 cmdREG(int argc, char **argv)
 {
     char *endp;
@@ -588,6 +596,7 @@ static struct commandInfo commandTable[] = {
   { "userMGT",cmdUMGT,  "User MGT reference clock adjustment"},
   { "values", cmdSYSMON,"Show system monitor values"         },
   { "amiValues", cmdAMIMON, "Show AMI monitor values"        },
+  { "rpbValues", cmdRPBMON, "Show RPB monitor values"        },
   { "xcvr",   eyescanCommand,"Perform transceiver eye scan"  },
 };
 static void
