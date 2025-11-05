@@ -35,6 +35,7 @@ static const struct ina239RegMap ina239RegMap[] = {
 #define DEVINFO_CPHA_DLY      1
 
 struct deviceInfo {
+    uint8_t channel;
     uint8_t lsbFirst;
     uint8_t wordSize24;
     uint8_t cpol;
@@ -42,7 +43,7 @@ struct deviceInfo {
 };
 
 static const struct deviceInfo deviceTable[] = {
-    {  0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY}, // RPB_SPI_INDEX_INA239
+    {  0,    0,    1,   DEVINFO_CPOL_NORMAL, DEVINFO_CPHA_DLY}, // RPB_SPI_INDEX_INA239
 };
 
 #define NUM_DEVICES ARRAY_SIZE(deviceTable)
@@ -145,7 +146,7 @@ rpbSPIWrite(unsigned int deviceIndex, uint32_t data)
     cp = &controller;
 
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
-            dp->cpha, 1);
+            dp->cpha, dp->channel);
     spiStatus = genericSPIWrite(&cp->spi, data);
 
     if (spiStatus != GSPI_SUCCESS) {
@@ -170,7 +171,7 @@ rpbSPIRead(unsigned int deviceIndex, uint32_t data, uint32_t *buf)
     cp = &controller;
 
     genericSPISetOptions(&cp->spi, dp->wordSize24, dp->lsbFirst, dp->cpol,
-            dp->cpha, 1);
+            dp->cpha, dp->channel);
     spiStatus = genericSPIRead(&cp->spi, data, buf);
 
     if (spiStatus != GSPI_SUCCESS) {
