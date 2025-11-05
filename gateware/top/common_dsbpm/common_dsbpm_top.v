@@ -112,7 +112,16 @@ module common_dsbpm_top #(
     output      FMC_PMOD6_4,
     output      FMC_PMOD6_5,
     input       FMC_PMOD6_6,
-    input       FMC_PMOD6_7
+    input       FMC_PMOD6_7,
+
+    output      FMC_PMOD4_0,
+    output      FMC_PMOD4_1,
+    input       FMC_PMOD4_2,
+    output      FMC_PMOD4_3,
+    output      FMC_PMOD4_4,
+    output      FMC_PMOD4_5,
+    output      FMC_PMOD4_6,
+    output      FMC_PMOD4_7
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2613,6 +2622,40 @@ endgenerate // generate
 
 assign AMI_BUCK_EN = 1'b1;
 assign DACIO = 0;
+
+//////////////////////////////////////////////////////////////////////////////
+// RPB SPI interface
+
+localparam RPB_NUM_CSB = 1;
+
+wire spiRpbCLK, spiRpbSDI, spiRpbSDO;
+wire [RPB_NUM_CSB-1:0] spiRpbCSB;
+genericSPI #(
+  .CLK_RATE(SYSCLK_RATE),
+  .CSB_WIDTH(RPB_NUM_CSB),
+  .BIT_RATE(100000),
+  .DEBUG("false")
+) genericRpbSPI (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_RPB_SPI_CSR]),
+    .gpioOut(GPIO_OUT),
+    .status(GPIO_IN[GPIO_IDX_RPB_SPI_CSR]),
+    .SPI_CLK(spiRpbCLK),
+    .SPI_CSB(spiRpbCSB),
+    .SPI_LE(),
+    .SPI_SDI(spiRpbSDI),
+    .SPI_SDO(spiRpbSDO)
+);
+
+assign FMC_PMOD4_3 = spiRpbCLK;
+assign FMC_PMOD4_0 = spiRpbCSB[0];
+assign FMC_PMOD4_1 = spiRpbSDI;
+assign spiRpbSDO = FMC_PMOD4_2;
+
+assign FMC_PMOD4_4 = 0;
+assign FMC_PMOD4_5 = 0;
+assign FMC_PMOD4_6 = 0;
+assign FMC_PMOD4_7 = 0;
 
 //
 // FOFB communication

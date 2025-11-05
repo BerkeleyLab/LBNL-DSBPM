@@ -112,7 +112,16 @@ module dsbpm_zcu208 #(
     output      FMC_PMOD6_4,
     output      FMC_PMOD6_5,
     input       FMC_PMOD6_6,
-    input       FMC_PMOD6_7
+    input       FMC_PMOD6_7,
+
+    output      FMC_PMOD4_0,
+    output      FMC_PMOD4_1,
+    input       FMC_PMOD4_2,
+    output      FMC_PMOD4_3,
+    output      FMC_PMOD4_4,
+    output      FMC_PMOD4_5,
+    output      FMC_PMOD4_6,
+    output      FMC_PMOD4_7
 );
 
 common_dsbpm_top #(
@@ -256,7 +265,16 @@ common_dsbpm_top #(
     .FMC_PMOD6_4(FMC_PMOD6_4),
     .FMC_PMOD6_5(FMC_PMOD6_5),
     .FMC_PMOD6_6(FMC_PMOD6_6),
-    .FMC_PMOD6_7(FMC_PMOD6_7)
+    .FMC_PMOD6_7(FMC_PMOD6_7),
+
+    .FMC_PMOD4_0(FMC_PMOD4_0),
+    .FMC_PMOD4_1(FMC_PMOD4_1),
+    .FMC_PMOD4_2(FMC_PMOD4_2),
+    .FMC_PMOD4_3(FMC_PMOD4_3),
+    .FMC_PMOD4_4(FMC_PMOD4_4),
+    .FMC_PMOD4_5(FMC_PMOD4_5),
+    .FMC_PMOD4_6(FMC_PMOD4_6),
+    .FMC_PMOD4_7(FMC_PMOD4_7)
 );
 
 endmodule

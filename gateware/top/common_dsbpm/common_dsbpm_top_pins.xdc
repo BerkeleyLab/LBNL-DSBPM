@@ -201,6 +201,33 @@ set_property PULLUP true [get_ports FMC_PMOD6_6]
 set_property PULLUP true [get_ports FMC_PMOD6_7]
 set_property DRIVE 8 [get_ports FMC_PMOD6_1]
 
+# PMOD 4 connector - RPB board
+#
+# LA28_P
+set_property PACKAGE_PIN AM15     [get_ports FMC_PMOD4_0]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_0]
+# LA31_P
+set_property PACKAGE_PIN AJ16     [get_ports FMC_PMOD4_1]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_1]
+# LA30_P
+set_property PACKAGE_PIN AG17     [get_ports FMC_PMOD4_2]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_2]
+# LA33_P
+set_property PACKAGE_PIN AH16     [get_ports FMC_PMOD4_3]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_3]
+# LA28_N
+set_property PACKAGE_PIN AN15     [get_ports FMC_PMOD4_4]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_4]
+# LA31_N
+set_property PACKAGE_PIN AJ15     [get_ports FMC_PMOD4_5]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_5]
+# LA30_N
+set_property PACKAGE_PIN AH17     [get_ports FMC_PMOD4_6]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_6]
+# LA33_N
+set_property PACKAGE_PIN AH15     [get_ports FMC_PMOD4_7]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD4_7]
+
 # SPI Mux Selection
 set_property PACKAGE_PIN C11       [get_ports CLK_SPI_MUX_SEL0]
 set_property PACKAGE_PIN B12       [get_ports CLK_SPI_MUX_SEL1]

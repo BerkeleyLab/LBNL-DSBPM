@@ -33,6 +33,7 @@
 #define GPIO_IDX_EVR_SA_RELOAD           20 // Slow acquisition divider reload
 #define GPIO_IDX_GITHASH                 21 // Git 32-bit hash
 #define GPIO_IDX_SYSREF_DAC_CSR          22 // SYSREF DAC generation control/status
+#define GPIO_IDX_RPB_SPI_CSR             23 // RPB SPI monitoring
 
 /*
  * Per DSBPM registers
