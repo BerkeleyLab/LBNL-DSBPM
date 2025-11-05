@@ -115,8 +115,8 @@ module common_dsbpm_top #(
     input       FMC_PMOD6_7,
 
     output      FMC_PMOD4_0,
-    output      FMC_PMOD4_1,
-    input       FMC_PMOD4_2,
+    input       FMC_PMOD4_1,
+    output      FMC_PMOD4_2,
     output      FMC_PMOD4_3,
     output      FMC_PMOD4_4,
     output      FMC_PMOD4_5,
@@ -2647,13 +2647,13 @@ genericSPI #(
     .SPI_SDO(spiRpbSDO)
 );
 
-assign FMC_PMOD4_3 = spiRpbCLK;
+assign FMC_PMOD4_5 = spiRpbCLK;
 assign FMC_PMOD4_0 = spiRpbCSB[0];
-assign FMC_PMOD4_1 = spiRpbSDI;
-assign spiRpbSDO = FMC_PMOD4_2;
+assign FMC_PMOD4_4 = spiRpbSDI;
+assign spiRpbSDO = FMC_PMOD4_1;
 
-assign FMC_PMOD4_4 = 0;
-assign FMC_PMOD4_5 = 0;
+assign FMC_PMOD4_2 = 0;
+assign FMC_PMOD4_3 = 0;
 assign FMC_PMOD4_6 = 0;
 assign FMC_PMOD4_7 = 0;
 

@@ -115,8 +115,8 @@ module dsbpm_zcu208 #(
     input       FMC_PMOD6_7,
 
     output      FMC_PMOD4_0,
-    output      FMC_PMOD4_1,
-    input       FMC_PMOD4_2,
+    input       FMC_PMOD4_1,
+    output      FMC_PMOD4_2,
     output      FMC_PMOD4_3,
     output      FMC_PMOD4_4,
     output      FMC_PMOD4_5,
