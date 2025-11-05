@@ -5,6 +5,7 @@
 #include <netif/xadapter.h>
 #include "afe.h"
 #include "ami.h"
+#include "rpb.h"
 #include "console.h"
 #include "display.h"
 #include "epics.h"
@@ -128,6 +129,7 @@ main(void)
     rfDCinit();
     afeInit();
     amiInit();
+    rpbInit();
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
@@ -138,6 +140,8 @@ main(void)
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
         amiPSinfoDisplay(bpm);
     }
+
+    rpbPSinfoDisplay();
 
     /* Start network */
     lwip_init();
@@ -185,6 +189,7 @@ main(void)
         mgtCrankRxAligner();
         cellCommCrank();
         amiCrank();
+        rpbCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();
