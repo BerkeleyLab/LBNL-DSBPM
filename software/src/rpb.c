@@ -76,6 +76,8 @@ struct psInfo {
     uint32_t    vbus;
     uint32_t    current;
     uint32_t    temp;
+    uint32_t    mfrId;
+    uint32_t    devId;
     const char *name;
 };
 
@@ -86,10 +88,14 @@ static struct psInfo psInfos[RPB_NUM_PS_SENSORS] = {
         .vbus = 0,
         .current = 0,
         .temp = 0,
+        .mfrId = 0,
+        .devId = 0,
         .name = "RPB_0"
     },
 };
 
+static int fetchId(unsigned int channel,
+        uint32_t *mfrId, uint32_t *devId);
 static int fetchVIRaw(unsigned int channel,
         uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf);
 static int fetchTempRaw(unsigned int channel,
@@ -118,7 +124,10 @@ rpbInit(void)
     int sensor = 0;
     int status = 0;
     for (sensor = 0 ; sensor < RPB_NUM_PS_SENSORS; sensor++) {
-        status = fetchVIRaw(sensor,
+        status = fetchId(sensor,
+                &psInfos[sensor].mfrId,
+                &psInfos[sensor].devId);
+        status |= fetchVIRaw(sensor,
                 &psInfos[sensor].vbus,
                 &psInfos[sensor].vshunt,
                 &psInfos[sensor].current);
@@ -250,6 +259,23 @@ rpbIna239DevIdGet(unsigned int channel)
     }
 
     return buf;
+}
+
+static int
+fetchId(unsigned int channel, uint32_t *mfrId, uint32_t *devId)
+{
+    int status = 0;
+
+    status = rpbGetIna239Reading(psInfos[channel].deviceIndex,
+            RPB_INA239_INDEX_MFR, mfrId);
+    status |= rpbGetIna239Reading(psInfos[channel].deviceIndex,
+            RPB_INA239_INDEX_DEVID, devId);
+
+    if (status < 0) {
+        return status;
+    }
+
+    return 0;
 }
 
 static int
@@ -390,7 +416,7 @@ rpbFetch(uint32_t *args)
  * values, convert and display them.
  */
 void
-rpbPSinfoDisplay(void)
+rpbPSinfoDisplay(int verbose)
 {
     unsigned int sensor = 0;
     int status = 0;
@@ -406,12 +432,17 @@ rpbPSinfoDisplay(void)
                 &v, &vs, &i);
         status |= convertTemp(psInfos[sensor].temp, &t);
         if (status < 0) {
-            printf("%8s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
+            printf("%8s(Nil:Nil): NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
                     psInfos[sensor].name);
         }
-        else {
+        else if (verbose == 0) {
             printf("%8s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
                     psInfos[sensor].name, v, vs, i, t);
+        }
+        else {
+            printf("%8s(0x%04X:0x%04X): %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
+                    psInfos[sensor].name, psInfos[sensor].mfrId, psInfos[sensor].devId,
+                    v, vs, i, t);
         }
     }
 }

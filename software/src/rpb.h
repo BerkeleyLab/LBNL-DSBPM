@@ -29,6 +29,6 @@ int rpbIna239DevIdGet(unsigned int channel);
 
 int rpbFetch(uint32_t *args);
 void rpbCrank(void);
-void rpbPSinfoDisplay(void);
+void rpbPSinfoDisplay(int verbose);
 
 #endif /* _RPB_SPI_H_ */
