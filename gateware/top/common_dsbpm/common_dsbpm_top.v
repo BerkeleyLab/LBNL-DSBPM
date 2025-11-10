@@ -2540,10 +2540,13 @@ rmsCalc rmsCalc(.clk(sysClk),
 // DAC streamer
 //
 
+// each row: I and Q samples
+localparam DAC_ADDRESS_WIDTH = $clog2(CFG_DAC_AXI_SAMPLES_PER_CLOCK*CFG_PT_GEN_ROW_CAPACITY);
+
 genericDACStreamer #(
   .AXIS_DATA_WIDTH(AXIS_DAC_SAMPLE_WIDTH),
   .DAC_DATA_WIDTH(DAC_SAMPLE_WIDTH),
-  .DAC_ADDRESS_WIDTH(16)
+  .DAC_ADDRESS_WIDTH(DAC_ADDRESS_WIDTH)
 ) genericDACStreamer (
     .sysClk(sysClk),
     .sysGpioData(GPIO_OUT),
