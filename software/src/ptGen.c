@@ -36,7 +36,25 @@
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 #define PT_GEN_TABLE_BUF_SIZE       (2+(2*CFG_PT_GEN_ROW_CAPACITY))
-#define MAX_TABLE_BUF_SIZE          (PT_GEN_TABLE_BUF_SIZE)
+
+/*
+ * EEPROM I/O
+ * The PT generation file is encoded with 2 numbers per row
+ * separated by comma and terminated with "\n"
+ *
+ * Each number is:
+ *
+ * number = "([+- ])[01].[0-9]{6}"
+ * max_size(number) = 9
+ *
+ * As each PT table has 2 numbers per row:
+ *
+ * row = number,number\n
+ * max_size(row) = 2*9 + 1 (comma) + 1 (linefeed) + (null character)
+ * max_size(buffer) = (num_rows * max_size(row)) + (null character)
+ */
+
+#define MAX_TABLE_BUF_SIZE      ((2*9 + 1 + 1)*CFG_PT_GEN_ROW_CAPACITY+1)
 
 static int32_t ptGenTable[PT_GEN_TABLE_BUF_SIZE];
 
@@ -164,20 +182,36 @@ ptGenSetTable(unsigned char *buf, int size)
  * Called when local oscillator table is to be downloaded from the TFTP server
  */
 int
-ptGenGetTable(unsigned char *buf)
+ptGenGetTable(unsigned char *buf, int capacity)
 {
     int r, c, rowCount, colCount = 2;
     int32_t *table = ptGenTable;
+    int32_t *tp = table;
+    size_t tableSize = sizeof(ptGenTable);
     unsigned char *cp = buf;
 
-    rowCount = table[0];
-    table += 2;
+    rowCount = tp[0];
+    tp += 2;
     for (r = 0 ; r < rowCount ; r++) {
         for (c = 0 ; c < colCount ; c++) {
             int i;
             char sep = (c == (colCount - 1)) ? '\n' : ',';
-            double v = *table++ / SCALE_FACTOR;
-            i = sprintf((char *)cp, "%9.6f%c", v, sep);
+
+            // Will table overflow?
+            if (((unsigned char *)(tp+1) -
+                        (unsigned char *)table) > tableSize) {
+                return cp - buf;
+            }
+            double v = *tp++ / SCALE_FACTOR;
+
+            size_t bytesLeft = capacity - (cp-buf);
+            i = snprintf((char *)cp, bytesLeft, "%9.6f%c", v, sep);
+
+            // Has the buffer been truncated to avoid overflow?
+            if (i < 0 || i >= bytesLeft) {
+                return cp - buf;
+            }
+
             cp += i;
         }
     }
@@ -283,7 +317,7 @@ void ptGenInit(unsigned int bpm)
 /*
  * EEPROM I/O
  */
-static int32_t tableBuf[MAX_TABLE_BUF_SIZE];
+static unsigned char tableBuf[MAX_TABLE_BUF_SIZE];
 
 int
 ptGenFetchEEPROM()
@@ -299,10 +333,17 @@ ptGenFetchEEPROM()
         return -1;
     }
 
-    nRead = ptGenGetTable((unsigned char *)tableBuf);
+    nRead = ptGenGetTable((unsigned char *)tableBuf, sizeof(tableBuf));
     if (nRead <= 0) {
+        printf("ptGen: PT generation format to file failed\n");
         f_close(&fil);
         return -1;
+    }
+
+    // Results were truncated. nRead does NOT contain the NULL
+    // character
+    if (nRead >= sizeof(tableBuf)) {
+        printf("ptGen: PT generation format to file truncated\n");
     }
 
     fr = f_write(&fil, tableBuf, nRead, &nWritten);
@@ -339,6 +380,12 @@ ptGenStashEEPROM()
         return -1;
     }
     if (nRead == 0) {
+        printf("ptGen: PT generation table file had 0 bytes\n");
+        f_close(&fil);
+        return 0;
+    }
+    if (nRead >= sizeof(tableBuf)) {
+        printf("ptGen: PT generation buffer truncated. Not setting table\n");
         f_close(&fil);
         return 0;
     }
