@@ -429,7 +429,19 @@ cmdAMIMON(int argc, char **argv)
 static int
 cmdRPBMON(int argc, char **argv)
 {
-    rpbPSinfoDisplay();
+    char *endp;
+    int verbose;
+
+    if (argc > 1) {
+        verbose = strtol(argv[1], &endp, 0);
+        if (*endp != '\0')
+            return 1;
+
+        rpbPSinfoDisplay(verbose);
+        return 0;
+    }
+
+    rpbPSinfoDisplay(0);
     return 0;
 }
 
