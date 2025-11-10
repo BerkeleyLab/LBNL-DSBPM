@@ -122,6 +122,8 @@ struct psInfo {
     uint32_t    vbus;
     uint32_t    current;
     uint32_t    temp;
+    uint32_t    mfrId;
+    uint32_t    devId;
     const char *name;
 };
 
@@ -133,6 +135,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_0"
         },
         {
@@ -141,6 +145,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_1"
         },
         {
@@ -149,6 +155,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_2"
         },
         {
@@ -157,6 +165,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_3"
         },
         {
@@ -165,6 +175,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "PTM_0"
         },
     },
@@ -175,6 +187,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_0"
         },
         {
@@ -183,6 +197,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_1"
         },
         {
@@ -191,6 +207,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_2"
         },
         {
@@ -199,6 +217,8 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "AFE_3"
         },
         {
@@ -207,11 +227,15 @@ static struct psInfo psInfos[CFG_DSBPM_COUNT][AMI_NUM_PS_SENSORS] = {
             .vbus = 0,
             .current = 0,
             .temp = 0,
+            .mfrId = 0,
+            .devId = 0,
             .name = "PTM_0"
         },
     }
 };
 
+static int fetchId(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *mfrId, uint32_t *devId);
 static int fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
         uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf);
 static int fetchTempRaw(unsigned int controllerIndex, unsigned int channel,
@@ -292,7 +316,10 @@ amiInit(void)
     int status = 0;
     for (controllerIndex = 0 ; controllerIndex < NUM_CONTROLLERS; controllerIndex++) {
         for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
-            status = fetchVIRaw(controllerIndex, sensor,
+            status = fetchId(controllerIndex, sensor,
+                    &psInfos[controllerIndex][sensor].mfrId,
+                    &psInfos[controllerIndex][sensor].devId);
+            status |= fetchVIRaw(controllerIndex, sensor,
                     &psInfos[controllerIndex][sensor].vbus,
                     &psInfos[controllerIndex][sensor].vshunt,
                     &psInfos[controllerIndex][sensor].current);
@@ -662,6 +689,24 @@ amiIna239DevIdGet(unsigned int bpm, unsigned int channel)
 }
 
 static int
+fetchId(unsigned int controllerIndex, unsigned int channel,
+        uint32_t *mfrId, uint32_t *devId)
+{
+    int status = 0;
+
+    status = amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
+            AMI_INA239_INDEX_MFR, mfrId);
+    status |= amiGetIna239Reading(controllerIndex, psInfos[controllerIndex][channel].deviceIndex,
+            AMI_INA239_INDEX_MFR, devId);
+
+    if (status < 0) {
+        return status;
+    }
+
+    return 0;
+}
+
+static int
 fetchVIRaw(unsigned int controllerIndex, unsigned int channel,
         uint32_t *vbuf, uint32_t *vsbuf, uint32_t *ibuf)
 {
@@ -809,7 +854,7 @@ amiFetch(uint32_t *args)
  * values, convert and display them.
  */
 void
-amiPSinfoDisplay(unsigned int bpm)
+amiPSinfoDisplay(unsigned int bpm, int verbose)
 {
     unsigned int sensor = 0;
     int status = 0;
@@ -832,9 +877,14 @@ amiPSinfoDisplay(unsigned int bpm)
             printf("%8s: NaN (bus) V  NaN (shunt)  NaN A  Nan oC\n",
                     psInfos[bpm][sensor].name);
         }
-        else {
+        else if (verbose == 0) {
             printf("%8s: %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
                     psInfos[bpm][sensor].name, v, vs, i, t);
+        }
+        else {
+            printf("%8s(0x%04X:0x%04X): %7.3f (bus) V  %7.3f (shunt) V  %8.3f A  %7.3f C\n",
+                    psInfos[bpm][sensor].name, psInfos[bpm][sensor].mfrId, psInfos[bpm][sensor].devId,
+                    v, vs, i, t);
         }
     }
 }

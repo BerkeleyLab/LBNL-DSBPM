@@ -39,6 +39,6 @@ int amiIna239DevIdGet(unsigned int bpm, unsigned int channel);
 
 int amiFetch(uint32_t *args);
 void amiCrank();
-void amiPSinfoDisplay(unsigned int bpm);
+void amiPSinfoDisplay(unsigned int bpm, int verbose);
 
 #endif /* _AMI_SPI_H_ */
