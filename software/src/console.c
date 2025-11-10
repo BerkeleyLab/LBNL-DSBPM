@@ -408,19 +408,26 @@ static int
 cmdAMIMON(int argc, char **argv)
 {
     char *endp;
-    int bpm;
+    int bpm = 0;
+    int verbose = 0;
 
     if (argc > 1) {
         bpm = strtol(argv[1], &endp, 0);
         if (*endp != '\0')
             return 1;
 
-        amiPSinfoDisplay(bpm);
+        if (argc > 2) {
+            verbose = strtol(argv[2], &endp, 0);
+            if (*endp != '\0')
+                return 1;
+        }
+
+        amiPSinfoDisplay(bpm, verbose);
         return 0;
     }
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm);
+        amiPSinfoDisplay(bpm, 0);
     }
 
     return 0;
@@ -430,7 +437,7 @@ static int
 cmdRPBMON(int argc, char **argv)
 {
     char *endp;
-    int verbose;
+    int verbose = 0;
 
     if (argc > 1) {
         verbose = strtol(argv[1], &endp, 0);
@@ -457,6 +464,7 @@ cmdREG(int argc, char **argv)
         first = strtol(argv[1], &endp, 0);
         if (*endp != '\0')
             return 1;
+
         if (argc > 2) {
             n = strtol(argv[2], &endp, 0);
             if (*endp != '\0')
