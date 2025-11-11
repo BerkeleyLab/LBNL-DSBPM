@@ -106,7 +106,7 @@
 #define CFG_LO_RF_ROW_CAPACITY           1024
 #define CFG_LO_PT_ROW_CAPACITY           8192
 
-#define CFG_PT_GEN_ROW_CAPACITY          32768 // 2^15 per DAC sample (I and Q)
+#define CFG_PT_GEN_ROW_CAPACITY          65536 // 2^16 per DAC sample (I and Q)
 
 // FOFB communication
 #define GPIO_IDX_CELL_COMM_CCW_CSR       256
