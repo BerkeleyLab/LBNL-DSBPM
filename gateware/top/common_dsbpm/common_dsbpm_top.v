@@ -591,25 +591,12 @@ assign GPIO_IN[GPIO_IDX_USER_GPIO_CSR] = {
 
 //////////////////////////////////////////////////////////////////////////////
 // Interlocks
-reg interlockRelayControl = 0;
-wire interlockResetButton = GPIO_SW_N;
-wire interlockRelayOpen = 1'b0;
-wire interlockRelayClosed = 1'b1;
 assign GPIO_LEDS[7] = 1'b0;
 assign GPIO_LEDS[6] = 1'b0;
 assign GPIO_LEDS[5] = dacClkLocked;
 assign GPIO_LEDS[4] = adcClkLocked;
 assign GPIO_LEDS[3] = GPIO_IN[GPIO_IDX_SECONDS_SINCE_BOOT][1];
 assign GPIO_LEDS[2] = GPIO_IN[GPIO_IDX_SECONDS_SINCE_BOOT][0];
-always @(posedge sysClk) begin
-    if (GPIO_STROBES[GPIO_IDX_INTERLOCK_CSR]) begin
-        interlockRelayControl <= GPIO_OUT[0];
-    end
-end
-assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
-                                                  interlockRelayOpen,
-                                                  1'b0,
-                                                  interlockResetButton };
 
 /////////////////////////////////////////////////////////////////////////////
 // Acquisition common
