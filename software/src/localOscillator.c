@@ -276,15 +276,12 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             x = strtod((char *)cp, &endp);
             if ((*endp != expectedEnd)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
-                sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
-                        r + 1, *endp, expectedEnd);
                 printf("LocalOsc: Unexpected characters on line %d: %c (expected %c)\n",
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
             /* The odd-looking comparison is to deal with NANs */
             if (!(x >= -1.0) && (x <= 1.0)) {
-                sprintf((char *)buf, "Value out of range at line %d", r + 1);
                 printf("LocalOsc: Value out of range at line %d\n", r + 1);
                 return -1;
             }
@@ -292,7 +289,6 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             cp = (unsigned char *)endp + 1;
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
-                    sprintf((char *)buf, "Too short at line %d", r + 1);
                     printf("LocalOsc: Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
                     return -1;
                 }
@@ -304,7 +300,6 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             }
         }
     }
-    sprintf((char *)buf, "Too long at line %d", r + 1);
     printf("LocalOsc: Too long at line %d\n", r + 1);
     return -1;
 }
