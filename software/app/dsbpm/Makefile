@@ -59,7 +59,6 @@ __SRC_FILES = \
 	ffs.c \
 	frequencyMonitor.c \
 	genericSPI.c \
-	interlock.c \
 	lossOfBeam.c \
 	main.c \
 	mgt.c \
@@ -103,7 +102,6 @@ __HDR_FILES = \
 	frequencyMonitor.h \
 	genericSPI.h \
 	dsbpmProtocol.h \
-	interlock.h \
 	lossOfBeam.h \
 	lv_font.h \
 	mgt.h \
