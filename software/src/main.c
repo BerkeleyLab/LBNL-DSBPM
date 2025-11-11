@@ -138,10 +138,10 @@ main(void)
      * Show AFE sensors
      */
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm);
+        amiPSinfoDisplay(bpm, 0);
     }
 
-    rpbPSinfoDisplay();
+    rpbPSinfoDisplay(0);
 
     /* Start network */
     lwip_init();
