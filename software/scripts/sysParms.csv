@@ -12,7 +12,9 @@ ADC clocks per heartbeat,24928000
 EVR clocks per fast acquisition,12464
 EVR clocks per slow acquisition,12464000
 ADC for button ABCD,3210
-Physical ADC to logical ADC,45670123
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,3375
+RFDC MMCM Clk0 Divider,10250
 X calibration (mm p.u.),16.0
 Y calibration (mm p.u.),16.0
 Q calibration (p.u.),16.0
