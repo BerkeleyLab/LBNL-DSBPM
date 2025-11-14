@@ -57,9 +57,9 @@ systemParametersSetDefaults(void)
     netDefault.ethernetMAC[3] = 'N';
     netDefault.ethernetMAC[4] = 'L';
     netDefault.ethernetMAC[5] = 0x01;
-    netDefault.ipv4.address = htonl((192<<24) | (168<<16) | (  1<< 8) | 128);
-    netDefault.ipv4.netmask = htonl((255<<24) | (255<<16) | (255<< 8) | 0);
-    netDefault.ipv4.gateway = htonl((192<<24) | (168<<16) | (  1<< 8) | 1);
+    netDefault.ipv4.address = IP4_FORMAT(192, 168, 1, 128);
+    netDefault.ipv4.netmask = IP4_FORMAT(255, 255, 255, 0);
+    netDefault.ipv4.gateway = IP4_FORMAT(192, 168, 1, 1);
     systemParametersDefault.netConfig = netDefault;
     systemParametersDefault.userMGTrefClkOffsetPPM = 0;
     systemParametersDefault.startupDebugFlags = 0;
@@ -494,6 +494,29 @@ systemParametersStashEEPROM(void)
     return nWrite;
 }
 
+void
+setDefaultIPv4Address(struct sysNetConfig *netConfig,
+        struct sysNetConfig *sysParamsNetConfig,
+        struct sysNetConfig *defaultNetConfig, int isRecovery)
+{
+    if (isRecovery) {
+        netConfig->ipv4 = defaultNetConfig->ipv4;
+        memcpy(netConfig->ethernetMAC, defaultNetConfig->ethernetMAC,
+                sizeof (netConfig->ethernetMAC));
+    }
+    else {
+#if LWIP_DHCP==1
+        netConfig->ipv4.address = 0;
+        netConfig->ipv4.netmask = 0;
+        netConfig->ipv4.gateway = 0;
+#else
+        netConfig->ipv4 = sysParamsNetConfig->ipv4;
+#endif
+        memcpy (netConfig->ethernetMAC, sysParamsNetConfig->ethernetMAC,
+                sizeof (netConfig->ethernetMAC));
+    }
+}
+
 /*
  * Print configuration routines
  */
@@ -503,6 +526,15 @@ showNetworkConfiguration(const struct sysNetParms *ipv4)
     printf("   IP ADDR: %s\n", formatIP(&ipv4->address));
     printf("  NET MASK: %s\n", formatIP(&ipv4->netmask));
     printf("   GATEWAY: %s\n", formatIP(&ipv4->gateway));
+}
+
+void
+showNetworkConfiguration2(const ip_addr_t *ipaddr,
+        const ip_addr_t *netmask, const ip_addr_t *gateway)
+{
+    printf("   IP ADDR: %s\n", formatIP(&ip4_addr_get_u32(ipaddr)));
+    printf("  NET MASK: %s\n", formatIP(&ip4_addr_get_u32(netmask)));
+    printf("   GATEWAY: %s\n", formatIP(&ip4_addr_get_u32(gateway)));
 }
 
 void
