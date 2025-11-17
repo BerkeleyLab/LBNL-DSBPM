@@ -61,8 +61,6 @@ void setDefaultIPv4Address(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery);
 void showNetworkConfiguration(const struct sysNetParms *ipv4);
-void showNetworkConfiguration2(const ip_addr_t *ipaddr,
-        const ip_addr_t *netmask, const ip_addr_t *gateway);
 void systemParametersShowUserMGTrefClkOffsetPPM(void);
 
 #endif

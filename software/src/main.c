@@ -217,10 +217,13 @@ main(void)
     ipaddr.addr = netif.ip_addr.addr;
     netmask.addr = netif.netmask.addr;
     gateway.addr = netif.gw.addr;
+    currentNetConfig.ipv4.address = netif.ip_addr.addr;
+    currentNetConfig.ipv4.netmask = netif.netmask.addr;
+    currentNetConfig.ipv4.gateway = netif.gw.addr;
 
     printf("Network:\n");
     printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
-    showNetworkConfiguration2(&ipaddr, &netmask, &gateway);
+    showNetworkConfiguration(&currentNetConfig.ipv4);
     displayShowStatusLine("");
 
     /* Set up communications and acquisition */

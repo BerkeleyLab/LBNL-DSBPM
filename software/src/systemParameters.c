@@ -529,15 +529,6 @@ showNetworkConfiguration(const struct sysNetParms *ipv4)
 }
 
 void
-showNetworkConfiguration2(const ip_addr_t *ipaddr,
-        const ip_addr_t *netmask, const ip_addr_t *gateway)
-{
-    printf("   IP ADDR: %s\n", formatIP(&ip4_addr_get_u32(ipaddr)));
-    printf("  NET MASK: %s\n", formatIP(&ip4_addr_get_u32(netmask)));
-    printf("   GATEWAY: %s\n", formatIP(&ip4_addr_get_u32(gateway)));
-}
-
-void
 systemParametersShowUserMGTrefClkOffsetPPM(void)
 {
     printf("User MGT reference clock offset: %d PPM\n",
