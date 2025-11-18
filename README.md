@@ -108,6 +108,14 @@ Button rotation (0 or 45),45
 AFE attenuator trims (dB),0 0 0 0
 ```
 
+IMPORTANT NOTE: The board will first try to request an IP via DHCP, if it's
+compiled with LWIP_DHCP enabled. If that fails, then it will fallback to IP
+address `192.168.1.10/24`.
+
+If LWIP_DHCP is disabled, then it will use static IP address and the embedded
+software will use the `IP Address`, `IP Netmask` and `IP Gateway` from the
+`sysParms.csv` configuration file.
+
 * RFTABLE.CSV
 
 RF Demodulation table for the synchronous Digital Down-Conversion (DDC) local
