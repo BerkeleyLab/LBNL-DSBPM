@@ -114,7 +114,8 @@ address `192.168.1.10/24`.
 
 If LWIP_DHCP is disabled, then it will use static IP address and the embedded
 software will use the `IP Address`, `IP Netmask` and `IP Gateway` from the
-`sysParms.csv` configuration file.
+`sysParms.csv` configuration file. If `sysParms.csv` file corrupted, the
+default IP address 192.168.1.128/24 will be used.
 
 * RFTABLE.CSV
 
