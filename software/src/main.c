@@ -39,6 +39,7 @@
 #include "positionCalc.h"
 #include "waveformRecorder.h"
 #include "cellComm.h"
+#include "fanCtl.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -186,6 +187,9 @@ main(void)
     }
 
     rpbPSinfoDisplay(0);
+
+    /* Show Fans */
+    fanCtlInfoDisplay();
 
     /* Start network */
     lwip_init();
