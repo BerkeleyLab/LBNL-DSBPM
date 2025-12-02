@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <xil_io.h>
 #include <lwip/def.h>
+#include <stdbool.h>
 #include "gpio.h"
 #include "iic.h"
 #include "systemParameters.h"
@@ -305,43 +306,164 @@ formatHex(const void *val)
 static struct conv {
     const char *name;
     size_t      offset;
+    bool        visited;
     char     *(*format)(const void *val);
     int       (*parse)(const char *str, void *val);
 } conv[] = {
-  {"Ethernet Address", offsetof(struct systemParameters, netConfig.ethernetMAC), formatMAC,  parseMAC},
-  {"IP Address",       offsetof(struct systemParameters, netConfig.ipv4.address),     formatIP,   parseIP},
-  {"IP Netmask",       offsetof(struct systemParameters, netConfig.ipv4.netmask),     formatIP,   parseIP},
-  {"IP Gateway",       offsetof(struct systemParameters, netConfig.ipv4.gateway),     formatIP,   parseIP},
-  {"User MGT ref offset", offsetof(struct systemParameters, userMGTrefClkOffsetPPM),   formatInt,   parseInt},
-  {"Startup debug flags", offsetof(struct systemParameters, startupDebugFlags),   formatHex,   parseHex},
-  {"PLL RF divisor",   offsetof(struct systemParameters, rfDivisor),       formatInt,  parseInt},
-  {"PLL multiplier",   offsetof(struct systemParameters, pllMultiplier),   formatInt,  parseInt},
-  {"Single pass?",     offsetof(struct systemParameters, isSinglePass),    formatInt,  parseInt},
-  {"Single pass event",offsetof(struct systemParameters, singlePassEvent), formatInt,  parseInt},
-  {"ADC clocks per heartbeat",
-                       offsetof(struct systemParameters, adcHeartbeatMarker),  formatInt,  parseInt},
-  {"EVR clocks per fast acquisition",
-                       offsetof(struct systemParameters, evrPerFaMarker),  formatInt,  parseInt},
-  {"EVR clocks per slow acquisition",
-                       offsetof(struct systemParameters, evrPerSaMarker),  formatInt,  parseInt},
-  {"ADC for button ABCD",
-                       offsetof(struct systemParameters, adcOrder),       formatInt4,  parseInt},
-  {"RFDC MMCM DivClk Divider",
-                       offsetof(struct systemParameters, rfdcMMCMDivClkDivider),  formatInt,  parseInt},
-  {"RFDC MMCM Clk Multiplier",
-                       offsetof(struct systemParameters, rfdcMMCMMultiplier),  formatInt,  parseInt},
-  {"RFDC MMCM Clk0 Divider",
-                       offsetof(struct systemParameters, rfdcMMCMClk0Divider),  formatInt,  parseInt},
-  {"X calibration (mm p.u.)",
-                       offsetof(struct systemParameters, xCalibration),  formatFloat,parseFloat},
-  {"Y calibration (mm p.u.)",
-                       offsetof(struct systemParameters, yCalibration),  formatFloat,parseFloat},
-  {"Q calibration (p.u.)",
-                       offsetof(struct systemParameters, qCalibration),  formatFloat,parseFloat},
-  {"Button rotation (0 or 45)",
-                       offsetof(struct systemParameters, buttonRotation),  formatInt,  parseInt},
-  {"AFE attenuator trims (dB)",
-                       offsetof(struct systemParameters, afeTrim[0]),   formatAtrim,parseAtrim},
+    {
+        .name = "Ethernet Address",
+        .offset = offsetof(struct systemParameters, netConfig.ethernetMAC),
+        .visited = false,
+        .format = formatMAC,
+        .parse= parseMAC,
+    },
+    {
+        .name = "IP Address",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.address),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "IP Netmask",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.netmask),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "IP Gateway",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.gateway),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "User MGT ref offset",
+        .offset = offsetof(struct systemParameters, userMGTrefClkOffsetPPM),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Startup debug flags",
+        .offset = offsetof(struct systemParameters, startupDebugFlags),
+        .visited = false,
+        .format = formatHex,
+        .parse = parseHex,
+    },
+    {
+        .name = "PLL RF divisor",
+        .offset = offsetof(struct systemParameters, rfDivisor),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "PLL multiplier",
+        .offset = offsetof(struct systemParameters, pllMultiplier),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Single pass?",
+        .offset = offsetof(struct systemParameters, isSinglePass),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Single pass event",
+        .offset = offsetof(struct systemParameters, singlePassEvent),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "ADC clocks per heartbeat",
+        .offset = offsetof(struct systemParameters, adcHeartbeatMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "EVR clocks per fast acquisition",
+        .offset = offsetof(struct systemParameters, evrPerFaMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "EVR clocks per slow acquisition",
+        .offset = offsetof(struct systemParameters, evrPerSaMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "ADC for button ABCD",
+        .offset = offsetof(struct systemParameters, adcOrder),
+        .visited = false,
+        .format = formatInt4,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM DivClk Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMDivClkDivider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk Multiplier",
+        .offset = offsetof(struct systemParameters, rfdcMMCMMultiplier),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk0 Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMClk0Divider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "X calibration (mm p.u.)",
+        .offset = offsetof(struct systemParameters, xCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Y calibration (mm p.u.)",
+        .offset = offsetof(struct systemParameters, yCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Q calibration (p.u.)",
+        .offset = offsetof(struct systemParameters, qCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Button rotation (0 or 45)",
+        .offset = offsetof(struct systemParameters, buttonRotation),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "AFE attenuator trims (dB)",
+        .offset = offsetof(struct systemParameters, afeTrim[0]),
+        .visited = false,
+        .format = formatAtrim,
+        .parse = parseAtrim,
+    },
 };
 
 /*
