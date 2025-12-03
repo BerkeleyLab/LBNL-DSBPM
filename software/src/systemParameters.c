@@ -467,6 +467,61 @@ static struct conv {
 };
 
 /*
+ * String matcher
+ *   Ignore case.
+ */
+static int
+parameterMatch(const char *name, const char *match, size_t size)
+{
+    if (strncasecmp(name, match, size) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int
+searchConvName(struct conv *cnv, size_t size,
+        const char *match, size_t len)
+{
+    int i = 0;
+    int matched = -1;
+
+    for (i = 0; i < size; ++i) {
+        if (parameterMatch(cnv[i].name, match, len) ){
+            if (matched >= 0) {
+                // Duplicated match
+                return -1;
+            }
+
+            matched = i;
+        }
+    }
+
+    // Not found
+    if (matched < 0) {
+        return size;
+    }
+
+    return matched;
+}
+
+static int
+searchConvFirstNonVisited(struct conv *cnv, size_t size)
+{
+    int i = 0;
+
+    for (i = 0; i < size; ++i) {
+        if (!cnv[i].visited){
+            return i;
+        }
+    }
+
+    // Not found
+    return size;
+}
+
+/*
  * Serialize/deserialize complete table
  */
 int
@@ -522,38 +577,68 @@ parseTable(struct systemParameters *sysParams,
 {
     const char *base = (const char *)buf;
     const char *cp = base;
-    int i, l;
+    int pos = 0;
+    int l = 0;
     int line = 1;
 
-    for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++) {
-        l = strlen(conv[i].name);
-        if (((cp - base) + l + 2) >= size) {
+    /*
+     * Step 1: Parse line, which must be "<parameter_name>", <parameter_value>\n
+     * Step 2: Convert <parameter_value> according to the function in "conv"
+     */
+    while ((cp - base) < size) {
+        size_t spn = strcspn (cp, ",");
+        if (((cp - base) + spn) >= size) {
             *err = "Unexpected EOF";
             return -line;
         }
-        if (strncmp(cp, conv[i].name, l) != 0) {
-            *err = "Unexpected parameter name";
-            return -line;
-        }
-        cp += l;
-        if (*cp++ != ',') {
-            *err = "Missing comma after parameter name";
+
+        pos = searchConvName(conv, ARRAY_SIZE(conv), cp, spn);
+        if (pos < 0) {
+            *err = "Duplicated parameter name";
             return -line;
         }
 
-        l = (*conv[i].parse)(cp, (char *)sysParams + conv[i].offset);
+        // Ignore unexpected values
+        if (pos >= ARRAY_SIZE(conv)) {
+            printf ("Skiping unexpected parameter \"%.*s\"\n",
+                    (int) spn, cp);
+            spn = strcspn (cp, "\n");
+            cp += spn + 1;
+            line++;
+            continue;
+        }
+
+        // Skip ','
+        cp += spn + 1;
+
+        l = (*conv[pos].parse)(cp, (char *)sysParams + conv[pos].offset);
         if (l <= 0) {
             *err = "Invalid value";
             return -line;
         }
+
         cp += l;
+
+        // Mark node as visited
+        conv[pos].visited = true;
+
+        // Skip trailing spaces and ',' until a '\n' is found
         while (((cp - base) < size)
             && (((isspace((unsigned char)*cp))) || (*cp == ','))) {
-            if (*cp == '\n')
+            if (*cp == '\n') {
                 line++;
+            }
             cp++;
         }
     }
+
+    // Check if every node was visited
+    pos = searchConvFirstNonVisited(conv, ARRAY_SIZE(conv));
+    if (pos < ARRAY_SIZE(conv)) {
+        *err = "Missing parameters";
+        return -line;
+    }
+
     return cp - base;
 }
 
@@ -599,7 +684,7 @@ systemParametersStashEEPROM(void)
         return -1;
     }
 
-    fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf), &nRead);
+    fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf)-1, &nRead);
     if (fr != FR_OK) {
         f_close(&fil);
         return -1;
@@ -608,6 +693,8 @@ systemParametersStashEEPROM(void)
         f_close(&fil);
         return 0;
     }
+
+    systemParametersBuf[nRead] = '\0';
 
     nWrite = systemParametersSetTable(&systemParametersCandidate,
             (unsigned char *)systemParametersBuf, nRead);
