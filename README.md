@@ -85,6 +85,7 @@ Configuration parameters in .csv format with the following lines, for example:
 
 ```
 Ethernet Address,AA:4C:42:4E:4C:02
+Use DHCP,1
 IP Address,192.168.1.129
 IP Netmask,255.255.255.0
 IP Gateway,192.168.1.1
@@ -109,13 +110,15 @@ AFE attenuator trims (dB),0 0 0 0
 ```
 
 IMPORTANT NOTE: The board will first try to request an IP via DHCP, if it's
-compiled with LWIP_DHCP enabled. If that fails, then it will fallback to IP
-address `192.168.1.10/24`.
+compiled with LWIP_DHCP enabled and the parameter `Use DHCP` is set to `1`.
+If that fails, then it will fallback to IP address `192.168.1.10/24`.
 
-If LWIP_DHCP is disabled, then it will use static IP address and the embedded
-software will use the `IP Address`, `IP Netmask` and `IP Gateway` from the
-`sysParms.csv` configuration file. If `sysParms.csv` file corrupted, the
-default IP address 192.168.1.128/24 will be used.
+If LWIP_DHCP is disabled or `Use DHCP` is set to `0`, then it will use static
+IP address and the embedded software will use the `IP Address`, `IP Netmask`
+and `IP Gateway` from the `sysParms.csv` configuration file.
+
+If `sysParms.csv` file corrupted, the default IP address 192.168.1.128/24 will
+be used.
 
 * RFTABLE.CSV
 
