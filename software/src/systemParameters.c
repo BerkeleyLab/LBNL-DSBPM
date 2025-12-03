@@ -61,6 +61,7 @@ systemParametersSetDefaults(void)
     netDefault.ipv4.address = IP4_FORMAT(192, 168, 1, 128);
     netDefault.ipv4.netmask = IP4_FORMAT(255, 255, 255, 0);
     netDefault.ipv4.gateway = IP4_FORMAT(192, 168, 1, 1);
+    netDefault.useDHCP = 0;
     systemParametersDefault.netConfig = netDefault;
     systemParametersDefault.userMGTrefClkOffsetPPM = 0;
     systemParametersDefault.startupDebugFlags = 0;
@@ -316,6 +317,13 @@ static struct conv {
         .visited = false,
         .format = formatMAC,
         .parse= parseMAC,
+    },
+    {
+        .name = "Use DHCP",
+        .offset = offsetof(struct systemParameters, netConfig.useDHCP),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
     },
     {
         .name = "IP Address",
@@ -710,14 +718,21 @@ setDefaultIPv4Address(struct sysNetConfig *netConfig,
 {
     if (isRecovery) {
         netConfig->ipv4 = defaultNetConfig->ipv4;
+        netConfig->useDHCP = defaultNetConfig->useDHCP;
         memcpy(netConfig->ethernetMAC, defaultNetConfig->ethernetMAC,
                 sizeof (netConfig->ethernetMAC));
     }
     else {
+        netConfig->useDHCP = sysParamsNetConfig->useDHCP;
 #if LWIP_DHCP==1
-        netConfig->ipv4.address = 0;
-        netConfig->ipv4.netmask = 0;
-        netConfig->ipv4.gateway = 0;
+        if (netConfig->useDHCP) {
+            netConfig->ipv4.address = 0;
+            netConfig->ipv4.netmask = 0;
+            netConfig->ipv4.gateway = 0;
+        }
+        else {
+            netConfig->ipv4 = sysParamsNetConfig->ipv4;
+        }
 #else
         netConfig->ipv4 = sysParamsNetConfig->ipv4;
 #endif
