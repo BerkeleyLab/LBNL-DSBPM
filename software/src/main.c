@@ -154,7 +154,6 @@ main(void)
     setDefaultIPv4Address(&currentNetConfig,
             &systemParameters.netConfig,
             &netDefault, isRecovery);
-    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
 
     /* Set up hardware */
     sysmonInit();
@@ -233,6 +232,7 @@ main(void)
     printf("Network:\n");
     printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
     showNetworkConfiguration(&currentNetConfig.ipv4);
+    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
     displayShowStatusLine("");
 
     /* Set up communications and acquisition */
