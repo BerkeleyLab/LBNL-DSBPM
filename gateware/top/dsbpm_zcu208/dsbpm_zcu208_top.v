@@ -120,8 +120,8 @@ module dsbpm_zcu208 #(
     output      FMC_PMOD4_3,
     output      FMC_PMOD4_4,
     output      FMC_PMOD4_5,
-    output      FMC_PMOD4_6,
-    output      FMC_PMOD4_7
+    input       FMC_PMOD4_6,
+    input       FMC_PMOD4_7
 );
 
 common_dsbpm_top #(

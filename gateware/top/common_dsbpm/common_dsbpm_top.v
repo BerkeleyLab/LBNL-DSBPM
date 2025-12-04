@@ -120,8 +120,8 @@ module common_dsbpm_top #(
     output      FMC_PMOD4_3,
     output      FMC_PMOD4_4,
     output      FMC_PMOD4_5,
-    output      FMC_PMOD4_6,
-    output      FMC_PMOD4_7
+    input       FMC_PMOD4_6,
+    input       FMC_PMOD4_7
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2644,8 +2644,20 @@ assign spiRpbSDO = FMC_PMOD4_1;
 
 assign FMC_PMOD4_2 = 0;
 assign FMC_PMOD4_3 = 0;
-assign FMC_PMOD4_6 = 0;
-assign FMC_PMOD4_7 = 0;
+
+//////////////////////////////////////////////////////////////////////////////
+// RPB Fan Tach readings
+wire RPB_FAN1_TACH = FMC_PMOD4_6;
+wire RPB_FAN2_TACH = FMC_PMOD4_7;
+
+fanTach #(.CLK_FREQUENCY(SYSCLK_RATE),
+          .FAN_COUNT(CFG_FAN_COUNT))
+  fanTachs (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_RPB_FAN_TACHOMETERS]),
+    .GPIO_OUT(GPIO_OUT),
+    .value(GPIO_IN[GPIO_IDX_RPB_FAN_TACHOMETERS]),
+    .tachs_a({RPB_FAN2_TACH, RPB_FAN1_TACH}));
 
 //
 // FOFB communication

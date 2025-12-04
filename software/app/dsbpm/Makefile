@@ -45,6 +45,7 @@ __SRC_FILES = \
 	afe.c \
 	ami.c \
 	rpb.c \
+	fanCtl.c \
 	autotrim.c \
 	bpmComm.c \
 	calibrationGains.c \
@@ -87,6 +88,7 @@ __HDR_FILES = \
 	afe.h \
 	ami.h \
 	rpb.h \
+	fanCtl.h \
 	autotrim.h \
 	bpmComm.h \
 	calibrationGains.h \

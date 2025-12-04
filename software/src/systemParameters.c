@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <xil_io.h>
 #include <lwip/def.h>
+#include <stdbool.h>
 #include "gpio.h"
 #include "iic.h"
 #include "systemParameters.h"
@@ -60,6 +61,7 @@ systemParametersSetDefaults(void)
     netDefault.ipv4.address = IP4_FORMAT(192, 168, 1, 128);
     netDefault.ipv4.netmask = IP4_FORMAT(255, 255, 255, 0);
     netDefault.ipv4.gateway = IP4_FORMAT(192, 168, 1, 1);
+    netDefault.useDHCP = 0;
     systemParametersDefault.netConfig = netDefault;
     systemParametersDefault.userMGTrefClkOffsetPPM = 0;
     systemParametersDefault.startupDebugFlags = 0;
@@ -305,44 +307,227 @@ formatHex(const void *val)
 static struct conv {
     const char *name;
     size_t      offset;
+    bool        visited;
     char     *(*format)(const void *val);
     int       (*parse)(const char *str, void *val);
 } conv[] = {
-  {"Ethernet Address", offsetof(struct systemParameters, netConfig.ethernetMAC), formatMAC,  parseMAC},
-  {"IP Address",       offsetof(struct systemParameters, netConfig.ipv4.address),     formatIP,   parseIP},
-  {"IP Netmask",       offsetof(struct systemParameters, netConfig.ipv4.netmask),     formatIP,   parseIP},
-  {"IP Gateway",       offsetof(struct systemParameters, netConfig.ipv4.gateway),     formatIP,   parseIP},
-  {"User MGT ref offset", offsetof(struct systemParameters, userMGTrefClkOffsetPPM),   formatInt,   parseInt},
-  {"Startup debug flags", offsetof(struct systemParameters, startupDebugFlags),   formatHex,   parseHex},
-  {"PLL RF divisor",   offsetof(struct systemParameters, rfDivisor),       formatInt,  parseInt},
-  {"PLL multiplier",   offsetof(struct systemParameters, pllMultiplier),   formatInt,  parseInt},
-  {"Single pass?",     offsetof(struct systemParameters, isSinglePass),    formatInt,  parseInt},
-  {"Single pass event",offsetof(struct systemParameters, singlePassEvent), formatInt,  parseInt},
-  {"ADC clocks per heartbeat",
-                       offsetof(struct systemParameters, adcHeartbeatMarker),  formatInt,  parseInt},
-  {"EVR clocks per fast acquisition",
-                       offsetof(struct systemParameters, evrPerFaMarker),  formatInt,  parseInt},
-  {"EVR clocks per slow acquisition",
-                       offsetof(struct systemParameters, evrPerSaMarker),  formatInt,  parseInt},
-  {"ADC for button ABCD",
-                       offsetof(struct systemParameters, adcOrder),       formatInt4,  parseInt},
-  {"RFDC MMCM DivClk Divider",
-                       offsetof(struct systemParameters, rfdcMMCMDivClkDivider),  formatInt,  parseInt},
-  {"RFDC MMCM Clk Multiplier",
-                       offsetof(struct systemParameters, rfdcMMCMMultiplier),  formatInt,  parseInt},
-  {"RFDC MMCM Clk0 Divider",
-                       offsetof(struct systemParameters, rfdcMMCMClk0Divider),  formatInt,  parseInt},
-  {"X calibration (mm p.u.)",
-                       offsetof(struct systemParameters, xCalibration),  formatFloat,parseFloat},
-  {"Y calibration (mm p.u.)",
-                       offsetof(struct systemParameters, yCalibration),  formatFloat,parseFloat},
-  {"Q calibration (p.u.)",
-                       offsetof(struct systemParameters, qCalibration),  formatFloat,parseFloat},
-  {"Button rotation (0 or 45)",
-                       offsetof(struct systemParameters, buttonRotation),  formatInt,  parseInt},
-  {"AFE attenuator trims (dB)",
-                       offsetof(struct systemParameters, afeTrim[0]),   formatAtrim,parseAtrim},
+    {
+        .name = "Ethernet Address",
+        .offset = offsetof(struct systemParameters, netConfig.ethernetMAC),
+        .visited = false,
+        .format = formatMAC,
+        .parse= parseMAC,
+    },
+    {
+        .name = "Use DHCP",
+        .offset = offsetof(struct systemParameters, netConfig.useDHCP),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "IP Address",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.address),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "IP Netmask",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.netmask),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "IP Gateway",
+        .offset = offsetof(struct systemParameters, netConfig.ipv4.gateway),
+        .visited = false,
+        .format = formatIP,
+        .parse = parseIP,
+    },
+    {
+        .name = "User MGT ref offset",
+        .offset = offsetof(struct systemParameters, userMGTrefClkOffsetPPM),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Startup debug flags",
+        .offset = offsetof(struct systemParameters, startupDebugFlags),
+        .visited = false,
+        .format = formatHex,
+        .parse = parseHex,
+    },
+    {
+        .name = "PLL RF divisor",
+        .offset = offsetof(struct systemParameters, rfDivisor),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "PLL multiplier",
+        .offset = offsetof(struct systemParameters, pllMultiplier),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Single pass?",
+        .offset = offsetof(struct systemParameters, isSinglePass),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "Single pass event",
+        .offset = offsetof(struct systemParameters, singlePassEvent),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "ADC clocks per heartbeat",
+        .offset = offsetof(struct systemParameters, adcHeartbeatMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "EVR clocks per fast acquisition",
+        .offset = offsetof(struct systemParameters, evrPerFaMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "EVR clocks per slow acquisition",
+        .offset = offsetof(struct systemParameters, evrPerSaMarker),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "ADC for button ABCD",
+        .offset = offsetof(struct systemParameters, adcOrder),
+        .visited = false,
+        .format = formatInt4,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM DivClk Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMDivClkDivider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk Multiplier",
+        .offset = offsetof(struct systemParameters, rfdcMMCMMultiplier),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk0 Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMClk0Divider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "X calibration (mm p.u.)",
+        .offset = offsetof(struct systemParameters, xCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Y calibration (mm p.u.)",
+        .offset = offsetof(struct systemParameters, yCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Q calibration (p.u.)",
+        .offset = offsetof(struct systemParameters, qCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "Button rotation (0 or 45)",
+        .offset = offsetof(struct systemParameters, buttonRotation),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "AFE attenuator trims (dB)",
+        .offset = offsetof(struct systemParameters, afeTrim[0]),
+        .visited = false,
+        .format = formatAtrim,
+        .parse = parseAtrim,
+    },
 };
+
+/*
+ * String matcher
+ *   Ignore case.
+ */
+static int
+parameterMatch(const char *name, const char *match, size_t size)
+{
+    if (strncasecmp(name, match, size) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int
+searchConvName(struct conv *cnv, size_t size,
+        const char *match, size_t len)
+{
+    int i = 0;
+    int matched = -1;
+
+    for (i = 0; i < size; ++i) {
+        if (parameterMatch(cnv[i].name, match, len) ){
+            if (matched >= 0) {
+                // Duplicated match
+                return -1;
+            }
+
+            matched = i;
+        }
+    }
+
+    // Not found
+    if (matched < 0) {
+        return size;
+    }
+
+    return matched;
+}
+
+static int
+searchConvFirstNonVisited(struct conv *cnv, size_t size)
+{
+    int i = 0;
+
+    for (i = 0; i < size; ++i) {
+        if (!cnv[i].visited){
+            return i;
+        }
+    }
+
+    // Not found
+    return size;
+}
 
 /*
  * Serialize/deserialize complete table
@@ -400,38 +585,68 @@ parseTable(struct systemParameters *sysParams,
 {
     const char *base = (const char *)buf;
     const char *cp = base;
-    int i, l;
+    int pos = 0;
+    int l = 0;
     int line = 1;
 
-    for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++) {
-        l = strlen(conv[i].name);
-        if (((cp - base) + l + 2) >= size) {
+    /*
+     * Step 1: Parse line, which must be "<parameter_name>", <parameter_value>\n
+     * Step 2: Convert <parameter_value> according to the function in "conv"
+     */
+    while ((cp - base) < size) {
+        size_t spn = strcspn (cp, ",");
+        if (((cp - base) + spn) >= size) {
             *err = "Unexpected EOF";
             return -line;
         }
-        if (strncmp(cp, conv[i].name, l) != 0) {
-            *err = "Unexpected parameter name";
-            return -line;
-        }
-        cp += l;
-        if (*cp++ != ',') {
-            *err = "Missing comma after parameter name";
+
+        pos = searchConvName(conv, ARRAY_SIZE(conv), cp, spn);
+        if (pos < 0) {
+            *err = "Duplicated parameter name";
             return -line;
         }
 
-        l = (*conv[i].parse)(cp, (char *)sysParams + conv[i].offset);
+        // Ignore unexpected values
+        if (pos >= ARRAY_SIZE(conv)) {
+            printf ("Skiping unexpected parameter \"%.*s\"\n",
+                    (int) spn, cp);
+            spn = strcspn (cp, "\n");
+            cp += spn + 1;
+            line++;
+            continue;
+        }
+
+        // Skip ','
+        cp += spn + 1;
+
+        l = (*conv[pos].parse)(cp, (char *)sysParams + conv[pos].offset);
         if (l <= 0) {
             *err = "Invalid value";
             return -line;
         }
+
         cp += l;
+
+        // Mark node as visited
+        conv[pos].visited = true;
+
+        // Skip trailing spaces and ',' until a '\n' is found
         while (((cp - base) < size)
             && (((isspace((unsigned char)*cp))) || (*cp == ','))) {
-            if (*cp == '\n')
+            if (*cp == '\n') {
                 line++;
+            }
             cp++;
         }
     }
+
+    // Check if every node was visited
+    pos = searchConvFirstNonVisited(conv, ARRAY_SIZE(conv));
+    if (pos < ARRAY_SIZE(conv)) {
+        *err = "Missing parameters";
+        return -line;
+    }
+
     return cp - base;
 }
 
@@ -477,7 +692,7 @@ systemParametersStashEEPROM(void)
         return -1;
     }
 
-    fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf), &nRead);
+    fr = f_read(&fil, systemParametersBuf, sizeof(systemParametersBuf)-1, &nRead);
     if (fr != FR_OK) {
         f_close(&fil);
         return -1;
@@ -486,6 +701,8 @@ systemParametersStashEEPROM(void)
         f_close(&fil);
         return 0;
     }
+
+    systemParametersBuf[nRead] = '\0';
 
     nWrite = systemParametersSetTable(&systemParametersCandidate,
             (unsigned char *)systemParametersBuf, nRead);
@@ -501,14 +718,21 @@ setDefaultIPv4Address(struct sysNetConfig *netConfig,
 {
     if (isRecovery) {
         netConfig->ipv4 = defaultNetConfig->ipv4;
+        netConfig->useDHCP = defaultNetConfig->useDHCP;
         memcpy(netConfig->ethernetMAC, defaultNetConfig->ethernetMAC,
                 sizeof (netConfig->ethernetMAC));
     }
     else {
+        netConfig->useDHCP = sysParamsNetConfig->useDHCP;
 #if LWIP_DHCP==1
-        netConfig->ipv4.address = 0;
-        netConfig->ipv4.netmask = 0;
-        netConfig->ipv4.gateway = 0;
+        if (netConfig->useDHCP) {
+            netConfig->ipv4.address = 0;
+            netConfig->ipv4.netmask = 0;
+            netConfig->ipv4.gateway = 0;
+        }
+        else {
+            netConfig->ipv4 = sysParamsNetConfig->ipv4;
+        }
 #else
         netConfig->ipv4 = sysParamsNetConfig->ipv4;
 #endif

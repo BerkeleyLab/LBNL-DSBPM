@@ -33,6 +33,7 @@
 #define GPIO_IDX_GITHASH                 21 // Git 32-bit hash
 #define GPIO_IDX_SYSREF_DAC_CSR          22 // SYSREF DAC generation control/status
 #define GPIO_IDX_RPB_SPI_CSR             23 // RPB SPI monitoring
+#define GPIO_IDX_RPB_FAN_TACHOMETERS     24 // RPB Fans monitoring
 
 /*
  * Per DSBPM registers
@@ -268,5 +269,10 @@
 #define CFG_RECORDER_PT_SAMPLE_CAPACITY  16*1024*1024
 #define CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY 16*1024*1024
 #define CFG_RECORDER_FA_POS_SAMPLE_CAPACITY  16*1024*1024
+
+/*
+ * Number os Tachs to be read from SPB
+ */
+#define CFG_FAN_COUNT   2
 
 #endif

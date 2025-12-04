@@ -39,6 +39,7 @@
 #include "positionCalc.h"
 #include "waveformRecorder.h"
 #include "cellComm.h"
+#include "fanCtl.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -153,7 +154,6 @@ main(void)
     setDefaultIPv4Address(&currentNetConfig,
             &systemParameters.netConfig,
             &netDefault, isRecovery);
-    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
 
     /* Set up hardware */
     sysmonInit();
@@ -187,6 +187,9 @@ main(void)
 
     rpbPSinfoDisplay(0);
 
+    /* Show Fans */
+    fanCtlInfoDisplay();
+
     /* Start network */
     lwip_init();
     ipaddr.addr = currentNetConfig.ipv4.address;
@@ -206,9 +209,14 @@ main(void)
      * Try to request IP from DHCP. Could fail if timeout.
      * If DHCP is disabled, returns success
      */
-    int ret = tryRequestDHCPIPv4Address(&netif);
-    if (ret < 0) {
-        warn("DHCP timeout. Default IP address assigned");
+    if (currentNetConfig.useDHCP) {
+        int ret = tryRequestDHCPIPv4Address(&netif);
+        if (ret < 0) {
+            warn("DHCP timeout. Default IP address assigned");
+        }
+    }
+    else {
+        printf("Configuration file set to disable DHCP. Using static IP address\n");
     }
 
     /*
@@ -224,6 +232,7 @@ main(void)
     printf("Network:\n");
     printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
     showNetworkConfiguration(&currentNetConfig.ipv4);
+    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
     displayShowStatusLine("");
 
     /* Set up communications and acquisition */
