@@ -8,7 +8,7 @@
 #define PT_GEN_TABLE_EEPROM_NAME "ptGen.csv"
 
 int ptGenSetTable(unsigned char *buf, int size);
-int ptGenGetTable(unsigned char *buf);
+int ptGenGetTable(unsigned char *buf, int capacity);
 void ptGenCommit(unsigned int bpm);
 void ptGenCommitAll(void);
 void ptGenInit(unsigned int bpm);

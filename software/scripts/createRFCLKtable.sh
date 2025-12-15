@@ -10,4 +10,4 @@ BASENAME=`basename --suffix=.tcs $TCSFILE`
 CSV="$BASENAME.csv"
 
 tr -d '\r' <"$TCSFILE" |
-sed -n -e '/^VALUE[0-9]*=\([0-9]*\)/s//    \1/p'
+sed -n -e '/^VALUE[0-9]*=\([0-9]*\)/s//\1/p'

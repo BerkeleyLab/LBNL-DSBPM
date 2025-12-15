@@ -6,6 +6,7 @@
 #define _SYSTEM_PARAMETERS_H_
 
 #include <stdint.h>
+#include <lwip/ip_addr.h>
 
 #define SYSTEM_PARAMETERS_NAME "sysParms.csv"
 
@@ -17,6 +18,7 @@ struct sysNetParms {
 
 struct sysNetConfig {
     unsigned char      ethernetMAC[8]; /* Pad to 4-byte boundary */
+    int                useDHCP;
     struct sysNetParms ipv4;
 };
 extern struct sysNetConfig netDefault;
@@ -56,6 +58,9 @@ int   parseIP(const char *str, void *val);
 char *formatMAC(const void *val);
 int   parseMAC(const char *str, void *val);
 
+void setDefaultIPv4Address(struct sysNetConfig *netConfig,
+        struct sysNetConfig *sysParamsNetConfig,
+        struct sysNetConfig *defaultNetConfig, int isRecovery);
 void showNetworkConfiguration(const struct sysNetParms *ipv4);
 void systemParametersShowUserMGTrefClkOffsetPPM(void);
 

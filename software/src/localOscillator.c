@@ -61,7 +61,26 @@
 
 #define RF_TABLE_BUF_SIZE       (2+(2*CFG_LO_RF_ROW_CAPACITY))
 #define PT_TABLE_BUF_SIZE       (2+(4*CFG_LO_PT_ROW_CAPACITY))
-#define MAX_TABLE_BUF_SIZE      (PT_TABLE_BUF_SIZE)
+
+/*
+ * EEPROM I/O
+ * The RF/PT files are encoded with 2,4 numbers per row
+ * separated by comma and terminated with "\n"
+ *
+ * Each number is:
+ *
+ * number = "([+- ])[01].[0-9]{6}"
+ * max_size(number) = 9
+ *
+ * Taking the most conservative approach of the PT table, with
+ * is 4 numbers per row:
+ *
+ * row = number,number,number,number\n
+ * max_size(row) = 4*9 + 3 (commas) + 1 (linefeed)
+ * max_size(buffer) = (num_rows * max_size(row)) + (null character)
+ */
+
+#define MAX_TABLE_BUF_SIZE      ((4*9 + 3 + 1)*CFG_LO_PT_ROW_CAPACITY+1)
 
 static int32_t rfTable[RF_TABLE_BUF_SIZE];
 static int32_t ptTable[PT_TABLE_BUF_SIZE];
@@ -257,15 +276,12 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             x = strtod((char *)cp, &endp);
             if ((*endp != expectedEnd)
              && ((expectedEnd == '\n') && (*endp != '\r'))) {
-                sprintf((char *)buf, "Unexpected characters on line %d: %c (expected %c)",
-                        r + 1, *endp, expectedEnd);
                 printf("LocalOsc: Unexpected characters on line %d: %c (expected %c)\n",
                         r + 1, *endp, expectedEnd);
                 return -1;
             }
             /* The odd-looking comparison is to deal with NANs */
             if (!(x >= -1.0) && (x <= 1.0)) {
-                sprintf((char *)buf, "Value out of range at line %d", r + 1);
                 printf("LocalOsc: Value out of range at line %d\n", r + 1);
                 return -1;
             }
@@ -273,7 +289,6 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             cp = (unsigned char *)endp + 1;
             if ((cp - buf) >= size) {
                 if ((r < 28) || (c != (colCount - 1))) {
-                    sprintf((char *)buf, "Too short at line %d", r + 1);
                     printf("LocalOsc: Too short at line %d, c = %d, colCount = %d, size = %d\n", r + 1, c, colCount, size);
                     return -1;
                 }
@@ -285,7 +300,6 @@ localOscSetTable(unsigned char *buf, int size, int isPt)
             }
         }
     }
-    sprintf((char *)buf, "Too long at line %d", r + 1);
     printf("LocalOsc: Too long at line %d\n", r + 1);
     return -1;
 }
@@ -306,20 +320,36 @@ localOscSetPtTable(unsigned char *buf, int size)
  * Called when local oscillator table is to be downloaded from the TFTP server
  */
 static int
-localOscGetTable(unsigned char *buf, int isPt)
+localOscGetTable(unsigned char *buf, int capacity, int isPt)
 {
     int r, c, rowCount, colCount = isPt ? 4 : 2;
     int32_t *table = isPt ? ptTable : rfTable;
+    int32_t *tp = table;
+    size_t tableSize = isPt ? sizeof(ptTable) : sizeof(rfTable);
     unsigned char *cp = buf;
 
-    rowCount = table[0];
-    table += 2;
+    rowCount = tp[0];
+    tp += 2;
     for (r = 0 ; r < rowCount ; r++) {
         for (c = 0 ; c < colCount ; c++) {
             int i;
             char sep = (c == (colCount - 1)) ? '\n' : ',';
-            double v = *table++ / SCALE_FACTOR;
-            i = sprintf((char *)cp, "%9.6f%c", v, sep);
+
+            // Will table overflow?
+            if (((unsigned char *)(tp+1) -
+                        (unsigned char *)table) > tableSize) {
+                return cp - buf;
+            }
+            double v = *tp++ / SCALE_FACTOR;
+
+            size_t bytesLeft = capacity - (cp-buf);
+            i = snprintf((char *)cp, bytesLeft, "%9.6f%c", v, sep);
+
+            // Has the buffer been truncated to avoid overflow?
+            if (i < 0 || i >= bytesLeft) {
+                return cp - buf;
+            }
+
             cp += i;
         }
     }
@@ -327,15 +357,15 @@ localOscGetTable(unsigned char *buf, int isPt)
 }
 
 int
-localOscGetRfTable(unsigned char *buf, int size)
+localOscGetRfTable(unsigned char *buf, int capacity)
 {
-    return localOscGetTable(buf, 0);
+    return localOscGetTable(buf, capacity, 0);
 }
 
 int
-localOscGetPtTable(unsigned char *buf, int size)
+localOscGetPtTable(unsigned char *buf, int capacity)
 {
-    return localOscGetTable(buf, 1);
+    return localOscGetTable(buf, capacity, 1);
 }
 
 /*
@@ -502,7 +532,7 @@ void localOscillatorInit(unsigned int bpm)
 /*
  * EEPROM I/O
  */
-static int32_t tableBuf[MAX_TABLE_BUF_SIZE];
+static unsigned char tableBuf[MAX_TABLE_BUF_SIZE];
 
 int
 localOscillatorFetchEEPROM(int isPt)
@@ -518,10 +548,17 @@ localOscillatorFetchEEPROM(int isPt)
         return -1;
     }
 
-    nRead = localOscGetTable((unsigned char *)tableBuf, isPt);
+    nRead = localOscGetTable(tableBuf, sizeof(tableBuf), isPt);
     if (nRead <= 0) {
+        printf("LocalOsc: %s local oscillator format to file failed\n", isPt? "PT" : "RF");
         f_close(&fil);
         return -1;
+    }
+
+    // Results were truncated. nRead does NOT contain the NULL
+    // character
+    if (nRead >= sizeof(tableBuf)) {
+        printf("LocalOsc: %s local oscillator format to file truncated\n", isPt? "PT" : "RF");
     }
 
     fr = f_write(&fil, tableBuf, nRead, &nWritten);
@@ -570,6 +607,12 @@ localOscillatorStashEEPROM(int isPt)
         return -1;
     }
     if (nRead == 0) {
+        printf("LocalOsc: %s local oscillator file had 0 bytes\n", isPt? "PT" : "RF");
+        f_close(&fil);
+        return 0;
+    }
+    if (nRead >= sizeof(tableBuf)) {
+        printf("LocalOsc: %s local oscillator buffer truncated. Not setting table\n", isPt? "PT" : "RF");
         f_close(&fil);
         return 0;
     }

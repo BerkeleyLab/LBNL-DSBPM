@@ -55,16 +55,39 @@
                            CSR_R_CPLL_LOCKED)
 
 /*
+ * Receiver alignment state machines
+ */
+static struct rxAligner {
+    uint32_t csrIdx;
+    uint32_t whenEntered;
+    uint16_t lostAlignmentCount;
+    uint16_t rxSlideCount;
+    uint32_t resetCount;
+    enum rxState { S_APPLY_RESET, S_HOLD_RESET, S_AWAIT_RESET_COMPLETION,
+                        S_POST_RESET_DELAY, S_CONFIRM_ALIGNMENT,
+                        S_ALIGNMENT_ACHIEVED, S_ALIGNED } state;
+} rxAligners[1] = {
+    {
+      .csrIdx   = GPIO_IDX_GTY_CSR,
+      .state    = S_ALIGNED
+    }
+};
+
+/*
  * Return monitor values
  */
-static uint16_t lostAlignmentCount;
-static uint16_t rxSlideCount;
+static int
+mgtFetchFor(struct rxAligner *rxp, uint32_t *args)
+{
+    int aIndex = 0;
+    args[aIndex++] = (rxp->rxSlideCount << 16) | rxp->lostAlignmentCount;
+    return aIndex;
+}
+
 int
 mgtFetch(uint32_t *args)
 {
-    int aIndex = 0;
-    args[aIndex++] = (rxSlideCount << 16) | lostAlignmentCount;
-    return aIndex;
+    return mgtFetchFor(&rxAligners[0], args);
 }
 
 /*
@@ -75,31 +98,26 @@ mgtFetch(uint32_t *args)
  * Instead the following state machine keeps resetting the receiver until the
  * receiver comes out of reset in the spot that is aligned.
  */
-int
-mgtCrankRxAligner(void)
+static int
+mgtCrankRxAlignerFor(struct rxAligner *rxp)
 {
-    uint32_t csr = GPIO_READ(GPIO_IDX_GTY_CSR);
-    static uint32_t whenEntered;
-    static int resetCount;
-    static enum state { S_APPLY_RESET, S_HOLD_RESET, S_AWAIT_RESET_COMPLETION,
-                        S_POST_RESET_DELAY, S_CONFIRM_ALIGNMENT,
-                        S_ALIGNMENT_ACHIEVED, S_ALIGNED } state = S_ALIGNED;
-    enum state oldState = state;
+    uint32_t csr = GPIO_READ(rxp->csrIdx);
+    enum rxState oldState = rxp->state;
 
-    switch (state) {
+    switch (rxp->state) {
     case S_APPLY_RESET:
-        GPIO_WRITE(GPIO_IDX_GTY_CSR, CSR_RW_GT_RESET_ALL);
-        state = S_HOLD_RESET;
+        GPIO_WRITE(rxp->csrIdx, CSR_RW_GT_RESET_ALL);
+        rxp->state = S_HOLD_RESET;
         break;
 
     case S_HOLD_RESET:
-        if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 10) {
-            resetCount++;
-            if ((debugFlags & DEBUGFLAG_EVR) && (resetCount % 1000000) == 0) {
-                printf("EVR reset count %d\n", resetCount);
+        if ((MICROSECONDS_SINCE_BOOT() - rxp->whenEntered) > 10) {
+            rxp->resetCount++;
+            if ((debugFlags & DEBUGFLAG_EVR) && (rxp->resetCount % 1000000) == 0) {
+                printf("EVR reset count %d\n", rxp->resetCount);
             }
-            GPIO_WRITE(GPIO_IDX_GTY_CSR, 0);
-            state = S_AWAIT_RESET_COMPLETION;
+            GPIO_WRITE(rxp->csrIdx, 0);
+            rxp->state = S_AWAIT_RESET_COMPLETION;
         }
         break;
 
@@ -110,54 +128,60 @@ mgtCrankRxAligner(void)
          * unlikely to ever be reached.
          */
         if ((csr & CSR_R_RESETS_DONE) == CSR_R_RESETS_DONE) {
-            state = S_POST_RESET_DELAY;
+            rxp->state = S_POST_RESET_DELAY;
         }
-        else if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 250000) {
+        else if ((MICROSECONDS_SINCE_BOOT() - rxp->whenEntered) > 250000) {
             warn("EVR reset incomplete: %X", csr);
-            state = S_APPLY_RESET;
+            rxp->state = S_APPLY_RESET;
         }
         break;
 
     case S_POST_RESET_DELAY:
-        if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 200) {
-            state = S_CONFIRM_ALIGNMENT;
+        if ((MICROSECONDS_SINCE_BOOT() - rxp->whenEntered) > 200) {
+            rxp->state = S_CONFIRM_ALIGNMENT;
         }
 
     case S_CONFIRM_ALIGNMENT:
     // FIXME: CHECK RESET DONE TOO?
         if (!(csr & CSR_R_RX_ALIGNED)) {
-            state = S_APPLY_RESET;
+            rxp->state = S_APPLY_RESET;
         }
-        else if ((MICROSECONDS_SINCE_BOOT() - whenEntered) > 1000) {
-            state = S_ALIGNMENT_ACHIEVED;
+        else if ((MICROSECONDS_SINCE_BOOT() - rxp->whenEntered) > 1000) {
+            rxp->state = S_ALIGNMENT_ACHIEVED;
         }
         break;
 
     case S_ALIGNMENT_ACHIEVED:
-        printf("EVR aligned after %d resets.\n", resetCount);
-        resetCount = 0;
-        GPIO_WRITE(GPIO_IDX_GTY_CSR, CSR_RW_TX_RESET);
+        printf("EVR aligned after %d resets.\n", rxp->resetCount);
+        rxp->resetCount = 0;
+        GPIO_WRITE(rxp->csrIdx, CSR_RW_TX_RESET);
         microsecondSpin(2);
-        GPIO_WRITE(GPIO_IDX_GTY_CSR, 0);
+        GPIO_WRITE(rxp->csrIdx, 0);
         rfDCsync();
-        state = S_ALIGNED;
+        rxp->state = S_ALIGNED;
         break;
 
     case S_ALIGNED:
         if (!(csr & CSR_R_RX_ALIGNED)) {
             printf("EVR misaligned after %u us. Bad K:%d Char:%d\n",
-                           MICROSECONDS_SINCE_BOOT() - whenEntered,
+                           MICROSECONDS_SINCE_BOOT() - rxp->whenEntered,
                            (csr & CSR_R_BAD_K_MASK) >> CSR_R_BAD_K_SHIFT,
                            (csr & CSR_R_BAD_CHAR_MASK) >> CSR_R_BAD_CHAR_SHIFT);
-            lostAlignmentCount++;
-            state = S_APPLY_RESET;
+            rxp->lostAlignmentCount++;
+            rxp->state = S_APPLY_RESET;
         }
         break;
     }
-    if (state != oldState) {
-        whenEntered = MICROSECONDS_SINCE_BOOT();
+    if (rxp->state != oldState) {
+        rxp->whenEntered = MICROSECONDS_SINCE_BOOT();
     }
-    return (state == S_ALIGNED);
+    return (rxp->state == S_ALIGNED);
+}
+
+int
+mgtCrankRxAligner(void)
+{
+    return mgtCrankRxAlignerFor(&rxAligners[0]);
 }
 
 void
@@ -194,9 +218,15 @@ mgtInit(void)
 }
 
 
-void
-mgtRxBitslide(void)
+static void
+mgtRxBitslideFor(struct rxAligner *rxp)
 {
-    rxSlideCount++;
-    GPIO_WRITE(GPIO_IDX_GTY_CSR, CSR_W_RX_BIT_SLIDE);
+    rxp->rxSlideCount++;
+    GPIO_WRITE(rxp->csrIdx, CSR_W_RX_BIT_SLIDE);
+}
+
+void
+mgtRxBitslide()
+{
+    mgtRxBitslideFor(&rxAligners[0]);
 }

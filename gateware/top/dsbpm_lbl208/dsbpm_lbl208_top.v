@@ -103,7 +103,25 @@ module dsbpm_lbl208 #(
     output wire [15:10] DACIO,
 
     output wire       CLK_SPI_MUX_SEL0,
-    output wire       CLK_SPI_MUX_SEL1
+    output wire       CLK_SPI_MUX_SEL1,
+
+    output      FMC_PMOD6_0,
+    inout       FMC_PMOD6_1,
+    output      FMC_PMOD6_2,
+    output      FMC_PMOD6_3,
+    output      FMC_PMOD6_4,
+    output      FMC_PMOD6_5,
+    input       FMC_PMOD6_6,
+    input       FMC_PMOD6_7,
+
+    output      FMC_PMOD4_0,
+    input       FMC_PMOD4_1,
+    output      FMC_PMOD4_2,
+    output      FMC_PMOD4_3,
+    output      FMC_PMOD4_4,
+    output      FMC_PMOD4_5,
+    input       FMC_PMOD4_6,
+    input       FMC_PMOD4_7
 );
 
 common_dsbpm_top #(
@@ -238,7 +256,25 @@ common_dsbpm_top #(
     .DACIO(DACIO),
 
     .CLK_SPI_MUX_SEL0(CLK_SPI_MUX_SEL0),
-    .CLK_SPI_MUX_SEL1(CLK_SPI_MUX_SEL1)
+    .CLK_SPI_MUX_SEL1(CLK_SPI_MUX_SEL1),
+
+    .FMC_PMOD6_0(FMC_PMOD6_0),
+    .FMC_PMOD6_1(FMC_PMOD6_1),
+    .FMC_PMOD6_2(FMC_PMOD6_2),
+    .FMC_PMOD6_3(FMC_PMOD6_3),
+    .FMC_PMOD6_4(FMC_PMOD6_4),
+    .FMC_PMOD6_5(FMC_PMOD6_5),
+    .FMC_PMOD6_6(FMC_PMOD6_6),
+    .FMC_PMOD6_7(FMC_PMOD6_7),
+
+    .FMC_PMOD4_0(FMC_PMOD4_0),
+    .FMC_PMOD4_1(FMC_PMOD4_1),
+    .FMC_PMOD4_2(FMC_PMOD4_2),
+    .FMC_PMOD4_3(FMC_PMOD4_3),
+    .FMC_PMOD4_4(FMC_PMOD4_4),
+    .FMC_PMOD4_5(FMC_PMOD4_5),
+    .FMC_PMOD4_6(FMC_PMOD4_6),
+    .FMC_PMOD4_7(FMC_PMOD4_7)
 );
 
 endmodule

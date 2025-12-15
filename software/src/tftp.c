@@ -343,9 +343,9 @@ tftp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                     }
 
                     bytesTrans = 0;
-                    int (*funcPostTrans)(void) = fileTable[fileIndex].postReceive;
-                    if (funcPostTrans) {
-                        bytesTrans = (*funcPostTrans)();
+                    int (*funcPostReceive)(void) = fileTable[fileIndex].postReceive;
+                    if (funcPostReceive) {
+                        bytesTrans = (*funcPostReceive)();
                         if (bytesTrans < 0) {
                             replyERR(pcb, fromAddr, fromPort, "Error Stashing File");
                         }
@@ -393,9 +393,9 @@ filesystemReadbacks(void)
 
     for (i = 0 ; i < FILE_TABLE_SIZE ; i++) {
         bytesTrans = 0;
-        int (*funcPostTrans)(void) = fileTable[i].postReceive;
-        if (funcPostTrans) {
-            bytesTrans = (*funcPostTrans)();
+        int (*funcPostReceive)(void) = fileTable[i].postReceive;
+        if (funcPostReceive) {
+            bytesTrans = (*funcPostReceive)();
             if (bytesTrans < 0) {
                 printf("%s (%s): Error reading back file\n",
                         fileTable[i].description, fileTable[i].name);

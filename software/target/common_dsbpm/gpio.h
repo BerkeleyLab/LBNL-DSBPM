@@ -24,7 +24,6 @@
 #define GPIO_IDX_DISPLAY_CSR             10 // Display CSR (R/W)
 #define GPIO_IDX_DISPLAY_DATA            11 // Display I/O (R/W)
 #define GPIO_IDX_ADC_SYNC_CSR            12 // ADC synchronization
-#define GPIO_IDX_INTERLOCK_CSR           13 // Interlock (R/W)
 #define GPIO_IDX_EVENT_LOG_CSR           15 // Event logger control/seconds
 #define GPIO_IDX_EVENT_LOG_TICKS         16 // Event logger ticks
 #define GPIO_IDX_ADC_RANGE_CSR           17 // Monitor ADC ranges
@@ -33,6 +32,8 @@
 #define GPIO_IDX_EVR_SA_RELOAD           20 // Slow acquisition divider reload
 #define GPIO_IDX_GITHASH                 21 // Git 32-bit hash
 #define GPIO_IDX_SYSREF_DAC_CSR          22 // SYSREF DAC generation control/status
+#define GPIO_IDX_RPB_SPI_CSR             23 // RPB SPI monitoring
+#define GPIO_IDX_RPB_FAN_TACHOMETERS     24 // RPB Fans monitoring
 
 /*
  * Per DSBPM registers
@@ -105,7 +106,7 @@
 #define CFG_LO_RF_ROW_CAPACITY           1024
 #define CFG_LO_PT_ROW_CAPACITY           8192
 
-#define CFG_PT_GEN_ROW_CAPACITY          32768 // 2^15 per DAC sample (I and Q)
+#define CFG_PT_GEN_ROW_CAPACITY          65536 // 2^16 per DAC sample (I and Q)
 
 // FOFB communication
 #define GPIO_IDX_CELL_COMM_CCW_CSR       256
@@ -268,5 +269,10 @@
 #define CFG_RECORDER_PT_SAMPLE_CAPACITY  16*1024*1024
 #define CFG_RECORDER_TBT_POS_SAMPLE_CAPACITY 16*1024*1024
 #define CFG_RECORDER_FA_POS_SAMPLE_CAPACITY  16*1024*1024
+
+/*
+ * Number os Tachs to be read from SPB
+ */
+#define CFG_FAN_COUNT   2
 
 #endif

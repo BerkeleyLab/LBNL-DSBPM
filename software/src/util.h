@@ -6,6 +6,7 @@
 #define _UTIL_H_
 
 #include <stdint.h>
+#include <lwip/ip4_addr.h>
 
 /*
  * Convenient macros
@@ -18,6 +19,9 @@
 #endif
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+
+#define IP4_FORMAT(a,b,c,d) PP_HTONL(LWIP_MAKEU32(a,b,c,d))
+
 
 /*
  * Meta information

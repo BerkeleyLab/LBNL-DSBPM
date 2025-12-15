@@ -103,7 +103,25 @@ module common_dsbpm_top #(
     output wire [15:10] DACIO,
 
     output wire       CLK_SPI_MUX_SEL0,
-    output wire       CLK_SPI_MUX_SEL1
+    output wire       CLK_SPI_MUX_SEL1,
+
+    output      FMC_PMOD6_0,
+    inout       FMC_PMOD6_1,
+    output      FMC_PMOD6_2,
+    output      FMC_PMOD6_3,
+    output      FMC_PMOD6_4,
+    output      FMC_PMOD6_5,
+    input       FMC_PMOD6_6,
+    input       FMC_PMOD6_7,
+
+    output      FMC_PMOD4_0,
+    input       FMC_PMOD4_1,
+    output      FMC_PMOD4_2,
+    output      FMC_PMOD4_3,
+    output      FMC_PMOD4_4,
+    output      FMC_PMOD4_5,
+    input       FMC_PMOD4_6,
+    input       FMC_PMOD4_7
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -207,8 +225,8 @@ BUFG_GT userMgt128Refclk1Div4Buf (.O(mgt128Refclk1Div4),
 (*ASYNC_REG="TRUE"*) reg Reset_RecoveryModeSwitch_m, Reset_RecoveryModeSwitch;
 (*ASYNC_REG="TRUE"*) reg DisplayModeSwitch_m, DisplayModeSwitch;
 always @(posedge sysClk) begin
-    Reset_RecoveryModeSwitch_m <= GPIO_SW_W;
-    DisplayModeSwitch_m        <= GPIO_SW_E;
+    Reset_RecoveryModeSwitch_m <= !FMC_PMOD6_6 || GPIO_SW_W;
+    DisplayModeSwitch_m        <= !FMC_PMOD6_7 || GPIO_SW_E;
     Reset_RecoveryModeSwitch   <= Reset_RecoveryModeSwitch_m;
     DisplayModeSwitch          <= DisplayModeSwitch_m;
 end
@@ -360,6 +378,33 @@ evrSROC #(.SYSCLK_FREQUENCY(SYSCLK_RATE),
           .evrSROCstrobe(),
           .evrCounterHBDbg(adcCounterHB));
 assign GPIO_IN[GPIO_IDX_ADC_SYNC_CSR] = adcSyncStatus;
+
+/////////////////////////////////////////////////////////////////////////////
+// Display
+wire DISPLAY_SPI_SDA_O, DISPLAY_SPI_SDA_T, DISPLAY_SPI_SDA_I;
+
+IOBUF DISPLAY_MOSI_Buf(.IO(FMC_PMOD6_1),
+                       .I(DISPLAY_SPI_SDA_O),
+                       .T(DISPLAY_SPI_SDA_T),
+                       .O(DISPLAY_SPI_SDA_I));
+
+st7789v #(.CLK_RATE(SYSCLK_RATE),
+          .COMMAND_QUEUE_ADDRESS_WIDTH(16),
+          .DEBUG("false"))
+  st7789v (.clk(sysClk),
+           .csrStrobe(GPIO_STROBES[GPIO_IDX_DISPLAY_CSR]),
+           .dataStrobe(GPIO_STROBES[GPIO_IDX_DISPLAY_DATA]),
+           .gpioOut(GPIO_OUT),
+           .status(GPIO_IN[GPIO_IDX_DISPLAY_CSR]),
+           .readData(GPIO_IN[GPIO_IDX_DISPLAY_DATA]),
+           .DISPLAY_BACKLIGHT_ENABLE(FMC_PMOD6_2),
+           .DISPLAY_RESET_N(FMC_PMOD6_4),
+           .DISPLAY_CMD_N(FMC_PMOD6_5),
+           .DISPLAY_CLK(FMC_PMOD6_3),
+           .DISPLAY_CS_N(FMC_PMOD6_0),
+           .DISPLAY_SDA_O(DISPLAY_SPI_SDA_O),
+           .DISPLAY_SDA_T(DISPLAY_SPI_SDA_T),
+           .DISPLAY_SDA_I(DISPLAY_SPI_SDA_I));
 
 /////////////////////////////////////////////////////////////////////////////
 // Generate tile synchronization user_sysref_adc
@@ -546,25 +591,12 @@ assign GPIO_IN[GPIO_IDX_USER_GPIO_CSR] = {
 
 //////////////////////////////////////////////////////////////////////////////
 // Interlocks
-reg interlockRelayControl = 0;
-wire interlockResetButton = GPIO_SW_N;
-wire interlockRelayOpen = 1'b0;
-wire interlockRelayClosed = 1'b1;
 assign GPIO_LEDS[7] = 1'b0;
 assign GPIO_LEDS[6] = 1'b0;
 assign GPIO_LEDS[5] = dacClkLocked;
 assign GPIO_LEDS[4] = adcClkLocked;
 assign GPIO_LEDS[3] = GPIO_IN[GPIO_IDX_SECONDS_SINCE_BOOT][1];
 assign GPIO_LEDS[2] = GPIO_IN[GPIO_IDX_SECONDS_SINCE_BOOT][0];
-always @(posedge sysClk) begin
-    if (GPIO_STROBES[GPIO_IDX_INTERLOCK_CSR]) begin
-        interlockRelayControl <= GPIO_OUT[0];
-    end
-end
-assign GPIO_IN[GPIO_IDX_INTERLOCK_CSR] = { 28'b0, interlockRelayClosed,
-                                                  interlockRelayOpen,
-                                                  1'b0,
-                                                  interlockResetButton };
 
 /////////////////////////////////////////////////////////////////////////////
 // Acquisition common
@@ -2495,10 +2527,13 @@ rmsCalc rmsCalc(.clk(sysClk),
 // DAC streamer
 //
 
+// each row: I and Q samples
+localparam DAC_ADDRESS_WIDTH = $clog2(CFG_DAC_AXI_SAMPLES_PER_CLOCK*CFG_PT_GEN_ROW_CAPACITY);
+
 genericDACStreamer #(
   .AXIS_DATA_WIDTH(AXIS_DAC_SAMPLE_WIDTH),
   .DAC_DATA_WIDTH(DAC_SAMPLE_WIDTH),
-  .DAC_ADDRESS_WIDTH(16)
+  .DAC_ADDRESS_WIDTH(DAC_ADDRESS_WIDTH)
 ) genericDACStreamer (
     .sysClk(sysClk),
     .sysGpioData(GPIO_OUT),
@@ -2577,6 +2612,52 @@ endgenerate // generate
 
 assign AMI_BUCK_EN = 1'b1;
 assign DACIO = 0;
+
+//////////////////////////////////////////////////////////////////////////////
+// RPB SPI interface
+
+localparam RPB_NUM_CSB = 1;
+
+wire spiRpbCLK, spiRpbSDI, spiRpbSDO;
+wire [RPB_NUM_CSB-1:0] spiRpbCSB;
+genericSPI #(
+  .CLK_RATE(SYSCLK_RATE),
+  .CSB_WIDTH(RPB_NUM_CSB),
+  .BIT_RATE(100000),
+  .DEBUG("false")
+) genericRpbSPI (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_RPB_SPI_CSR]),
+    .gpioOut(GPIO_OUT),
+    .status(GPIO_IN[GPIO_IDX_RPB_SPI_CSR]),
+    .SPI_CLK(spiRpbCLK),
+    .SPI_CSB(spiRpbCSB),
+    .SPI_LE(),
+    .SPI_SDI(spiRpbSDI),
+    .SPI_SDO(spiRpbSDO)
+);
+
+assign FMC_PMOD4_5 = spiRpbCLK;
+assign FMC_PMOD4_0 = spiRpbCSB[0];
+assign FMC_PMOD4_4 = spiRpbSDI;
+assign spiRpbSDO = FMC_PMOD4_1;
+
+assign FMC_PMOD4_2 = 0;
+assign FMC_PMOD4_3 = 0;
+
+//////////////////////////////////////////////////////////////////////////////
+// RPB Fan Tach readings
+wire RPB_FAN1_TACH = FMC_PMOD4_6;
+wire RPB_FAN2_TACH = FMC_PMOD4_7;
+
+fanTach #(.CLK_FREQUENCY(SYSCLK_RATE),
+          .FAN_COUNT(CFG_FAN_COUNT))
+  fanTachs (
+    .clk(sysClk),
+    .csrStrobe(GPIO_STROBES[GPIO_IDX_RPB_FAN_TACHOMETERS]),
+    .GPIO_OUT(GPIO_OUT),
+    .value(GPIO_IN[GPIO_IDX_RPB_FAN_TACHOMETERS]),
+    .tachs_a({RPB_FAN2_TACH, RPB_FAN1_TACH}));
 
 //
 // FOFB communication

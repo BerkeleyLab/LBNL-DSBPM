@@ -2,9 +2,13 @@
 #include <lwipopts.h>
 #include <lwip/init.h>
 #include <lwip/inet.h>
+#if LWIP_DHCP==1
+#include <lwip/dhcp.h>
+#endif
 #include <netif/xadapter.h>
 #include "afe.h"
 #include "ami.h"
+#include "rpb.h"
 #include "console.h"
 #include "display.h"
 #include "epics.h"
@@ -35,6 +39,7 @@
 #include "positionCalc.h"
 #include "waveformRecorder.h"
 #include "cellComm.h"
+#include "fanCtl.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -70,6 +75,47 @@ static void sfpChk(void)
     }
 }
 
+#if LWIP_DHCP==1
+extern volatile int dhcp_timoutcntr;
+err_t dhcp_start(struct netif *netif);
+#endif
+
+static int
+tryRequestDHCPIPv4Address(struct netif *netif)
+{
+#if LWIP_DHCP==1
+    /*
+     * Create a new DHCP client for this interface.
+     * Note: you must call dhcp_fine_tmr() and dhcp_coarse_tmr() at
+     * the predefined regular intervals after starting the client.
+     */
+    dhcp_start(netif);
+
+    /*
+     * Reset timeout counter. This is defined in platform_zynqmp.c
+     */
+    dhcp_timoutcntr = 240;
+
+    while (((netif->ip_addr.addr) == 0) && (dhcp_timoutcntr > 0)) {
+        xemacif_input(netif);
+    }
+
+    if (dhcp_timoutcntr <= 0) {
+        if ((netif->ip_addr.addr) == 0) {
+            // Timeout
+            IP4_ADDR(&(netif->ip_addr), 192, 168,   1, 10);
+            IP4_ADDR(&(netif->netmask), 255, 255, 255,  0);
+            IP4_ADDR(&(netif->gw),      192, 168,   1,  1);
+            return -1;
+        }
+    }
+
+    return 0;
+#else
+    return 0;
+#endif
+}
+
 int
 main(void)
 {
@@ -101,14 +147,13 @@ main(void)
     /* Readback configurations from filesystem, if available */
     filesystemReadbacks();
 
-    if (isRecovery) {
-        printf("==== Recovery mode -- Using default network parameters ====\n");
-        currentNetConfig = netDefault;
-    }
-    else {
-        currentNetConfig = systemParameters.netConfig;
-    }
-    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
+    /*
+     * Set default IPv4 configs based on system parameters file and
+     * DHCP
+     */
+    setDefaultIPv4Address(&currentNetConfig,
+            &systemParameters.netConfig,
+            &netDefault, isRecovery);
 
     /* Set up hardware */
     sysmonInit();
@@ -118,8 +163,9 @@ main(void)
     mgtInit();
     evrInit();
     cellCommInit();
-    rfClkInit();
+    rfClkPreInit();
     mmcmInit();
+    rfClkInit();
     sysrefInit(0);
     sysrefInit(1);
     sysrefShow(0);
@@ -127,6 +173,7 @@ main(void)
     rfDCinit();
     afeInit();
     amiInit();
+    rpbInit();
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
@@ -135,14 +182,16 @@ main(void)
      * Show AFE sensors
      */
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm);
+        amiPSinfoDisplay(bpm, 0);
     }
+
+    rpbPSinfoDisplay(0);
+
+    /* Show Fans */
+    fanCtlInfoDisplay();
 
     /* Start network */
     lwip_init();
-    printf("Network:\n");
-    printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
-    showNetworkConfiguration(&currentNetConfig.ipv4);
     ipaddr.addr = currentNetConfig.ipv4.address;
     netmask.addr = currentNetConfig.ipv4.netmask;
     gateway.addr = currentNetConfig.ipv4.gateway;
@@ -155,6 +204,35 @@ main(void)
     }
     netif_set_default(&netif);
     netif_set_up(&netif);
+
+    /*
+     * Try to request IP from DHCP. Could fail if timeout.
+     * If DHCP is disabled, returns success
+     */
+    if (currentNetConfig.useDHCP) {
+        int ret = tryRequestDHCPIPv4Address(&netif);
+        if (ret < 0) {
+            warn("DHCP timeout. Default IP address assigned");
+        }
+    }
+    else {
+        printf("Configuration file set to disable DHCP. Using static IP address\n");
+    }
+
+    /*
+     * Copy possibly changed IPv4 parameters by DHCP into out copy
+     */
+    ipaddr.addr = netif.ip_addr.addr;
+    netmask.addr = netif.netmask.addr;
+    gateway.addr = netif.gw.addr;
+    currentNetConfig.ipv4.address = netif.ip_addr.addr;
+    currentNetConfig.ipv4.netmask = netif.netmask.addr;
+    currentNetConfig.ipv4.gateway = netif.gw.addr;
+
+    printf("Network:\n");
+    printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
+    showNetworkConfiguration(&currentNetConfig.ipv4);
+    drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
     displayShowStatusLine("");
 
     /* Set up communications and acquisition */
@@ -184,6 +262,7 @@ main(void)
         mgtCrankRxAligner();
         cellCommCrank();
         amiCrank();
+        rpbCrank();
         xemacif_input(&netif);
         publisherCheck();
         consoleCheck();
