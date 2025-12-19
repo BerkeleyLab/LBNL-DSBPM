@@ -172,7 +172,7 @@ set_property IOSTANDARD LVCMOS12 [get_ports {GPIO_LEDS[5]}]
 set_property IOSTANDARD LVCMOS12 [get_ports {GPIO_LEDS[6]}]
 set_property IOSTANDARD LVCMOS12 [get_ports {GPIO_LEDS[7]}]
 
-# PMOD 6 connector -- Display
+# FMC PMOD 6 connector -- Display
 # LA_14_N
 set_property PACKAGE_PIN A24 [get_ports FMC_PMOD6_0]
 # LA_17_N_CC
@@ -201,7 +201,34 @@ set_property PULLUP true [get_ports FMC_PMOD6_6]
 set_property PULLUP true [get_ports FMC_PMOD6_7]
 set_property DRIVE 8 [get_ports FMC_PMOD6_1]
 
-# PMOD 4 connector - RPB board
+# FMC PMOD 5 connector - RPB board
+#
+# LA26_P
+set_property PACKAGE_PIN AV16     [get_ports FMC_PMOD5_0]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_0]
+# LA26_N
+set_property PACKAGE_PIN AW16     [get_ports FMC_PMOD5_1]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_1]
+# LA25_N
+set_property PACKAGE_PIN AR16     [get_ports FMC_PMOD5_2]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_2]
+# LA24_N
+set_property PACKAGE_PIN AN16     [get_ports FMC_PMOD5_3]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_3]
+# LA27_N
+set_property PACKAGE_PIN AW15     [get_ports FMC_PMOD5_4]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_4]
+# LA25_P
+set_property PACKAGE_PIN AP16     [get_ports FMC_PMOD5_5]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_5]
+# LA24_P
+set_property PACKAGE_PIN AN17     [get_ports FMC_PMOD5_6]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_6]
+# LA29_P
+set_property PACKAGE_PIN AP13     [get_ports FMC_PMOD5_7]
+set_property IOSTANDARD  LVCMOS18 [get_ports FMC_PMOD5_7]
+
+# FMC PMOD 4 connector - RPB board
 #
 # LA28_P
 set_property PACKAGE_PIN AM15     [get_ports FMC_PMOD4_0]
