@@ -3,13 +3,16 @@
 VFLAGS_DEP += -I. -y . -y$(DSP_DIR)
 VFLAGS += -I. -y . -y$(DSP_DIR) -I$(AUTOGEN_DIR)
 
+VERILOG += -g2012
+
 TEST_BENCH = \
 	csrTestMaster_tb \
 	genericWaveformRecorder_tb \
 	adcProcessing_tb \
 	genericDPRAM_tb \
 	genericDACStreamer_tb \
-	genericSPI_tb
+	genericSPI_tb \
+	adder_tree_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =
