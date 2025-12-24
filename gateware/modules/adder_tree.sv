@@ -6,19 +6,19 @@
 `default_nettype none
 
 module adder_tree #(
-    parameter NUM_INPUTS = 10,
-    parameter DATA_WIDTH = 16,
+    parameter int unsigned NUM_INPUTS = 10,
+    parameter int unsigned DATA_WIDTH = 16,
     // Don't change these
-    parameter DEPTH = $clog2(NUM_INPUTS)
+    parameter int unsigned DEPTH = $clog2(NUM_INPUTS)
     ) (
     input  wire logic       clk,
     input  wire logic       rst,
 
     input  wire logic       valid_in,
-    input  wire logic [NUM_INPUTS*DATA_WIDTH-1:0]
+    input  wire logic signed [NUM_INPUTS-1:0][DATA_WIDTH-1:0]
                             data_in,
 
-    output wire logic [DATA_WIDTH+DEPTH-1:0]
+    output wire logic signed [DATA_WIDTH+DEPTH-1:0]
                             data_out,
     output wire logic       valid_out);
 
@@ -48,17 +48,16 @@ logic [DEPTH:0] valid_pipe = '0;
 //
 // Stage 0: Load inputs
 //
-integer j;
 always_ff @(posedge clk) begin
     if (rst) begin
         valid_pipe[0] <= 1'b0;
-        for (j = 0; j < NUM_INPUTS; j++) begin
-            pipe[0][j] <= '0;
+        for (int i = 0; i < NUM_INPUTS; i++) begin
+            pipe[0][i] <= '0;
         end
     end else begin
         valid_pipe[0] <= valid_in;
-        for (j = 0; j < NUM_INPUTS; j++) begin
-            pipe[0][j] <= signed'(data_in[j*DATA_WIDTH+:DATA_WIDTH]);
+        for (int i = 0; i < NUM_INPUTS; i++) begin
+            pipe[0][i] <= data_in[i];
         end
     end
 end
@@ -82,7 +81,7 @@ for (s = 0; s < DEPTH; s++) begin : STAGES
                 pipe[s+1][i] <= '0;
                 valid_pipe[s+1] <= 1'b0;
             end else begin
-                // Add pairs if they exist. If off number of inputs,
+                // Add pairs if they exist. If odd number of inputs,
                 // passthrough.
                 if ((2*i+1) < NUM_STAGE_INPUTS) begin
                     pipe[s+1][i] <= pipe[s][2*i] + pipe[s][2*i+1];

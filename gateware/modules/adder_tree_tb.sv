@@ -1,7 +1,7 @@
 `timescale 1ns / 1ns
 
 module adder_tree_tb #(
-    parameter NUM_INPUTS  = 8,
+    parameter NUM_INPUTS  = 10,
     parameter DATA_WIDTH  = 16,
     parameter CLK_PERIOD  = 2.0  // 500 MHz
 );
@@ -11,46 +11,24 @@ localparam DEPTH = $clog2(NUM_INPUTS);
 logic clk = 0;
 logic rst = 0;
 logic valid_in = 0;
-logic [DATA_WIDTH-1:0] data_in [0:NUM_INPUTS-1];
-logic [NUM_INPUTS*DATA_WIDTH-1:0] data_in_flat;
-
-logic [DATA_WIDTH+DEPTH-1:0] data_out;
+logic signed [NUM_INPUTS-1:0][DATA_WIDTH-1:0] data_in;
 logic valid_out;
+logic signed [DATA_WIDTH+DEPTH-1:0] data_out;
 
 // Clock Generation
-initial clk = 0;
 always #(CLK_PERIOD/2) clk = ~clk;
 
 // Helper function to calculate sum
-function signed [DATA_WIDTH+DEPTH-1:0] calc_sum;
-    input [NUM_INPUTS*DATA_WIDTH-1:0] flat_data;
-    integer k;
-    logic signed [DATA_WIDTH-1:0] temp;
-    begin
-        calc_sum = 0;
-        for (k = 0; k < NUM_INPUTS; k = k + 1) begin
-            temp = flat_data[k*DATA_WIDTH+:DATA_WIDTH];
-            calc_sum = calc_sum + temp;
-        end
+function automatic int sum_reduction(
+    input logic signed [NUM_INPUTS-1:0][DATA_WIDTH-1:0] data);
+    int sum = 0;
+
+    for (int i = 0; i < NUM_INPUTS; i++) begin
+        sum += data[i];
     end
+
+    return sum;
 endfunction
-
-// Helper task to randomize data
-task randomize_inputs;
-    integer i;
-    begin
-        for(i = 0; i < NUM_INPUTS; i = i+1) begin
-            data_in[i] = $random % 10;
-        end
-    end
-endtask
-
-genvar ix;
-generate
-for(ix = 0; ix < NUM_INPUTS; ix = ix+1) begin
-    assign data_in_flat[ix*DATA_WIDTH+:DATA_WIDTH] = data_in[ix];
-end
-endgenerate
 
 initial begin
     if ($test$plusargs("vcd")) begin
@@ -60,22 +38,15 @@ initial begin
 end
 
 // Scoreboarding
-logic [DATA_WIDTH+DEPTH-1:0] expected_queue [$];
-logic [DATA_WIDTH+DEPTH-1:0] expected_val;
+int expected_queue [$];
+int expected_val;
 integer errors = 0;
 
 // Instantiate DUT
 adder_tree #(
     .NUM_INPUTS(NUM_INPUTS),
     .DATA_WIDTH(DATA_WIDTH)
-) dut (
-    .clk(clk),
-    .rst(rst),
-    .valid_in(valid_in),
-    .data_in(data_in_flat),
-    .data_out(data_out),
-    .valid_out(valid_out)
-);
+) dut (.*);
 
 generate
 	genvar r, c;
@@ -93,14 +64,16 @@ generate
 endgenerate
 
 // Stimulus Process
-integer j;
+logic signed [NUM_INPUTS-1:0][DATA_WIDTH-1:0] next_data_in;
+
 initial begin
     rst = 1;
     valid_in = 0;
     errors = 0;
 
-    for (j = 0; j < NUM_INPUTS; j = j + 1) begin
-        data_in[j] = 0;
+    for (int i = 0; i < NUM_INPUTS; i++) begin
+        data_in[i] = 0;
+        next_data_in[i] = 0;
     end
 
     repeat(5) begin
@@ -113,20 +86,23 @@ initial begin
         @(posedge clk);
     end
 
-    for (j = 0; j < 200; j = j + 1) begin
+    for (int i = 0; i < 200; i++) begin
 
         // Randomly decide if this cycle is valid (70% chance of valid)
         if (($random % 100) < 70) begin
+
+            for (int i = 0; i < NUM_INPUTS; i++) begin
+                next_data_in[i] = $random % 10;
+            end
+
             valid_in <= 1;
-            randomize_inputs();
+            data_in <= next_data_in;
 
             // Add expected result to queue
-            expected_queue.push_back(calc_sum(data_in_flat));
+            expected_queue.push_back(sum_reduction(next_data_in));
         end else begin
             valid_in <= 0;
-            // Data on invalid cycles shouldn't matter, but we randomize it
-            // to ensure the DUT doesn't accidentally process it.
-            randomize_inputs();
+            data_in <= 'x;
         end
 
         @(posedge clk);
@@ -134,6 +110,7 @@ initial begin
 
     // End of stream
     valid_in <= 0;
+    data_in <= 'x;
     @(posedge clk);
 
     // Wait for pipeline drain
@@ -146,7 +123,8 @@ initial begin
         $finish(0);
     end else begin
         $display("# FAIL, %0d errors", errors);
-        $stop(0);
+
+        $finish(0);
     end
 end
 

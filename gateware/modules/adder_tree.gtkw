@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Tue Dec 23 07:07:09 2025
+[*] Wed Dec 24 00:18:05 2025
 [*]
 [dumpfile] "/home/lerwys/Repos/dsbpm/gateware/modules/adder_tree.vcd"
-[dumpfile_mtime] "Tue Dec 23 07:07:02 2025"
-[dumpfile_size] 151569
+[dumpfile_mtime] "Wed Dec 24 00:17:10 2025"
+[dumpfile_size] 129387
 [savefile] "/home/lerwys/Repos/dsbpm/gateware/modules/adder_tree.gtkw"
 [timestart] 0
 [size] 2193 1239
 [pos] -1 -1
-*-4.200000 15 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.200000 21 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] adder_tree_tb.
 [sst_width] 438
 [signals_width] 593
@@ -25,17 +25,17 @@ adder_tree_tb.DEPTH
 adder_tree_tb.NUM_INPUTS
 @28
 adder_tree_tb.clk
-@22
-adder_tree_tb.data_in_flat[127:0]
+@421
+adder_tree_tb.expected_val
+@420
 adder_tree_tb.data_out[18:0]
+@28
+adder_tree_tb.valid_out
 @420
 adder_tree_tb.errors
-adder_tree_tb.expected_val[18:0]
-adder_tree_tb.j
 @28
 adder_tree_tb.rst
 adder_tree_tb.valid_in
-adder_tree_tb.valid_out
 @200
 -dut
 @420
@@ -63,9 +63,7 @@ adder_tree_tb.dut.\pipe[13][18:0]
 adder_tree_tb.dut.\pipe[14][18:0]
 adder_tree_tb.dut.\pipe[15][18:0]
 adder_tree_tb.dut.\pipe[16][18:0]
-@421
 adder_tree_tb.dut.\pipe[17][18:0]
-@420
 adder_tree_tb.dut.\pipe[18][18:0]
 adder_tree_tb.dut.\pipe[19][18:0]
 adder_tree_tb.dut.\pipe[20][18:0]
@@ -82,9 +80,8 @@ adder_tree_tb.dut.\pipe[30][18:0]
 adder_tree_tb.dut.\pipe[31][18:0]
 @22
 adder_tree_tb.dut.data_in[127:0]
-adder_tree_tb.dut.data_out[18:0]
 @420
-adder_tree_tb.dut.j
+adder_tree_tb.dut.data_out[18:0]
 @28
 adder_tree_tb.dut.rst
 adder_tree_tb.dut.valid_in
