@@ -1,6 +1,5 @@
 module common_dsbpm_top #(
     parameter FPGA_FAMILY               = "ultrascaleplus",
-    parameter TEST_BYPASS_RECORDERS     = "FALSE",
     parameter TEST_BYPASS_PRELIM_PROC   = "FALSE",
     parameter DDR_ILA_CHIPSCOPE_DBG     = "FALSE",
     parameter DAC_ILA_CHIPSCOPE_DBG     = "FALSE",
@@ -724,15 +723,7 @@ wire                            wr_fa_pos_axi_BVALID[0:CFG_DSBPM_COUNT-1];
 (* mark_debug = "true" *) wire ddrSoftTrigger[0:CFG_DSBPM_COUNT-1];
 
 generate
-if (TEST_BYPASS_RECORDERS != "TRUE" && TEST_BYPASS_RECORDERS != "FALSE") begin
-    TEST_BYPASS_RECORDERS_only_TRUE_or_FALSE_SUPPORTED error();
-end
-endgenerate
-
-generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recorders
-    if (TEST_BYPASS_RECORDERS == "FALSE") begin
-
     //
     // Waveform recorder triggers
     // Stretch soft trigger to ensure it is seen across clock boundaries
@@ -1198,7 +1189,6 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : dram_recor
         .axi_BRESP(wr_fa_pos_axi_BRESP[dsbpm]),
         .axi_BVALID(wr_fa_pos_axi_BVALID[dsbpm]));
 
-    end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
 end // for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1)
 endgenerate
 
@@ -1329,9 +1319,6 @@ wire            ddr_aximm_dbg_WVALID;
 
 //////////////////////////////////////////////////////////////////////////////
 // ZYNQ processor system
-
-generate
-if (TEST_BYPASS_RECORDERS == "FALSE") begin
 
 system
   system_i (
@@ -1795,199 +1782,6 @@ system
     .ddr_aximm_dbg_wstrb(ddr_aximm_dbg_WSTRB),
     .ddr_aximm_dbg_wvalid(ddr_aximm_dbg_WVALID)
     );
-
-end
-else begin
-
-system
-  system_i (
-    .sysClk(sysClk),
-    .sysReset_n(sysReset_n),
-
-    .GPIO_IN(GPIO_IN_FLATTENED),
-    .GPIO_OUT(GPIO_OUT),
-    .GPIO_STROBES(GPIO_STROBES),
-
-    .evrCharIsComma(evrCharIsComma),
-    .evrCharIsK(evrCharIsK),
-    .evrClk(evrClk),
-    .evrChars(evrChars),
-    .evrMgtResetDone(evrRxSynchronized),
-    .evrTriggerBus(evrTriggerBus),
-    .evrTimestamp(evrTimestamp),
-
-    .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
-    .adcClk(adcClk),
-    .adcClkLocked(adcClkLocked),
-    .clk_adc0_0(rfdc_adc0_clk),
-
-    // ADC tile 225 distributes clock to all others
-    //.adc01_clk_n(),
-    //.adc01_clk_p(),
-    .adc23_clk_n(RF1_CLKO_B_C_N),
-    .adc23_clk_p(RF1_CLKO_B_C_P),
-    //.adc45_clk_n(),
-    //.adc45_clk_p(),
-    //.adc67_clk_n(),
-    //.adc67_clk_p(),
-    .user_sysref_adc(user_sysref_adc),
-
-    // DAC tile 0 must be enabled dfor sysref
-    // to be distributed to ADC/DAC for RFSoC GEN3
-    .sysref_in_diff_n(SYSREF_RFSOC_C_N),
-    .sysref_in_diff_p(SYSREF_RFSOC_C_P),
-
-    .dacClk(dacClk),
-    .dacClkLocked(dacClkLocked),
-    .clk_dac0_0(rfdc_dac0_clk),
-
-    // DAC tile 230 distributes clock to all others
-    .dac45_clk_n(RF4_CLKO_B_C_N),
-    .dac45_clk_p(RF4_CLKO_B_C_P),
-    .user_sysref_dac(user_sysref_dac),
-
-    .vin0_v_n(RFMC_ADC_00_N),
-    .vin0_v_p(RFMC_ADC_00_P),
-    .vin1_v_n(RFMC_ADC_01_N),
-    .vin1_v_p(RFMC_ADC_01_P),
-    .vin2_v_n(RFMC_ADC_02_N),
-    .vin2_v_p(RFMC_ADC_02_P),
-    .vin3_v_n(RFMC_ADC_03_N),
-    .vin3_v_p(RFMC_ADC_03_P),
-    .vin4_v_n(RFMC_ADC_04_N),
-    .vin4_v_p(RFMC_ADC_04_P),
-    .vin5_v_n(RFMC_ADC_05_N),
-    .vin5_v_p(RFMC_ADC_05_P),
-    .vin6_v_n(RFMC_ADC_06_N),
-    .vin6_v_p(RFMC_ADC_06_P),
-    .vin7_v_n(RFMC_ADC_07_N),
-    .vin7_v_p(RFMC_ADC_07_P),
-
-    .adc0stream_tdata(adcsPhysicalTDATA[0*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc1stream_tdata(adcsPhysicalTDATA[2*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc2stream_tdata(adcsPhysicalTDATA[4*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc3stream_tdata(adcsPhysicalTDATA[6*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc4stream_tdata(adcsPhysicalTDATA[8*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc5stream_tdata(adcsPhysicalTDATA[10*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc6stream_tdata(adcsPhysicalTDATA[12*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc7stream_tdata(adcsPhysicalTDATA[14*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc0Qstream_tdata(adcsPhysicalTDATA[1*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc1Qstream_tdata(adcsPhysicalTDATA[3*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc2Qstream_tdata(adcsPhysicalTDATA[5*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc3Qstream_tdata(adcsPhysicalTDATA[7*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc4Qstream_tdata(adcsPhysicalTDATA[9*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc5Qstream_tdata(adcsPhysicalTDATA[11*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc6Qstream_tdata(adcsPhysicalTDATA[13*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc7Qstream_tdata(adcsPhysicalTDATA[15*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),
-    .adc0stream_tvalid(adcsPhysicalTVALID[0]),
-    .adc1stream_tvalid(adcsPhysicalTVALID[2]),
-    .adc2stream_tvalid(adcsPhysicalTVALID[4]),
-    .adc3stream_tvalid(adcsPhysicalTVALID[6]),
-    .adc4stream_tvalid(adcsPhysicalTVALID[8]),
-    .adc5stream_tvalid(adcsPhysicalTVALID[10]),
-    .adc6stream_tvalid(adcsPhysicalTVALID[12]),
-    .adc7stream_tvalid(adcsPhysicalTVALID[14]),
-    .adc0Qstream_tvalid(adcsPhysicalTVALID[1]),
-    .adc1Qstream_tvalid(adcsPhysicalTVALID[3]),
-    .adc2Qstream_tvalid(adcsPhysicalTVALID[5]),
-    .adc3Qstream_tvalid(adcsPhysicalTVALID[7]),
-    .adc4Qstream_tvalid(adcsPhysicalTVALID[9]),
-    .adc5Qstream_tvalid(adcsPhysicalTVALID[11]),
-    .adc6Qstream_tvalid(adcsPhysicalTVALID[13]),
-    .adc7Qstream_tvalid(adcsPhysicalTVALID[15]),
-    .adc0stream_tready(1'b1),
-    .adc1stream_tready(1'b1),
-    .adc2stream_tready(1'b1),
-    .adc3stream_tready(1'b1),
-    .adc4stream_tready(1'b1),
-    .adc5stream_tready(1'b1),
-    .adc6stream_tready(1'b1),
-    .adc7stream_tready(1'b1),
-    .adc0Qstream_tready(1'b1),
-    .adc1Qstream_tready(1'b1),
-    .adc2Qstream_tready(1'b1),
-    .adc3Qstream_tready(1'b1),
-    .adc4Qstream_tready(1'b1),
-    .adc5Qstream_tready(1'b1),
-    .adc6Qstream_tready(1'b1),
-    .adc7Qstream_tready(1'b1),
-
-    .dac0stream_tdata(dacsPhysicalTDATA[0*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac1stream_tdata(dacsPhysicalTDATA[1*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac2stream_tdata(dacsPhysicalTDATA[2*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac3stream_tdata(dacsPhysicalTDATA[3*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac4stream_tdata(dacsPhysicalTDATA[4*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac5stream_tdata(dacsPhysicalTDATA[5*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac6stream_tdata(dacsPhysicalTDATA[6*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac7stream_tdata(dacsPhysicalTDATA[7*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH]),
-    .dac0stream_tvalid(dacsPhysicalTVALID[0]),
-    .dac1stream_tvalid(dacsPhysicalTVALID[1]),
-    .dac2stream_tvalid(dacsPhysicalTVALID[2]),
-    .dac3stream_tvalid(dacsPhysicalTVALID[3]),
-    .dac4stream_tvalid(dacsPhysicalTVALID[4]),
-    .dac5stream_tvalid(dacsPhysicalTVALID[5]),
-    .dac6stream_tvalid(dacsPhysicalTVALID[6]),
-    .dac7stream_tvalid(dacsPhysicalTVALID[7]),
-    .dac0stream_tready(dacsPhysicalTREADY[0]),
-    .dac1stream_tready(dacsPhysicalTREADY[1]),
-    .dac2stream_tready(dacsPhysicalTREADY[2]),
-    .dac3stream_tready(dacsPhysicalTREADY[3]),
-    .dac4stream_tready(dacsPhysicalTREADY[4]),
-    .dac5stream_tready(dacsPhysicalTREADY[5]),
-    .dac6stream_tready(dacsPhysicalTREADY[6]),
-    .dac7stream_tready(dacsPhysicalTREADY[7]),
-
-    .vout0_v_n(RFMC_DAC_00_N),
-    .vout0_v_p(RFMC_DAC_00_P),
-    .vout1_v_n(RFMC_DAC_01_N),
-    .vout1_v_p(RFMC_DAC_01_P),
-    .vout2_v_n(RFMC_DAC_02_N),
-    .vout2_v_p(RFMC_DAC_02_P),
-    .vout3_v_n(RFMC_DAC_03_N),
-    .vout3_v_p(RFMC_DAC_03_P),
-    .vout4_v_n(RFMC_DAC_04_N),
-    .vout4_v_p(RFMC_DAC_04_P),
-    .vout5_v_n(RFMC_DAC_05_N),
-    .vout5_v_p(RFMC_DAC_05_P),
-    .vout6_v_n(RFMC_DAC_06_N),
-    .vout6_v_p(RFMC_DAC_06_P),
-    .vout7_v_n(RFMC_DAC_07_N),
-    .vout7_v_p(RFMC_DAC_07_P)
-    );
-
-    assign DDR4_C0_ACT_N = 1'b1;
-    assign DDR4_C0_ADR = 0;
-    assign DDR4_C0_BA = 0;
-    assign DDR4_C0_BG = 0;
-
-    OBUFDS ddr4_c0_ck_obufds (
-        .O(DDR4_C0_CK_T),
-        .OB(DDR4_C0_CK_C),
-        .I(1'b0)
-    );
-
-    assign DDR4_C0_CKE = 1'b0;
-    assign DDR4_C0_CS_N = {2{1'b1}};
-
-    assign DDR4_C0_DM_DBI_N = {4{1'bz}};
-    assign DDR4_C0_DQ = {32{1'bz}};
-
-    for(i = 0; i < 4; i = i + 1) begin
-
-        OBUFTDS ddr4_c0_dqs_obuftds (
-            .O(DDR4_C0_DQS_T[i]),
-            .OB(DDR4_C0_DQS_C[i]),
-            .I(1'b0),
-            .T(1'b1) // High-Z
-        );
-
-    end
-
-    assign DDR4_C0_ODT = 1'b0;
-    assign DDR4_C0_RESET_N = 1'b1;
-
-end // if (TEST_BYPASS_RECORDERS == "FALSE") begin
-endgenerate
 
 generate
 if (DDR_ILA_CHIPSCOPE_DBG != "TRUE" && DDR_ILA_CHIPSCOPE_DBG != "FALSE") begin

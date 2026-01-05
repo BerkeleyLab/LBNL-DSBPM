@@ -57,8 +57,6 @@ work/
 !/gateware/platform/xilinx/*/*/prbsMMCM/prbsMMCM.xci
 /gateware/platform/xilinx/*/*/system/*
 !/gateware/platform/xilinx/*/*/system/system.bd
-/gateware/platform/xilinx/*/*/system_without_ddr/*
-!/gateware/platform/xilinx/*/*/system_without_ddr/system_without_ddr.bd
 /gateware/platform/xilinx/*/*/ila_td256_s4096_cap/*
 !/gateware/platform/xilinx/*/*/ila_td256_s4096_cap/ila_td256_s4096_cap.xci
 /gateware/platform/xilinx/*/*/PacketMem/*
