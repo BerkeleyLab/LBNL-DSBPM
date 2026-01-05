@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0xBA911FA42C651792",
+      "boundary_crc": "0x36CC05A715B9179D",
       "device": "xczu47dr-ffvg1517-1-e",
       "name": "system",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
@@ -56,7 +56,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -87,7 +87,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -114,7 +114,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -145,7 +145,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -172,7 +172,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -203,7 +203,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -230,7 +230,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -261,7 +261,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -288,7 +288,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -319,7 +319,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -346,7 +346,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -377,7 +377,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -448,7 +448,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -479,7 +479,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -506,7 +506,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -537,7 +537,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -588,7 +588,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -619,7 +619,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -646,7 +646,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -677,7 +677,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -704,7 +704,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -735,7 +735,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -762,7 +762,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -793,7 +793,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -820,7 +820,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -851,7 +851,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -878,7 +878,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -909,7 +909,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -936,7 +936,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -967,7 +967,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -994,7 +994,7 @@
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "HAS_TKEEP": {
             "value": "0",
@@ -1025,7 +1025,7 @@
             "value_src": "ip_prop"
           },
           "TDATA_NUM_BYTES": {
-            "value": "2",
+            "value": "20",
             "value_src": "auto_prop"
           },
           "TDEST_WIDTH": {
@@ -3403,19 +3403,19 @@
           }
         }
       },
-      "adcClk": {
+      "adcFastClk": {
         "type": "clk",
         "direction": "O",
         "parameters": {
           "ASSOCIATED_BUSIF": {
-            "value": "adc0stream:adc1stream:adc2stream:adc3stream:adc4stream:adc5stream:adc6stream:adc7stream:adc0Qstream:adc1Qstream:adc2Qstream:adc3Qstream:adc4Qstream:adc5Qstream:adc6Qstream:adc7Qstream:wr_adc_0_axi:wr_adc_1_axi"
+            "value": "adc0stream:adc1stream:adc2stream:adc3stream:adc4stream:adc5stream:adc6stream:adc7stream:adc0Qstream:adc1Qstream:adc2Qstream:adc3Qstream:adc4Qstream:adc5Qstream:adc6Qstream:adc7Qstream"
           },
           "CLK_DOMAIN": {
             "value": "system_FPGA_REFCLK_OUT_C",
             "value_src": "ip_prop"
           },
           "FREQ_HZ": {
-            "value": "123386707"
+            "value": "493546829"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",
@@ -3431,7 +3431,7 @@
           }
         }
       },
-      "adcClkLocked": {
+      "adcFastClkLocked": {
         "direction": "O"
       },
       "user_sysref_dac": {
@@ -3556,6 +3556,37 @@
           "POLARITY": {
             "value": "ACTIVE_HIGH",
             "value_src": "const_prop"
+          }
+        }
+      },
+      "adcSlowClkLocked": {
+        "direction": "O"
+      },
+      "adcSlowClk": {
+        "type": "clk",
+        "direction": "O",
+        "parameters": {
+          "ASSOCIATED_BUSIF": {
+            "value": "wr_adc_0_axi:wr_adc_1_axi"
+          },
+          "CLK_DOMAIN": {
+            "value": "system_FPGA_REFCLK_OUT_C",
+            "value_src": "ip_prop"
+          },
+          "FREQ_HZ": {
+            "value": "123386707"
+          },
+          "FREQ_TOLERANCE_HZ": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.0",
+            "value_src": "ip_prop"
           }
         }
       }
@@ -4487,13 +4518,13 @@
             "value": "BUFG"
           },
           "CLKOUT1_JITTER": {
-            "value": "190.914"
+            "value": "157.832"
           },
           "CLKOUT1_PHASE_ERROR": {
             "value": "338.733"
           },
           "CLKOUT1_REQUESTED_OUT_FREQ": {
-            "value": "123.38671"
+            "value": "493.54683"
           },
           "CLKOUT2_DRIVES": {
             "value": "BUFG"
@@ -4508,7 +4539,7 @@
             "value": "123.38671"
           },
           "CLKOUT2_USED": {
-            "value": "false"
+            "value": "true"
           },
           "CLKOUT3_DRIVES": {
             "value": "Buffer"
@@ -4538,16 +4569,16 @@
             "value": "10.0"
           },
           "MMCM_CLKOUT0_DIVIDE_F": {
-            "value": "10.000"
+            "value": "2.500"
           },
           "MMCM_CLKOUT1_DIVIDE": {
-            "value": "1"
+            "value": "10"
           },
           "MMCM_DIVCLK_DIVIDE": {
             "value": "41"
           },
           "NUM_OUT_CLKS": {
-            "value": "1"
+            "value": "2"
           },
           "PRIM_IN_FREQ": {
             "value": "499.640"
@@ -4720,52 +4751,52 @@
             "value": "1"
           },
           "ADC_Data_Width00": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width02": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width10": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width12": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width20": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width22": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width30": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Data_Width32": {
-            "value": "1"
+            "value": "10"
           },
           "ADC_Decimation_Mode00": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode02": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode10": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode12": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode20": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode22": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode30": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Decimation_Mode32": {
-            "value": "40"
+            "value": "1"
           },
           "ADC_Dither00": {
             "value": "true"
@@ -8978,17 +9009,11 @@
       "clk_wiz_0_clk_out1": {
         "ports": [
           "rfadc_mmcm/clk_out1",
-          "adcClk",
+          "adcFastClk",
           "usp_rf_data_converter_0/m0_axis_aclk",
           "usp_rf_data_converter_0/m1_axis_aclk",
           "usp_rf_data_converter_0/m2_axis_aclk",
-          "usp_rf_data_converter_0/m3_axis_aclk",
-          "ddr4_smc_0/aclk1",
-          "dacClk",
-          "usp_rf_data_converter_0/s0_axis_aclk",
-          "usp_rf_data_converter_0/s1_axis_aclk",
-          "usp_rf_data_converter_0/s2_axis_aclk",
-          "usp_rf_data_converter_0/s3_axis_aclk"
+          "usp_rf_data_converter_0/m3_axis_aclk"
         ]
       },
       "ddr4_0_c0_ddr4_ui_clk": {
@@ -9028,7 +9053,7 @@
       "m0_axis_aresetn_0_1": {
         "ports": [
           "rfadc_mmcm/locked",
-          "adcClkLocked",
+          "adcFastClkLocked",
           "usp_rf_data_converter_0/m0_axis_aresetn",
           "usp_rf_data_converter_0/m1_axis_aresetn",
           "usp_rf_data_converter_0/m2_axis_aresetn",
@@ -9037,7 +9062,8 @@
           "usp_rf_data_converter_0/s0_axis_aresetn",
           "usp_rf_data_converter_0/s1_axis_aresetn",
           "usp_rf_data_converter_0/s2_axis_aresetn",
-          "usp_rf_data_converter_0/s3_axis_aresetn"
+          "usp_rf_data_converter_0/s3_axis_aresetn",
+          "adcSlowClkLocked"
         ]
       },
       "mgt_chariscomma_0_1": {
@@ -9068,6 +9094,18 @@
         "ports": [
           "evrMgtResetDone",
           "evr_axi_0/mgt_reset_done"
+        ]
+      },
+      "rfadc_mmcm_clk_out2": {
+        "ports": [
+          "rfadc_mmcm/clk_out2",
+          "dacClk",
+          "usp_rf_data_converter_0/s0_axis_aclk",
+          "usp_rf_data_converter_0/s1_axis_aclk",
+          "usp_rf_data_converter_0/s2_axis_aclk",
+          "usp_rf_data_converter_0/s3_axis_aclk",
+          "adcSlowClk",
+          "ddr4_smc_0/aclk1"
         ]
       },
       "rst_ddr_mig_0_peripheral_aresetn": {
