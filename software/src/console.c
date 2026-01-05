@@ -455,7 +455,7 @@ cmdRPBMON(int argc, char **argv)
 static int
 cmdFanMON(int argc, char **argv)
 {
-    rpbPSinfoDisplay(0);
+    fanCtlInfoDisplay();
     return 0;
 }
 
