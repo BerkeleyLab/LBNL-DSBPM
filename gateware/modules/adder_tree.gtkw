@@ -1,99 +1,121 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Wed Dec 24 00:18:05 2025
+[*] Tue Jan  6 02:03:41 2026
 [*]
-[dumpfile] "/home/lerwys/Repos/dsbpm/gateware/modules/adder_tree.vcd"
-[dumpfile_mtime] "Wed Dec 24 00:17:10 2025"
-[dumpfile_size] 129387
-[savefile] "/home/lerwys/Repos/dsbpm/gateware/modules/adder_tree.gtkw"
+[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/adder_tree.vcd"
+[dumpfile_mtime] "Tue Jan  6 02:03:24 2026"
+[dumpfile_size] 214314
+[savefile] "/home/lrusso/repos/dsbpm/gateware/modules/adder_tree.gtkw"
 [timestart] 0
-[size] 2193 1239
-[pos] -1 -1
-*-4.200000 21 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1710 1318
+[pos] -1718 -1
+*-4.200000 25 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] adder_tree_tb.
 [sst_width] 438
 [signals_width] 593
 [sst_expanded] 1
-[sst_vpaned_height] 409
+[sst_vpaned_height] 439
 @200
 -adder_tree_tb
 @28
 adder_tree_tb.CLK_PERIOD
 @420
-adder_tree_tb.DATA_WIDTH
 adder_tree_tb.DEPTH
 adder_tree_tb.NUM_INPUTS
+adder_tree_tb.INPUT_WIDTH
+adder_tree_tb.OUTPUT_WIDTH
 @28
+adder_tree_tb.ROUND_CONVERGENT
 adder_tree_tb.clk
-@421
-adder_tree_tb.expected_val
-@420
-adder_tree_tb.data_out[18:0]
-@28
-adder_tree_tb.valid_out
 @420
 adder_tree_tb.errors
 @28
 adder_tree_tb.rst
 adder_tree_tb.valid_in
+@420
+adder_tree_tb.raw_sum
+adder_tree_tb.resized_sum[15:0]
+@22
+adder_tree_tb.data_in[159:0]
+@23
+adder_tree_tb.next_data_in[159:0]
+@28
+adder_tree_tb.valid_out
+@420
+adder_tree_tb.data_out[15:0]
 @200
 -dut
 @420
-adder_tree_tb.dut.DATA_WIDTH
 adder_tree_tb.dut.DEPTH
-adder_tree_tb.dut.MAX_WIDTH
 adder_tree_tb.dut.NUM_INPUTS
+adder_tree_tb.dut.INPUT_WIDTH
+adder_tree_tb.dut.OUTPUT_WIDTH
 @28
+adder_tree_tb.dut.ROUND_CONVERGENT
 adder_tree_tb.dut.clk
-@420
-adder_tree_tb.dut.\pipe[0][18:0]
-adder_tree_tb.dut.\pipe[1][18:0]
-adder_tree_tb.dut.\pipe[2][18:0]
-adder_tree_tb.dut.\pipe[3][18:0]
-adder_tree_tb.dut.\pipe[4][18:0]
-adder_tree_tb.dut.\pipe[5][18:0]
-adder_tree_tb.dut.\pipe[6][18:0]
-adder_tree_tb.dut.\pipe[7][18:0]
-adder_tree_tb.dut.\pipe[8][18:0]
-adder_tree_tb.dut.\pipe[9][18:0]
-adder_tree_tb.dut.\pipe[10][18:0]
-adder_tree_tb.dut.\pipe[11][18:0]
-adder_tree_tb.dut.\pipe[12][18:0]
-adder_tree_tb.dut.\pipe[13][18:0]
-adder_tree_tb.dut.\pipe[14][18:0]
-adder_tree_tb.dut.\pipe[15][18:0]
-adder_tree_tb.dut.\pipe[16][18:0]
-adder_tree_tb.dut.\pipe[17][18:0]
-adder_tree_tb.dut.\pipe[18][18:0]
-adder_tree_tb.dut.\pipe[19][18:0]
-adder_tree_tb.dut.\pipe[20][18:0]
-adder_tree_tb.dut.\pipe[21][18:0]
-adder_tree_tb.dut.\pipe[22][18:0]
-adder_tree_tb.dut.\pipe[23][18:0]
-adder_tree_tb.dut.\pipe[24][18:0]
-adder_tree_tb.dut.\pipe[25][18:0]
-adder_tree_tb.dut.\pipe[26][18:0]
-adder_tree_tb.dut.\pipe[27][18:0]
-adder_tree_tb.dut.\pipe[28][18:0]
-adder_tree_tb.dut.\pipe[29][18:0]
-adder_tree_tb.dut.\pipe[30][18:0]
-adder_tree_tb.dut.\pipe[31][18:0]
-@22
-adder_tree_tb.dut.data_in[127:0]
-@420
-adder_tree_tb.dut.data_out[18:0]
-@28
 adder_tree_tb.dut.rst
 adder_tree_tb.dut.valid_in
-adder_tree_tb.dut.valid_out
-@800022
-adder_tree_tb.dut.valid_pipe[3:0]
+@22
+adder_tree_tb.dut.data_in[159:0]
+adder_tree_tb.dut.valid_pipe[4:0]
+@420
+adder_tree_tb.dut.\pipe[0][19:0]
+adder_tree_tb.dut.\pipe[1][19:0]
+adder_tree_tb.dut.\pipe[2][19:0]
+adder_tree_tb.dut.\pipe[3][19:0]
+adder_tree_tb.dut.\pipe[4][19:0]
+adder_tree_tb.dut.\pipe[5][19:0]
+adder_tree_tb.dut.\pipe[6][19:0]
+adder_tree_tb.dut.\pipe[7][19:0]
+adder_tree_tb.dut.\pipe[8][19:0]
+adder_tree_tb.dut.\pipe[9][19:0]
+adder_tree_tb.dut.\pipe[10][19:0]
+adder_tree_tb.dut.\pipe[11][19:0]
+adder_tree_tb.dut.\pipe[12][19:0]
+adder_tree_tb.dut.\pipe[13][19:0]
+adder_tree_tb.dut.\pipe[14][19:0]
+adder_tree_tb.dut.\pipe[15][19:0]
+adder_tree_tb.dut.\pipe[16][19:0]
+adder_tree_tb.dut.\pipe[17][19:0]
+adder_tree_tb.dut.\pipe[18][19:0]
+adder_tree_tb.dut.\pipe[19][19:0]
+adder_tree_tb.dut.\pipe[20][19:0]
+adder_tree_tb.dut.\pipe[21][19:0]
+adder_tree_tb.dut.\pipe[22][19:0]
+adder_tree_tb.dut.\pipe[23][19:0]
+adder_tree_tb.dut.\pipe[24][19:0]
+adder_tree_tb.dut.\pipe[25][19:0]
+adder_tree_tb.dut.\pipe[26][19:0]
+adder_tree_tb.dut.\pipe[27][19:0]
+adder_tree_tb.dut.\pipe[28][19:0]
+adder_tree_tb.dut.\pipe[29][19:0]
+adder_tree_tb.dut.\pipe[30][19:0]
+adder_tree_tb.dut.\pipe[31][19:0]
+adder_tree_tb.dut.\pipe[32][19:0]
+adder_tree_tb.dut.\pipe[33][19:0]
+adder_tree_tb.dut.\pipe[34][19:0]
+adder_tree_tb.dut.\pipe[35][19:0]
+adder_tree_tb.dut.\pipe[36][19:0]
+adder_tree_tb.dut.\pipe[37][19:0]
+adder_tree_tb.dut.\pipe[38][19:0]
+adder_tree_tb.dut.\pipe[39][19:0]
+adder_tree_tb.dut.\pipe[40][19:0]
+adder_tree_tb.dut.\pipe[41][19:0]
+adder_tree_tb.dut.\pipe[42][19:0]
+adder_tree_tb.dut.\pipe[43][19:0]
+adder_tree_tb.dut.\pipe[44][19:0]
+adder_tree_tb.dut.\pipe[45][19:0]
+adder_tree_tb.dut.\pipe[46][19:0]
+adder_tree_tb.dut.\pipe[47][19:0]
+adder_tree_tb.dut.\pipe[48][19:0]
+adder_tree_tb.dut.\pipe[49][19:0]
 @28
-(0)adder_tree_tb.dut.valid_pipe[3:0]
-(1)adder_tree_tb.dut.valid_pipe[3:0]
-(2)adder_tree_tb.dut.valid_pipe[3:0]
-(3)adder_tree_tb.dut.valid_pipe[3:0]
-@1001200
--group_end
+adder_tree_tb.dut.valid_rs
+@420
+adder_tree_tb.dut.data_rs[15:0]
+@28
+adder_tree_tb.dut.valid_out
+@420
+adder_tree_tb.dut.data_out[15:0]
 [pattern_trace] 1
 [pattern_trace] 0
