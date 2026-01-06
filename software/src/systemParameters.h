@@ -42,6 +42,7 @@ extern struct systemParameters {
     int                 rfdcMMCMDivClkDivider;
     int                 rfdcMMCMMultiplier;
     int                 rfdcMMCMClk0Divider;
+    int                 rfdcMMCMClk1Divider;
     int                 buttonRotation;
     int                 afeTrim[4]; /* Per-channel trims in units of 0.25 dB */
     uint32_t            checksum;

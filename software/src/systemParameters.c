@@ -75,6 +75,7 @@ systemParametersSetDefaults(void)
     systemParametersDefault.rfdcMMCMDivClkDivider = ADC_CLK_MMCM_DIVCLK_DIVIDER;
     systemParametersDefault.rfdcMMCMMultiplier = ADC_CLK_MMCM_MULTIPLIER;
     systemParametersDefault.rfdcMMCMClk0Divider = ADC_CLK_MMCM_CLK0_DIVIDER;
+    systemParametersDefault.rfdcMMCMClk1Divider = ADC_CLK_MMCM_CLK1_DIVIDER;
     // position calc order:
     //   A = 3, B = 1, C = 2, D = 0
     systemParametersDefault.adcOrder = 123;
@@ -438,6 +439,13 @@ static struct conv {
         .parse = parseInt,
     },
     {
+        .name = "RFDC MMCM Clk1 Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMClk1Divider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
         .name = "X calibration (mm p.u.)",
         .offset = offsetof(struct systemParameters, xCalibration),
         .visited = false,
@@ -670,7 +678,8 @@ systemParametersSetTable(struct systemParameters *sysParams,
     }
     if ((sysParams->rfdcMMCMDivClkDivider < 1000)
      || (sysParams->rfdcMMCMMultiplier < 1000)
-     || (sysParams->rfdcMMCMClk0Divider < 1000)) {
+     || (sysParams->rfdcMMCMClk0Divider < 1000)
+     || (sysParams->rfdcMMCMClk1Divider < 1000)) {
         printf("Bad RF MMCM parameters (must be >= 1000)\n");
         return -1;
     }
