@@ -49,18 +49,20 @@ adder_tree #(
 ) dut (.*);
 
 generate
-	genvar r, c;
-	for (r = 0; r < DEPTH+1; r++) begin
-		for (c = 0; c < NUM_INPUTS; c++) begin
-			initial begin
-                // Wait to ensure $dumpfile is set by the main initial block
-                #0;
-                if ($test$plusargs("vcd")) begin
-                    $dumpvars(0, dut.pipe[r][c]);
-                end
-			end
-		end
-	end
+
+genvar r, c;
+for (r = 0; r < DEPTH+1; r++) begin
+    for (c = 0; c < NUM_INPUTS; c++) begin
+        initial begin
+            // Wait to ensure $dumpfile is set by the main initial block
+            #0;
+            if ($test$plusargs("vcd")) begin
+                $dumpvars(0, dut.pipe[r][c]);
+            end
+        end
+    end
+end
+
 endgenerate
 
 // Stimulus Process
