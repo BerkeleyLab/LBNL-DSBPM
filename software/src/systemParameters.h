@@ -6,7 +6,6 @@
 #define _SYSTEM_PARAMETERS_H_
 
 #include <stdint.h>
-#include <lwip/ip_addr.h>
 
 #define SYSTEM_PARAMETERS_NAME "sysParms.csv"
 
