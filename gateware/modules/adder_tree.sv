@@ -75,9 +75,8 @@ function automatic logic [OUTPUT_WIDTH-1:0] resize_data(
             resized_val = val_in[FULL_WIDTH-1:extra_bits];
         end
     end
-    // Sign Extension needed (Input is narrower than Output)
+    // Sign Extension
     else begin // extra_bits < 0
-        // Replicates the sign bit (MSB) to fill the upper bits
         resized_val = { {(-extra_bits){val_in[FULL_WIDTH-1]}}, val_in };
     end
 
