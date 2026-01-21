@@ -86,27 +86,25 @@ endgenerate
 genvar dsbpm;
 genvar channel;
 generate
-for dsbpm = 0 ; dsbpm < ADC_SETS_COUNT ; dsbpm = dsbpm + 1 begin
+for (dsbpm = 0 ; dsbpm < ADC_SETS_COUNT ; dsbpm = dsbpm + 1) begin
     for (channel = 0 ; channel < ADCS_PER_SET_COUNT ; channel = channel + 1) begin
 
-        always_comb begin
-            localparam OFFSET_REMAP = (SWAP_ADC_SETS == 1)?
-                ADCS_PER_SET_COUNT : 0;
+        localparam OFFSET_REMAP = (SWAP_ADC_SETS == 1)?
+            ADCS_PER_SET_COUNT : 0;
 
-            localparam int unsigned adc = dsbpm*ADCS_PER_SET_COUNT + channel;
+        localparam int unsigned adc = dsbpm*ADCS_PER_SET_COUNT + channel;
 
-            localparam int unsigned adcRev = (REVERSE_ADC_SET_ORDER == 1)?
-                dsbpm*ADCS_PER_SET_COUNT + (ADCS_PER_SET_COUNT-1 - channel) :
-                dsbpm*ADCS_PER_SET_COUNT + channel;
+        localparam int unsigned adcRev = (REVERSE_ADC_SET_ORDER == 1)?
+            dsbpm*ADCS_PER_SET_COUNT + (ADCS_PER_SET_COUNT-1 - channel) :
+            dsbpm*ADCS_PER_SET_COUNT + channel;
 
-            localparam int unsigned adcRemap = (adcRev + OFFSET_REMAP) % (ADC_SETS_COUNT*ADCS_PER_SET_COUNT);
+        localparam int unsigned adcRemap = (adcRev + OFFSET_REMAP) % (ADC_SETS_COUNT*ADCS_PER_SET_COUNT);
 
-            adcs_TVALID[adcRemap] = adcs_phy_TVALID[adc];
-            adcs_TDATA[adcRemap*ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH+:
-                                   ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH] =
-                adcs_phy_TDATA[adc*ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH+:
-                                      ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH];
-        end
+        assign adcs_TVALID[adcRemap] = adcs_phy_TVALID[adc];
+        assign adcs_TDATA[adcRemap*ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH+:
+                               ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH] =
+            adcs_phy_TDATA[adc*ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH+:
+                                  ADC_SAMPLES_PER_CHANNEL*IQ_ADC_SAMPLE_WIDTH];
     end
 end
 endgenerate
@@ -115,52 +113,26 @@ generate
 for (dsbpm = 0 ; dsbpm < DAC_SETS_COUNT ; dsbpm = dsbpm + 1) begin
     for (channel = 0 ; channel < DACS_PER_SET_COUNT ; channel = channel + 1) begin
 
-        always_comb begin
-            localparam OFFSET_REMAP = (SWAP_DAC_SETS == 1)?
-                DACS_PER_SET_COUNT : 0;
+        localparam OFFSET_REMAP = (SWAP_DAC_SETS == 1)?
+            DACS_PER_SET_COUNT : 0;
 
-            localparam int unsigned dac = dsbpm*DACS_PER_SET_COUNT + channel;
+        localparam int unsigned dac = dsbpm*DACS_PER_SET_COUNT + channel;
 
-            localparam int unsigned dacRev = (REVERSE_DAC_SET_ORDER == 1)?
-                dsbpm*DACS_PER_SET_COUNT + (DACS_PER_SET_COUNT-1 - channel) :
-                dsbpm*DACS_PER_SET_COUNT + channel;
+        localparam int unsigned dacRev = (REVERSE_DAC_SET_ORDER == 1)?
+            dsbpm*DACS_PER_SET_COUNT + (DACS_PER_SET_COUNT-1 - channel) :
+            dsbpm*DACS_PER_SET_COUNT + channel;
 
-            localparam int unsigned dacRemap = (dacRev + OFFSET_REMAP) % (DAC_SETS_COUNT*DACS_PER_SET_COUNT);
+        localparam int unsigned dacRemap = (dacRev + OFFSET_REMAP) % (DAC_SETS_COUNT*DACS_PER_SET_COUNT);
 
-            dacs_TREADY[dacRemap] = dacs_phy_TREADY[dac];
-            dacs_phy_TVALID[dac] = dacs_TVALID[dacRemap];
-            dacs_phy_TDATA[dac*DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH+:
-                                  DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH] =
-                dacs_TDATA[dacRemap*DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH+:
-                                       DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH];
-        end
+        assign dacs_TREADY[dacRemap] = dacs_phy_TREADY[dac];
+        assign dacs_phy_TVALID[dac] = dacs_TVALID[dacRemap];
+        assign dacs_phy_TDATA[dac*DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH+:
+                              DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH] =
+            dacs_TDATA[dacRemap*DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH+:
+                                   DAC_SAMPLES_PER_CHANNEL*IQ_DAC_SAMPLE_WIDTH];
     end
 end
 endgenerate
-
-//////////////////////////////////////////////////////////////////////////////
-// Remap ADC data to 2-D system verilog array
-
-logic signed [INPUTS-1:0][INPUT_WIDTH-1:0] data_in;
-logic valid_out;
-
-//////////////////////////////////////////////////////////////////////////////
-// Perform decimation on Fast ADC data
-module adder_tree #(
-    .INPUTS(),
-    .INPUT_WIDTH(ADC_SAMPLE_WIDTH),
-    .OUTPUT_WIDTH(ADC_SAMPLE_WIDTH)
-    ) (
-    .clk(clk_adc_fast),
-    .rst(1'b0),
-
-    input  wire logic       valid_in,
-    input  wire logic signed [INPUTS-1:0][INPUT_WIDTH-1:0]
-                            data_in,
-
-    output wire logic signed [OUTPUT_WIDTH-1:0]
-                            data_out,
-    output wire logic       valid_out);
 
 endmodule
 
