@@ -12,13 +12,7 @@ module common_dsbpm_top #(
     parameter AXI_DAC_SAMPLE_WIDTH      = ((DAC_WIDTH + 7) / 8) * 8,
     parameter IQ_DATA                   = "TRUE",
     parameter SYSCLK_RATE               = 99999001,  // From block design
-    parameter ADC_CHANNEL_COUNT         = 8,
-    parameter ADC_SAMPLES_PER_CLOCK     = 10,
-    parameter ADC_WORDS_PER_CHANNEL     = 2,
     parameter ADC_CHANNEL_DEBUG         = "false",
-    parameter DAC_CHANNEL_COUNT         = 8,
-    parameter DAC_SAMPLES_PER_CLOCK     = 1,
-    parameter DAC_WORDS_PER_CHANNEL     = 2,
     parameter LO_WIDTH                  = 18,
     parameter MAG_WIDTH                 = 26,
     parameter PRODUCT_WIDTH             = AXI_ADC_SAMPLE_WIDTH + LO_WIDTH - 1,
@@ -158,13 +152,6 @@ assign GPIO_IN[GPIO_IDX_GITHASH] = GIT_REV_32BIT;
 wire sysClk, evrClk, adcClk, dacClk;
 wire adcClkLocked, dacClkLocked;
 wire sysReset_n;
-// ADC fast/slow clocks
-wire adcFastClk, adcSlowClk;
-wire adcFastClkLocked, adcSlowClkLocked;
-
-// Everything uses the slow clock, which is decimated by 40x
-assign adcClk = adcSlowClk;
-assign adcClkLocked = adcSlowClkLocked;
 
 // Get USER MGT reference clock
 // Configure ODIV2 to run at O/2.
@@ -610,14 +597,8 @@ assign GPIO_LEDS[2] = GPIO_IN[GPIO_IDX_SECONDS_SINCE_BOOT][0];
 
 /////////////////////////////////////////////////////////////////////////////
 // Acquisition common
-localparam ADC_SAMPLE_WIDTH = AXI_ADC_SAMPLE_WIDTH;
+localparam DAC_SAMPLE_WIDTH = AXI_DAC_SAMPLE_WIDTH;
 localparam ACQ_ADC_SAMPLE_WIDTH = ACQ_WIDTH;
-
-// localparam DAC_SAMPLE_WIDTH = CFG_DAC_AXI_WORDS_PER_SAMPLE * AXI_DAC_SAMPLE_WIDTH;
-
-// I and Q interleaved
-// localparam AXIS_ADC_WORDS_PER_SAMPLE = (IQ_DATA == "TRUE")? 2 : 1;
-// localparam AXIS_ADC_SAMPLE_WIDTH = AXIS_ADC_WORDS_PER_SAMPLE * ADC_SAMPLE_WIDTH;
 
 // FIFO sizes
 localparam ADC_FIFO_CAPACITY = 2048;
@@ -1207,18 +1188,18 @@ endgenerate
 //////////////////////////////////////////////////////////////////////////////
 // Fast data subsystem
 //
-localparam FAST_ADC_SAMPLE_WIDTH = ADC_SAMPLE_WIDTH *
+localparam FAST_ADC_SAMPLE_WIDTH = AXI_ADC_SAMPLE_WIDTH *
                                    CFG_ADC_AXI_SAMPLES_PER_CLOCK;
 localparam FAST_IQ_ADC_SAMPLE_WIDTH = FAST_ADC_SAMPLE_WIDTH *
                                       CFG_ADC_AXI_SAMPLES_PER_CHANNEL;
-localparam IQ_ADC_SAMPLE_WIDTH = ADC_SAMPLE_WIDTH *
+localparam IQ_ADC_SAMPLE_WIDTH = AXI_ADC_SAMPLE_WIDTH *
                                  CFG_ADC_AXI_SAMPLES_PER_CHANNEL;
 
-localparam FAST_DAC_SAMPLE_WIDTH = DAC_SAMPLE_WIDTH *
+localparam FAST_DAC_SAMPLE_WIDTH = AXI_DAC_SAMPLE_WIDTH *
                                    CFG_DAC_AXI_SAMPLES_PER_CLOCK;
 localparam FAST_IQ_DAC_SAMPLE_WIDTH = FAST_DAC_SAMPLE_WIDTH *
                                       CFG_DAC_AXI_SAMPLES_PER_CHANNEL;
-localparam IQ_DAC_SAMPLE_WIDTH = DAC_SAMPLE_WIDTH *
+localparam IQ_DAC_SAMPLE_WIDTH = AXI_DAC_SAMPLE_WIDTH *
                                  CFG_DAC_AXI_SAMPLES_PER_CHANNEL;
 
 wire [(CFG_ADC_CHANNEL_COUNT*FAST_IQ_ADC_SAMPLE_WIDTH)-1:0] adcs_phy_TDATA;
@@ -1237,22 +1218,22 @@ fast_data_subsys #(
     .ADC_SETS_COUNT(CFG_DSBPM_COUNT),
     .ADCS_PER_SET_COUNT(CFG_ADC_PER_BPM_COUNT),
     .ADC_CHANNEL_COUNT(CFG_ADC_CHANNEL_COUNT),
-    .ADC_SAMPLE_WIDTH(ADC_SAMPLE_WIDTH),
+    .ADC_SAMPLE_WIDTH(AXI_ADC_SAMPLE_WIDTH),
     .ADC_SAMPLES_PER_CHANNEL(CFG_ADC_AXI_SAMPLES_PER_CHANNEL),
     .ADC_SAMPLES_PER_CLOCK(CFG_ADC_AXI_SAMPLES_PER_CLOCK),
     .DAC_SETS_COUNT(CFG_DSBPM_COUNT),
     .DACS_PER_SET_COUNT(CFG_DAC_PER_BPM_COUNT),
     .DAC_CHANNEL_COUNT(CFG_DAC_CHANNEL_COUNT),
-    .DAC_SAMPLE_WIDTH(DAC_SAMPLE_WIDTH),
+    .DAC_SAMPLE_WIDTH(AXI_DAC_SAMPLE_WIDTH),
     .DAC_SAMPLES_PER_CLOCK(CFG_DAC_AXI_SAMPLES_PER_CLOCK),
     .DAC_SAMPLES_PER_CHANNEL(CFG_DAC_AXI_SAMPLES_PER_CHANNEL),
-    .SWAP_ADC_SETS(SWAP_ADC_SETS),
-    .REVERSE_ADC_SET_ORDER(REVERSE_ADC_SET_ORDER),
-    .SWAP_DAC_SETS(SWAP_DAC_SETS),
-    .REVERSE_DAC_SET_ORDER(REVERSE_DAC_SET_ORDER))
+    .SWAP_ADC_SETS(CFG_SWAP_ADC_SETS),
+    .REVERSE_ADC_SET_ORDER(CFG_REVERSE_ADC_SET_ORDER),
+    .SWAP_DAC_SETS(CFG_SWAP_DAC_SETS),
+    .REVERSE_DAC_SET_ORDER(CFG_REVERSE_DAC_SET_ORDER))
   fast_data_subsys (
-    .clk_adc_fast(clk_adc_fast),
-    .clk_adc_slow(clk_adc_slow),
+    .clk_adc_fast(adcClk),
+    .clk_adc_slow(adcClk),
 
     .adcs_phy_TDATA(adcs_phy_TDATA),
     .adcs_phy_TVALID(adcs_phy_TVALID),
@@ -1331,10 +1312,8 @@ system
     .evrTimestamp(evrTimestamp),
 
     .FPGA_REFCLK_OUT_C(FPGA_REFCLK_OUT_C),
-    .adcFastClk(adcFastClk),
-    .adcFastClkLocked(adcFastClkLocked),
-    .adcSlowClk(adcSlowClk),
-    .adcSlowClkLocked(adcSlowClkLocked),
+    .adcClk(adcClk),
+    .adcClkLocked(adcClkLocked),
     .clk_adc0_0(rfdc_adc0_clk),
 
     // ADC tile 225 distributes clock to all others
@@ -1938,7 +1917,7 @@ if (IQ_DATA != "TRUE") begin
 end
 endgenerate
 
-localparam ADC_SAMPLES_PER_DSP = CFG_ADC_CHANNEL_COUNT * CFG_ADC_AXI_SAMPLES_PER_CHANNEL;
+localparam ADC_SAMPLES_PER_DSP = CFG_ADC_CHANNEL_COUNT;
 localparam DAC_SIGNAL_OFFSET_PER_DSP = CFG_DAC_CHANNEL_COUNT / CFG_DSBPM_COUNT;
 
 generate
@@ -1967,25 +1946,25 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_cha
         .sysReadout(GPIO_IN[GPIO_IDX_ADC_PROCESSING + dsbpm*GPIO_IDX_PER_DSBPM]),
 
         .adcClk(adcClk),
-        .adcValidIn(adcs_TVALID[dsbpm*8]),
-        .adc0In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
-        .adc1In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
-        .adc2In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
-        .adc3In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
-        .adc0QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-        .adc1QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-        .adc2QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-        .adc3QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        .adcValidIn(adcs_TVALID[dsbpm*CFG_ADC_PER_BPM_COUNT]),
+        .adc0In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I0
+        .adc1In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I1
+        .adc2In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I2
+        .adc3In(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I3
+        .adc0QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q0
+        .adc1QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q1
+        .adc2QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q2
+        .adc3QIn(adcs_TDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q3
 
         .adcValidOut(adcsProcTVALID),
-        .adc0Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I0
-        .adc1Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I1
-        .adc2Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I2
-        .adc3Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]),  // I3
-        .adc0QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-        .adc1QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-        .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-        .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        .adc0Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I0
+        .adc1Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I1
+        .adc2Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I2
+        .adc3Out(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]),  // I3
+        .adc0QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q0
+        .adc1QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q1
+        .adc2QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q2
+        .adc3QOut(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q3
 
         .adcUseThisSample(adcUseThisSample[dsbpm]),
         .adcExceedsThreshold(adcExceedsThreshold[dsbpm]));
@@ -2082,14 +2061,14 @@ for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : prelim_cha
         .sysTimestamp(sysTimestamp),
 
         .adcClk(adcClk),
-        .adc0(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I0
-        .adc1(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I1
-        .adc2(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I2
-        .adc3(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // I3
-        .adcQ0(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q0
-        .adcQ1(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q1
-        .adcQ2(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q2
-        .adcQ3(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*ADC_SAMPLE_WIDTH+:ADC_SAMPLE_WIDTH]), // Q3
+        .adc0(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 0)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // I0
+        .adc1(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 2)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // I1
+        .adc2(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 4)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // I2
+        .adc3(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 6)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // I3
+        .adcQ0(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 1)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q0
+        .adcQ1(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 3)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q1
+        .adcQ2(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 5)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q2
+        .adcQ3(adcsProcTDATA[(dsbpm*ADC_SAMPLES_PER_DSP + 7)*AXI_ADC_SAMPLE_WIDTH+:AXI_ADC_SAMPLE_WIDTH]), // Q3
         // All ADC data clocked with adcClk
         .adc0Out(prelimProcADC0[dsbpm]),
         .adc1Out(prelimProcADC1[dsbpm]),
@@ -2318,12 +2297,13 @@ rmsCalc rmsCalc(.clk(sysClk),
 //
 
 // each row: I and Q samples
-localparam DAC_ADDRESS_WIDTH = $clog2(CFG_ADC_WORDS_PER_SAMPLE*CFG_PT_GEN_ROW_CAPACITY);
+localparam AXI_DAC_ADDRESS_WIDTH = $clog2(CFG_ADC_AXI_SAMPLES_PER_CHANNEL*CFG_PT_GEN_ROW_CAPACITY);
+localparam AXIS_DAC_DATA_WIDTH = CFG_DAC_CHANNEL_COUNT*IQ_DAC_SAMPLE_WIDTH;
 
 genericDACStreamer #(
-  .AXIS_DATA_WIDTH(DAC_SAMPLE_WIDTH),
+  .AXIS_DATA_WIDTH(AXIS_DAC_DATA_WIDTH),
   .DAC_DATA_WIDTH(AXI_DAC_SAMPLE_WIDTH),
-  .DAC_ADDRESS_WIDTH(DAC_ADDRESS_WIDTH)
+  .DAC_ADDRESS_WIDTH(AXI_DAC_ADDRESS_WIDTH)
 ) genericDACStreamer (
     .sysClk(sysClk),
     .sysGpioData(GPIO_OUT),
@@ -2334,7 +2314,7 @@ genericDACStreamer #(
     .evrHbMarker(evrHeartbeat2),
 
     .axis_CLK(dacClk),
-    .axis_TDATA(dacs_TDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*DAC_SAMPLE_WIDTH+:DAC_SAMPLE_WIDTH]),
+    .axis_TDATA(dacs_TDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*AXI_DAC_SAMPLE_WIDTH+:AXI_DAC_SAMPLE_WIDTH]),
     .axis_TVALID(dacs_TVALID[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP]),
     .axis_TREADY(dacs_TREADY[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP])
 );
@@ -2594,11 +2574,11 @@ assign dac_probe[1]       = dacs_TREADY[4];
 assign dac_probe[2]       = dacs_TVALID[0];
 assign dac_probe[3]       = dacs_TVALID[4];
 
-assign dac_probe[32+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[0*DAC_SAMPLE_WIDTH+:AXI_DAC_SAMPLE_WIDTH];
-assign dac_probe[64+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[(0*DAC_SAMPLE_WIDTH+AXI_DAC_SAMPLE_WIDTH)+:AXI_DAC_SAMPLE_WIDTH];
+assign dac_probe[32+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[0*AXI_DAC_SAMPLE_WIDTH+:AXI_DAC_SAMPLE_WIDTH];
+assign dac_probe[64+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[(0*AXI_DAC_SAMPLE_WIDTH+AXI_DAC_SAMPLE_WIDTH)+:AXI_DAC_SAMPLE_WIDTH];
 
-assign dac_probe[96+:AXI_DAC_SAMPLE_WIDTH]  = dacs_TDATA[4*DAC_SAMPLE_WIDTH+:AXI_DAC_SAMPLE_WIDTH];
-assign dac_probe[128+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[(4*DAC_SAMPLE_WIDTH+AXI_DAC_SAMPLE_WIDTH)+:AXI_DAC_SAMPLE_WIDTH];
+assign dac_probe[96+:AXI_DAC_SAMPLE_WIDTH]  = dacs_TDATA[4*AXI_DAC_SAMPLE_WIDTH+:AXI_DAC_SAMPLE_WIDTH];
+assign dac_probe[128+:AXI_DAC_SAMPLE_WIDTH] = dacs_TDATA[(4*AXI_DAC_SAMPLE_WIDTH+AXI_DAC_SAMPLE_WIDTH)+:AXI_DAC_SAMPLE_WIDTH];
 `endif
 
 end // end if
