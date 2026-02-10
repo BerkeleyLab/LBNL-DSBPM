@@ -730,11 +730,21 @@ static int
 convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
         float *vp, float *vsp, float *ip)
 {
+    int vbus = vbuf;
+    if (vbus & 0x8000) {
+        vbus -= 0x10000;
+    }
+
     // 3.125mV / LSB
-    *vp = vbuf / 320.0;
+    *vp = vbus / 320.0;
+
+    int vshunt = vsbuf;
+    if (vshunt & 0x8000) {
+        vshunt -= 0x10000;
+    }
 
     // 5uV / LSB
-    *vsp = vsbuf / 200000.0;
+    *vsp = vshunt / 200000.0;
 
     // From the INA239 datasheet:
     // SHUNT_CAL = 819.2 x 10^6 x CURRENT_LSB x RSHUNT
