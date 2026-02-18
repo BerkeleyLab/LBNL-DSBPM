@@ -114,6 +114,15 @@ module common_dsbpm_top #(
     input       FMC_PMOD6_6,
     input       FMC_PMOD6_7,
 
+    output      FMC_PMOD5_0,
+    input       FMC_PMOD5_1,
+    output      FMC_PMOD5_2,
+    input       FMC_PMOD5_3,
+    output      FMC_PMOD5_4,
+    output      FMC_PMOD5_5,
+    output      FMC_PMOD5_6,
+    output      FMC_PMOD5_7,
+
     output      FMC_PMOD4_0,
     input       FMC_PMOD4_1,
     output      FMC_PMOD4_2,
@@ -2637,18 +2646,21 @@ genericSPI #(
     .SPI_SDO(spiRpbSDO)
 );
 
-assign FMC_PMOD4_5 = spiRpbCLK;
-assign FMC_PMOD4_0 = spiRpbCSB[0];
-assign FMC_PMOD4_4 = spiRpbSDI;
+assign FMC_PMOD4_0 = spiRpbCLK;
 assign spiRpbSDO = FMC_PMOD4_1;
+assign FMC_PMOD4_2 = spiRpbSDI;
+assign FMC_PMOD4_3 = spiRpbCSB[0];
 
-assign FMC_PMOD4_2 = 0;
-assign FMC_PMOD4_3 = 0;
+// Twisted PMOD pair
+assign FMC_PMOD4_4 = 0;
+assign FMC_PMOD4_5 = 0;
+assign FMC_PMOD4_6 = 0;
+assign FMC_PMOD4_7 = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 // RPB Fan Tach readings
-wire RPB_FAN1_TACH = FMC_PMOD4_6;
-wire RPB_FAN2_TACH = FMC_PMOD4_7;
+wire RPB_FAN1_TACH = FMC_PMOD5_1;
+wire RPB_FAN2_TACH = FMC_PMOD5_3;
 
 fanTach #(.CLK_FREQUENCY(SYSCLK_RATE),
           .FAN_COUNT(CFG_FAN_COUNT))
@@ -2658,6 +2670,17 @@ fanTach #(.CLK_FREQUENCY(SYSCLK_RATE),
     .GPIO_OUT(GPIO_OUT),
     .value(GPIO_IN[GPIO_IDX_RPB_FAN_TACHOMETERS]),
     .tachs_a({RPB_FAN2_TACH, RPB_FAN1_TACH}));
+
+//////////////////////////////////////////////////////////////////////////////
+// RPB Fan Control PWM
+assign FMC_PMOD5_0 = 1'b1;
+assign FMC_PMOD5_2 = 1'b1;
+
+// Twisted PMOD pair
+assign FMC_PMOD5_4 = 0;
+assign FMC_PMOD5_5 = 0;
+assign FMC_PMOD5_6 = 0;
+assign FMC_PMOD5_7 = 0;
 
 //
 // FOFB communication

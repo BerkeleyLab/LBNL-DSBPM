@@ -194,6 +194,7 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
     case DSBPM_PROTOCOL_CMD_HI_SYSMON2:
         if (commandArgCount != 0) return -1;
         replyArgCount = amiFetch(replyp->args);
+        replyArgCount += rpbFetch(replyp->args+replyArgCount);
         replyp->args[replyArgCount++] = (CFG_DSBPM_COUNT*AMI_NUM_PS_SENSORS << 16) |
                                                                   powerUpStatus;
         break;

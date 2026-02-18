@@ -114,7 +114,7 @@ static struct controller controllers[] = {
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
 static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
-#define INA239_AMPS_PER_VOLT            9 /* 1/Rshunt */
+static const float INA239_AMPS_PER_VOLT = 1.0/115e-3; /* 1/Rshunt */
 
 struct psInfo {
     int         deviceIndex;
@@ -730,11 +730,21 @@ static int
 convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
         float *vp, float *vsp, float *ip)
 {
+    int vbus = vbuf;
+    if (vbus & 0x8000) {
+        vbus -= 0x10000;
+    }
+
     // 3.125mV / LSB
-    *vp = vbuf / 320.0;
+    *vp = vbus / 320.0;
+
+    int vshunt = vsbuf;
+    if (vshunt & 0x8000) {
+        vshunt -= 0x10000;
+    }
 
     // 5uV / LSB
-    *vsp = vsbuf / 200000.0;
+    *vsp = vshunt / 200000.0;
 
     // From the INA239 datasheet:
     // SHUNT_CAL = 819.2 x 10^6 x CURRENT_LSB x RSHUNT
@@ -751,8 +761,7 @@ convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
 
     // 5uV per count
     curr *= 5;
-    curr *= INA239_AMPS_PER_VOLT;
-    *ip = curr / 1.0e6;
+    *ip = (curr * INA239_AMPS_PER_VOLT) / 1.0e6;
 
     return 0;
 }

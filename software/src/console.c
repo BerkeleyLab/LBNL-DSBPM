@@ -453,6 +453,13 @@ cmdRPBMON(int argc, char **argv)
 }
 
 static int
+cmdFanMON(int argc, char **argv)
+{
+    fanCtlInfoDisplay();
+    return 0;
+}
+
+static int
 cmdREG(int argc, char **argv)
 {
     char *endp;
@@ -617,6 +624,7 @@ static struct commandInfo commandTable[] = {
   { "values", cmdSYSMON,"Show system monitor values"         },
   { "amiValues", cmdAMIMON, "Show AMI monitor values"        },
   { "rpbValues", cmdRPBMON, "Show RPB monitor values"        },
+  { "fanValues", cmdFanMON, "Show Fan monitor values"        },
   { "xcvr",   eyescanCommand,"Perform transceiver eye scan"  },
 };
 static void
