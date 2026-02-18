@@ -68,7 +68,7 @@ static struct controller controller = {
 
 #define NUM_CONTROLLERS ARRAY_SIZE(controller)
 
-#define INA239_AMPS_PER_VOLT            56 /* 1/Rshunt */
+static const float INA239_AMPS_PER_VOLT = 1.0/18e-3; /* 1/Rshunt */
 
 struct psInfo {
     int         deviceIndex;
@@ -332,8 +332,7 @@ convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
 
     // 5uV per count
     curr *= 5;
-    curr *= INA239_AMPS_PER_VOLT;
-    *ip = curr / 1.0e6;
+    *ip = (curr * INA239_AMPS_PER_VOLT) / 1.0e6;
 
     return 0;
 }

@@ -114,7 +114,7 @@ static struct controller controllers[] = {
 static unsigned int amiAfeAttenuation[CFG_DSBPM_COUNT][CFG_ADC_PER_BPM_COUNT];
 static unsigned int amiPtmAttenuation[CFG_DSBPM_COUNT];
 
-#define INA239_AMPS_PER_VOLT            9 /* 1/Rshunt */
+static const float INA239_AMPS_PER_VOLT = 1.0/115e-3; /* 1/Rshunt */
 
 struct psInfo {
     int         deviceIndex;
@@ -761,8 +761,7 @@ convertVI(uint32_t vbuf, uint32_t vsbuf, uint32_t ibuf,
 
     // 5uV per count
     curr *= 5;
-    curr *= INA239_AMPS_PER_VOLT;
-    *ip = curr / 1.0e6;
+    *ip = (curr * INA239_AMPS_PER_VOLT) / 1.0e6;
 
     return 0;
 }
