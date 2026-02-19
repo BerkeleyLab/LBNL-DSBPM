@@ -158,7 +158,6 @@ main(void)
 
     /* Set up hardware */
     sysmonInit();
-    sysmon2Init();
     sfpChk();
     mgtClkIDTInit();
     eyescanInit();
@@ -179,6 +178,8 @@ main(void)
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
+    /* Needs to come after ami and rpb init routines */
+    sysmon2Init();
 
     /*
      * Show AFE sensors
