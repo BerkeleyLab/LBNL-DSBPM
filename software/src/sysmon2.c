@@ -7,14 +7,17 @@
 #include <stdint.h>
 #include "display.h"
 #include "sysmon2.h"
+#include "evr.h"
+#include "gpio.h"
 #include "ami.h"
 #include "rpb.h"
+#include "fanCtl.h"
 #include "util.h"
 
 void
 sysmon2Init(void)
 {
-    sysmonDisplay();
+    sysmon2Display();
 }
 
 /*
@@ -23,7 +26,6 @@ sysmon2Init(void)
 int
 sysmon2Fetch(uint32_t *args)
 {
-    int i;
     int aIndex = 0;
     evrTimestamp now;
 

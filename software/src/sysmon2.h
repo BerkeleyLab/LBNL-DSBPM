@@ -6,7 +6,7 @@
 
 void sysmon2Init(void);
 int sysmon2Fetch(uint32_t *args);
-int sysmon2Draw(void);
+void sysmon2Draw(int redrawAll, int page);
 void sysmon2Display(void);
 
 #endif  /* _SYSMON_H_ */
