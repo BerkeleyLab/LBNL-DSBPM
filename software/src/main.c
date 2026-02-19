@@ -28,6 +28,7 @@
 #include "st7789v.h"
 #include "sysref.h"
 #include "sysmon.h"
+#include "sysmon2.h"
 #include "systemParameters.h"
 #include "tftp.h"
 #include "util.h"
@@ -157,6 +158,7 @@ main(void)
 
     /* Set up hardware */
     sysmonInit();
+    sysmon2Init();
     sfpChk();
     mgtClkIDTInit();
     eyescanInit();
@@ -181,14 +183,6 @@ main(void)
     /*
      * Show AFE sensors
      */
-    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm, 0);
-    }
-
-    rpbPSinfoDisplay(0);
-
-    /* Show Fans */
-    fanCtlInfoDisplay();
 
     /* Start network */
     lwip_init();

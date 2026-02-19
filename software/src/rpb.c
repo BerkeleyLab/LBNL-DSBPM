@@ -404,11 +404,6 @@ rpbFetch(uint32_t *args)
 {
     int sensor;
     int aIndex = 0;
-    evrTimestamp now;
-
-    evrCurrentTime(&now);
-    args[aIndex++] = now.secPastEpoch;
-    args[aIndex++] = now.fraction;
 
     for (sensor = 0 ; sensor < RPB_NUM_PS_SENSORS; sensor++) {
         args[aIndex++] = (psInfos[sensor].vshunt << 16) |
@@ -429,8 +424,6 @@ rpbPSinfoDisplay(int verbose)
 {
     unsigned int sensor = 0;
     int status = 0;
-
-    printf("RPB:\n");
 
     for (sensor = 0 ; sensor < RPB_NUM_PS_SENSORS; sensor++) {
         float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
