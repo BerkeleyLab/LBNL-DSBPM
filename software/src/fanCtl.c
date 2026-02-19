@@ -18,13 +18,34 @@ fanCtlFanSpeeds(unsigned int fanIdx)
     return GPIO_READ(GPIO_IDX_RPB_FAN_TACHOMETERS) & 0xFFFF;
 }
 
+int
+fanCtlFetch(uint32_t *args)
+{
+    int shift = 0, count = 0;
+    uint32_t v = 0;
+    unsigned int fan = 0;
+
+    for (fan = 0 ; fan < CFG_FAN_COUNT ; fan++) {
+        if (shift > 16) {
+            *args++ = v;
+            v = 0;
+            count++;
+            shift = 0;
+        }
+        v |= fanCtlFanSpeeds(fan) << shift;
+        shift += 16;
+    }
+
+    *args = v;
+
+    return count + 1;
+}
+
 void
 fanCtlInfoDisplay(void)
 {
     int rawSpeed = 0;
     unsigned int fanIdx = 0;
-
-    printf("Fan Speeds:\n");
 
     for (fanIdx = 0 ; fanIdx < CFG_FAN_COUNT; fanIdx++) {
         unsigned int v = 0;

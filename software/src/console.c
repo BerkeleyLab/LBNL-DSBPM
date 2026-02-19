@@ -422,11 +422,13 @@ cmdAMIMON(int argc, char **argv)
                 return 1;
         }
 
+        printf("BPM%u:\n", bpm);
         amiPSinfoDisplay(bpm, verbose);
         return 0;
     }
 
     for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
+        printf("BPM%u:\n", bpm);
         amiPSinfoDisplay(bpm, 0);
     }
 
@@ -444,10 +446,12 @@ cmdRPBMON(int argc, char **argv)
         if (*endp != '\0')
             return 1;
 
+        printf("RPB:\n");
         rpbPSinfoDisplay(verbose);
         return 0;
     }
 
+    printf("RPB:\n");
     rpbPSinfoDisplay(0);
     return 0;
 }
@@ -455,6 +459,7 @@ cmdRPBMON(int argc, char **argv)
 static int
 cmdFanMON(int argc, char **argv)
 {
+    printf("Fan Speeds:\n");
     fanCtlInfoDisplay();
     return 0;
 }

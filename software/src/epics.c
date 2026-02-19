@@ -17,6 +17,7 @@
 #include "rfclk.h"
 #include "softwareBuildDate.h"
 #include "sysmon.h"
+#include "sysmon2.h"
 #include "util.h"
 
 int
@@ -193,8 +194,7 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
 
     case DSBPM_PROTOCOL_CMD_HI_SYSMON2:
         if (commandArgCount != 0) return -1;
-        replyArgCount = amiFetch(replyp->args);
-        replyArgCount += rpbFetch(replyp->args+replyArgCount);
+        replyArgCount = sysmon2Fetch(replyp->args);
         replyp->args[replyArgCount++] = (CFG_DSBPM_COUNT*AMI_NUM_PS_SENSORS << 16) |
                                                                   powerUpStatus;
         break;

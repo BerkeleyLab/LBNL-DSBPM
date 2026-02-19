@@ -28,6 +28,7 @@
 #include "st7789v.h"
 #include "sysref.h"
 #include "sysmon.h"
+#include "sysmon2.h"
 #include "systemParameters.h"
 #include "tftp.h"
 #include "util.h"
@@ -177,18 +178,12 @@ main(void)
     rfADCrestart();
     rfDACrestart();
     rfDCsync();
+    /* Needs to come after ami and rpb init routines */
+    sysmon2Init();
 
     /*
      * Show AFE sensors
      */
-    for (bpm = 0; bpm < CFG_DSBPM_COUNT; bpm++) {
-        amiPSinfoDisplay(bpm, 0);
-    }
-
-    rpbPSinfoDisplay(0);
-
-    /* Show Fans */
-    fanCtlInfoDisplay();
 
     /* Start network */
     lwip_init();

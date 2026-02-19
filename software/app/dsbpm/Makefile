@@ -72,6 +72,7 @@ __SRC_FILES = \
 	rfdc.c \
 	rfclk.c \
 	sysmon.c \
+	sysmon2.c \
 	sysref.c \
 	systemParameters.c \
 	tftp.c \
@@ -117,6 +118,7 @@ __HDR_FILES = \
 	rfdc.h \
 	rfclk.h \
 	sysmon.h \
+	sysmon2.h \
 	sysref.h \
 	systemParameters.h \
 	tftp.h \

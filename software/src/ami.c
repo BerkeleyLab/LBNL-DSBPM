@@ -840,11 +840,6 @@ amiFetch(uint32_t *args)
 {
     int bpm, sensor;
     int aIndex = 0;
-    evrTimestamp now;
-
-    evrCurrentTime(&now);
-    args[aIndex++] = now.secPastEpoch;
-    args[aIndex++] = now.fraction;
 
     for (bpm = 0 ; bpm < CFG_DSBPM_COUNT; bpm++) {
         for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
@@ -871,8 +866,6 @@ amiPSinfoDisplay(unsigned int bpm, int verbose)
     if (bpm >= CFG_DSBPM_COUNT) {
         return;
     }
-
-    printf("BPM%u:\n", bpm);
 
     for (sensor = 0 ; sensor < AMI_NUM_PS_SENSORS; sensor++) {
         float v = 0.0, vs = 0.0, i = 0.0, t = 0.0;
