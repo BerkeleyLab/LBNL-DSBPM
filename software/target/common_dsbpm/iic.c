@@ -125,7 +125,6 @@ initController(struct controller *cp, int deviceId)
      * https://adaptivesupport.amd.com/s/article/59366?language=en_US
 	 */
 	XIicPs_SetSClk(&cp->Iic, 80000);
-
 }
 
 void
@@ -174,12 +173,12 @@ iicInit(void)
 static int
 iicReset(struct controller *cp)
 {
-    XIicPs_Reset(&cp->Iic);
-    microsecondSpin(10000);
-
     if (cp->controllerIndex >= CONTROLLER_COUNT) {
         return 0;
     }
+
+    XIicPs_Reset(&cp->Iic);
+    microsecondSpin(10000);
 
     initController(cp, deviceIds[cp->controllerIndex]);
     return 1;
