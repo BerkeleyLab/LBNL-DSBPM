@@ -172,6 +172,20 @@ iicInit(void)
 }
 
 static int
+iicReset(struct controller *cp)
+{
+    XIicPs_Reset(&cp->Iic);
+    microsecondSpin(10000);
+
+    if (cp->controllerIndex >= CONTROLLER_COUNT) {
+        return 0;
+    }
+
+    initController(cp, deviceIds[cp->controllerIndex]);
+    return 1;
+}
+
+static int
 iicSend(struct controller *cp, int address, const uint8_t *buf, int n)
 {
     int i = 0;
@@ -195,8 +209,8 @@ iicSend(struct controller *cp, int address, const uint8_t *buf, int n)
         if (debugFlags & DEBUGFLAG_IIC) {
             printf(" == reset ==");
         }
-        XIicPs_Reset(&cp->Iic);
-        microsecondSpin(10000);
+
+        iicReset(cp);
         if (XIicPs_BusIsBusy(&cp->Iic)) {
             printf("===== IIC %d reset failed ====\n", cp->controllerIndex);
             return 0;
