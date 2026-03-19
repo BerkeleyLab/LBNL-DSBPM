@@ -89,6 +89,7 @@ int iicWrite(unsigned int deviceIndex, const uint8_t *buf, int n);
 
 int eepromRead(int address, void *buf, int n);
 int eepromWrite(int address, const void *buf, int n);
+void eepromDisplay(uint8_t *buf, int n);
 
 int pmbusRead(unsigned int deviceIndex, unsigned int page, int reg);
 
