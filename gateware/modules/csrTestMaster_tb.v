@@ -12,31 +12,36 @@ integer cc;
 integer errors = 0;
 integer idx = 0;
 initial begin
-	if ($test$plusargs("vcd")) begin
-		$dumpfile("csrTestMaster.vcd");
-		$dumpvars(0, csrTestMaster_tb);
+    if ($test$plusargs("vcd")) begin
+        $dumpfile("csrTestMaster.vcd");
+        $dumpvars(0, csrTestMaster_tb);
 
         for (idx = 0; idx < NUMBER_OF_RW_TESTS; idx = idx + 1) begin
-		    $dumpvars(0, csrTestMaster_tb.expected_data_read_results[idx]);
-		    $dumpvars(0, csrTestMaster_tb.expected_data_write_results[idx]);
-		    $dumpvars(0, csrTestMaster_tb.expected_sel_read_results[idx]);
-		    $dumpvars(0, csrTestMaster_tb.expected_sel_write_results[idx]);
+            $dumpvars(0, csrTestMaster_tb.expected_data_read_results[idx]);
+            $dumpvars(0, csrTestMaster_tb.expected_data_write_results[idx]);
+            $dumpvars(0, csrTestMaster_tb.expected_sel_read_results[idx]);
+            $dumpvars(0, csrTestMaster_tb.expected_sel_write_results[idx]);
         end
 
         for (idx = 0; idx < CSR_STROBE_BUS_WIDTH; idx = idx + 1) begin
-		    $dumpvars(0, csrTestMaster_tb.data_dev_to_csr[idx]);
+            $dumpvars(0, csrTestMaster_tb.data_dev_to_csr[idx]);
         end
 
-	end
+    end
 
-	clk = 0;
-	for (cc = 0; cc < 1000; cc = cc+1) begin
-		clk = 0; #5;
-		clk = 1; #5;
-	end
+    clk = 0;
+    for (cc = 0; cc < 1000; cc = cc+1) begin
+        clk = 0; #5;
+        clk = 1; #5;
+    end
 
-    $display("%s",errors==0?"# PASS":"# FAIL");
-    $finish();
+    if (errors==0) begin
+        $display("# PASS");
+        $finish(0);
+    end else begin
+        $display("# FAIL");
+        $stop(0);
+    end
 end
 
 csrTestMaster # (

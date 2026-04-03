@@ -117,6 +117,56 @@ tryRequestDHCPIPv4Address(struct netif *netif)
 #endif
 }
 
+static const int EEPROM_MAC_ADDR_START = 0x23;
+static const int MAC_ADDR_SIZE = 6;
+
+static int
+validateMACAddress(uint8_t *buf, int size)
+{
+    int ones = 0;
+    int zeros = 0;
+
+    if (size < MAC_ADDR_SIZE) {
+        return -1;
+    }
+
+    for (int i = 0; i < MAC_ADDR_SIZE; i++) {
+        if (buf[i] == 0) {
+            zeros++;
+        }
+
+        if (buf[i] == 255) {
+            ones++;
+        }
+    }
+
+    if (zeros == 6 || ones == 6) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+tryRetrieveMACAddress(uint8_t *buf, int size)
+{
+    if (size < MAC_ADDR_SIZE) {
+        return -1;
+    }
+
+    int ret = eepromRead(EEPROM_MAC_ADDR_START, buf, MAC_ADDR_SIZE);
+
+    if (!ret) {
+        return -1;
+    }
+
+    if (validateMACAddress(buf, MAC_ADDR_SIZE) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 int
 main(void)
 {
@@ -148,13 +198,24 @@ main(void)
     /* Readback configurations from filesystem, if available */
     filesystemReadbacks();
 
+    /* Try to retrieve MAC from EEPROM */
+    uint8_t eepromMAC[MAC_ADDR_SIZE];
+    int isMACInvalid = tryRetrieveMACAddress(eepromMAC, MAC_ADDR_SIZE);
+
+    if (isMACInvalid == 0) {
+        printf("EEPROM MAC:\n");
+        eepromDisplay(eepromMAC, MAC_ADDR_SIZE);
+    }
+
     /*
      * Set default IPv4 configs based on system parameters file and
      * DHCP
      */
-    setDefaultIPv4Address(&currentNetConfig,
+    setDefaultNetAddress(&currentNetConfig,
             &systemParameters.netConfig,
-            &netDefault, isRecovery);
+            &netDefault, isRecovery,
+            eepromMAC, MAC_ADDR_SIZE,
+            (isMACInvalid == 0));
 
     /* Set up hardware */
     sysmonInit();
@@ -167,6 +228,7 @@ main(void)
     rfClkPreInit();
     mmcmInit();
     rfClkInit();
+    mmcmCheckLock();
     sysrefInit(0);
     sysrefInit(1);
     sysrefShow(0);

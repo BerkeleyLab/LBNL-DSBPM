@@ -712,9 +712,10 @@ systemParametersStashEEPROM(void)
 }
 
 void
-setDefaultIPv4Address(struct sysNetConfig *netConfig,
+setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
-        struct sysNetConfig *defaultNetConfig, int isRecovery)
+        struct sysNetConfig *defaultNetConfig, int isRecovery,
+        uint8_t *eepromMAC, int size, int isMACValid)
 {
     if (isRecovery) {
         netConfig->ipv4 = defaultNetConfig->ipv4;
@@ -736,8 +737,13 @@ setDefaultIPv4Address(struct sysNetConfig *netConfig,
 #else
         netConfig->ipv4 = sysParamsNetConfig->ipv4;
 #endif
-        memcpy (netConfig->ethernetMAC, sysParamsNetConfig->ethernetMAC,
-                sizeof (netConfig->ethernetMAC));
+        if (isMACValid) {
+            memcpy (netConfig->ethernetMAC, eepromMAC, size);
+        }
+        else {
+            memcpy (netConfig->ethernetMAC, sysParamsNetConfig->ethernetMAC,
+                    sizeof (netConfig->ethernetMAC));
+        }
     }
 }
 

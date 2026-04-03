@@ -58,9 +58,10 @@ int   parseIP(const char *str, void *val);
 char *formatMAC(const void *val);
 int   parseMAC(const char *str, void *val);
 
-void setDefaultIPv4Address(struct sysNetConfig *netConfig,
+void setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
-        struct sysNetConfig *defaultNetConfig, int isRecovery);
+        struct sysNetConfig *defaultNetConfig, int isRecovery,
+        uint8_t *eepromMAC, int size, int isMACValid);
 void showNetworkConfiguration(const struct sysNetParms *ipv4);
 void systemParametersShowUserMGTrefClkOffsetPPM(void);
 

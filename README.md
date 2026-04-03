@@ -109,7 +109,7 @@ Button rotation (0 or 45),45
 AFE attenuator trims (dB),0 0 0 0
 ```
 
-IMPORTANT NOTE: The board will first try to request an IP via DHCP, if it's
+**IMPORTANT NOTE**: The board will first try to request an IP via DHCP, if it's
 compiled with LWIP_DHCP enabled and the parameter `Use DHCP` is set to `1`.
 If that fails, then it will fallback to IP address `192.168.1.10/24`.
 
@@ -119,6 +119,25 @@ and `IP Gateway` from the `sysParms.csv` configuration file.
 
 If `sysParms.csv` file corrupted, the default IP address 192.168.1.128/24 will
 be used.
+
+**IMPORTANT NOTE 2**: There are 2 common sets of values for the `RFDC MMCM` values.
+The first one is when using the CLk104 with the on-bord 160MHz oscillator.
+
+```
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,3375
+RFDC MMCM Clk0 Divider,10250
+```
+
+The second set of values are using when using CLK104a and bypassing the LMK04828B
+(setting it to distribution mode). This effectively limits the `FPGA REF` clock.
+For this reason the MMC vlaues need to be different:
+
+```
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,20250
+RFDC MMCM Clk0 Divider,10250
+```
 
 * RFTABLE.CSV
 

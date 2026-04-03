@@ -40,8 +40,14 @@ initial begin
     end
 
     wait(module_done);
-    $display("%s",errors==0?"# PASS":"# FAIL");
-    $finish();
+
+    if (errors==0) begin
+        $display("# PASS");
+        $finish(0);
+    end else begin
+        $display("# FAIL");
+        $stop(0);
+    end
 end
 
 integer cc;

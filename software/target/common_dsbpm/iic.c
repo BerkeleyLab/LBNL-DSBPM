@@ -100,6 +100,14 @@ static const struct rfClkInfo rfClkInfos[RFCLK_INFO_NUM_DEVICES] = {
     {.muxSelect = SPI_MUX_2594_B_DAC, .type = RFCLK_LMX2594},  // RFCLK_INFO_LMX2594_DAC_INDEX
 };
 
+enum i2c2spiVersion {
+    I2C2SPI_SC18IS602B,
+    I2C2SPI_SC18IS606,
+    I2C2SPI_UNKNOWN
+};
+
+static enum i2c2spiVersion i2c2spiVersion;
+
 /*
  * Initialize IIC controllers
  */
@@ -131,7 +139,8 @@ void
 iicInit(void)
 {
     int i;
-    uint8_t buf[7];
+    static const int BUF_MAX_SIZE = 16;
+    uint8_t buf[BUF_MAX_SIZE];
 
     for (i = 0 ; i < CONTROLLER_COUNT ; i++) {
         struct controller *cp = &controllers[i];
@@ -155,7 +164,43 @@ iicInit(void)
     buf[4] = 0x00; /* Port 1: No polarity inversion */
     buf[5] = ~0x02; /* Port 0: All inputs, except bit 1 */
     buf[6] = ~0x00; /* Port 1: All inputs */
-    if (!iicWrite(IIC_INDEX_TCA6416A_PORT, buf, 7)) warn("Configure TCA6416");
+    if (!iicWrite(IIC_INDEX_TCA6416A_PORT, buf, 7)) {
+        warn("Configure TCA6416");
+    }
+
+    /*
+     * Try to detect SC18IS602 version. SC18IS602B or SC18IS606.
+     * SC18IS606 has a version register on Function ID FEh.
+     * SC18IS602B does not.
+     */
+    i2c2spiVersion = I2C2SPI_SC18IS602B;
+
+    buf[0] = 0xFE; /* Function ID FEh */
+    if(!iicWrite(IIC_INDEX_I2C2SPI, buf, 1)) {
+        warn("Request I2C2SPI version");
+    }
+
+    microsecondSpin(10000);
+
+    static const int I2C2SPI_VERSION_LENGTH = 16;
+    if(!iicRead(IIC_INDEX_I2C2SPI, -1, buf, I2C2SPI_VERSION_LENGTH)) {
+        warn("Read I2C2SPI version. Assumming SC18IS602B");
+        i2c2spiVersion = I2C2SPI_SC18IS602B;
+        buf[0] = '\0';
+    }
+    else {
+        buf[BUF_MAX_SIZE-1] = '\0';
+        if (strncasecmp((const char *) buf, "SC18IS606", 9) == 0) {
+            i2c2spiVersion = I2C2SPI_SC18IS606;
+        }
+        else {
+            i2c2spiVersion = I2C2SPI_SC18IS602B;
+        }
+    }
+
+    printf ("I2C2SPI detected version: \"%s\"\n",
+            i2c2spiVersion == I2C2SPI_SC18IS606? "SC18IS606" : "SC18IS602B");
+    printf ("I2C2SPI version buffer: \"%s\"\n", buf);
 
     /*
      * Configure SC18IS602 to:
@@ -406,6 +451,28 @@ eepromRead(int address, void *buf, int n)
     return 1;
 }
 
+void
+eepromDisplay(uint8_t *buf, int n)
+{
+    int i = 0;
+
+    for (i = 0; i < n; ++i) {
+        if ((i % 16) == 0) {
+            printf("    0x%04X:", i);
+        }
+        printf(" %02X", buf[i]);
+
+        if(((i+1) % 16) == 0) {
+            printf("\n");
+        }
+    }
+
+    // In case n is not a multiple of 16
+    if ((i % 16) != 0) {
+        printf("\n");
+    }
+}
+
 int
 eepromWrite(int address, const void *buf, int n)
 {
@@ -461,18 +528,24 @@ spiSend(unsigned int muxSelect, const uint8_t *buf, unsigned int n)
 {
     uint8_t iicBuf[20];
 
-    if ((muxSelect >= 4) || (n >= sizeof iicBuf)) return 0;
+    if ((muxSelect >= 4) || (n >= sizeof iicBuf)) {
+        return 0;
+    }
+
     iicBuf[0] = 0x8 >> muxSelect;
 
     // Depending on the CLk104 version, LMX ADC could be on
     // either GPIO3 or GPIO0, so select both to increase
     // compatibility
-    if (muxSelect == SPI_MUX_2594_A_ADC) {
-        iicBuf[0] |= 0x8 >> SPI_MUX_2594_A_ADC_NEW;
+    if (muxSelect == SPI_MUX_2594_A_ADC &&
+            i2c2spiVersion == I2C2SPI_SC18IS606) {
+        iicBuf[0] = 0x8 >> SPI_MUX_2594_A_ADC_NEW;
     }
 
     memcpy(&iicBuf[1], buf, n);
-    if (!iicWrite(IIC_INDEX_I2C2SPI, iicBuf, n + 1)) return 0;
+    if (!iicWrite(IIC_INDEX_I2C2SPI, iicBuf, n + 1)) {
+        return 0;
+    }
 
     microsecondSpin(10000);
     return 1;
@@ -487,7 +560,9 @@ spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
     /*
      * Don't exceed I2C/SPI adapter buffer limit
      */
-    if (n > 200) return 0;
+    if (n > 200) {
+        return 0;
+    }
 
     /*
      * Select the correct SDO MUX port for readout
@@ -497,7 +572,9 @@ spiTransfer(unsigned int muxSelect, uint8_t *buf, unsigned int n)
     /*
      * Transmit to and receive from SPI device
      */
-    if (!spiSend(muxSelect, buf, n)) return 0;
+    if (!spiSend(muxSelect, buf, n)) {
+        return 0;
+    }
 
     /*
      * Read buffered data from I2C/SPI adapter
@@ -521,7 +598,9 @@ lmk04828Bread(unsigned int muxSelect, int reg)
     // A7 - A0
     buf[1] = (reg & 0xFF);
     buf[2] = 0;
-    if (!spiTransfer(muxSelect, buf, 3)) return 0;
+    if (!spiTransfer(muxSelect, buf, 3)) {
+        return 0;
+    }
     return buf[2];
 }
 
@@ -533,7 +612,9 @@ lmk04828Bwrite(unsigned int muxSelect, uint32_t value)
     buf[0] = value >> 16;
     buf[1] = value >> 8;
     buf[2] = value;
-    if (!spiSend(muxSelect, buf, 3)) return 0;
+    if (!spiSend(muxSelect, buf, 3)) {
+        return 0;
+    }
     return 1;
 }
 
@@ -548,7 +629,9 @@ lmx2594read(unsigned int muxSelect, int reg)
     buf[0] = 0x80 | (reg & 0x7F);
     buf[1] = 0;
     buf[2] = 0;
-    if (!spiTransfer(muxSelect, buf, 3)) return 0;
+    if (!spiTransfer(muxSelect, buf, 3)) {
+        return 0;
+    }
     return (buf[1] << 8) | buf[2];
 }
 
@@ -560,7 +643,9 @@ lmx2594write(unsigned int muxSelect, uint32_t value)
     buf[0] = (value >> 16) & 0x7F;
     buf[1] = value >> 8;
     buf[2] = value;
-    if (!spiSend(muxSelect, buf, 3)) return 0;
+    if (!spiSend(muxSelect, buf, 3)) {
+        return 0;
+    }
     return 1;
 }
 
