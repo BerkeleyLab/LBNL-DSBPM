@@ -228,6 +228,7 @@ main(void)
     rfClkPreInit();
     mmcmInit();
     rfClkInit();
+    mmcmCheckLock();
     sysrefInit(0);
     sysrefInit(1);
     sysrefShow(0);

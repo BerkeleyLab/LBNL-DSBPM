@@ -7,6 +7,7 @@
 
 void mmcmInit(void);
 void mmcmShow(void);
+void mmcmCheckLock(void);
 void mmcmSetRFDCDivClkDivider(int divider);
 void mmcmSetRFDCClkMultiplier(int multiplier);
 void mmcmSetRFDCClk0Divider(int divider);

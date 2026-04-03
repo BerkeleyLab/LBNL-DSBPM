@@ -110,27 +110,46 @@ mmcmSetRFDCClk0Divider(int divider)
     WR(XPAR_RFADC_MMCM_BASEADDR, 0x208, (divFrac << 8) | divInt);
 }
 
+static int
+mmcmIsLocked(uint32_t timeout)
+{
+    uint32_t then = MICROSECONDS_SINCE_BOOT();
+
+    while (!RD(XPAR_RFADC_MMCM_BASEADDR, 0x04) & 0x1) {
+        if ((MICROSECONDS_SINCE_BOOT() - then) > timeout) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 void
 mmcmStartReconfig(void)
 {
-    uint32_t then;
+    int mmcmLocked = mmcmIsLocked(1000000);
+    if(!mmcmLocked) {
+        warn("Critical -- ADC clock MMCM unlocked");
+    }
 
-    then = MICROSECONDS_SINCE_BOOT();
-    while (!RD(XPAR_RFADC_MMCM_BASEADDR, 0x04) & 0x1) {
-        if ((MICROSECONDS_SINCE_BOOT() - then) > 1000000) {
-            warn("Critical -- ADC clock MMCM unlocked");
-            break;
-        }
-    }
-    then = MICROSECONDS_SINCE_BOOT();
     WR(XPAR_RFADC_MMCM_BASEADDR, 0x25C, 3);
-    while (!RD(XPAR_RFADC_MMCM_BASEADDR, 0x04) & 0x1) {
-        if ((MICROSECONDS_SINCE_BOOT() - then) > 10000000) {
-            warn("Critical -- ADC clock MMCM won't lock");
-            return;
-        }
+
+    mmcmLocked = mmcmIsLocked(1000000);
+    if(!mmcmLocked) {
+        printf("ADC clock MMCM not locked after reconfiguration. Try again\n");
     }
-    printf("ADC MMCM locked after %d uS.\n", MICROSECONDS_SINCE_BOOT() - then);
+}
+
+void
+mmcmCheckLock(void)
+{
+    int mmcmLocked = mmcmIsLocked(1000000);
+    if (!mmcmLocked) {
+        warn("Critical -- ADC clock MMCM won't lock");
+        return;
+    }
+
+    printf("ADC MMCM locked.\n");
 }
 
 static void
