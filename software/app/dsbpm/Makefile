@@ -44,6 +44,7 @@ __SRC_FILES = \
 	adcProcessing.c \
 	afe.c \
 	ami.c \
+	boardInfo.c \
 	rpb.c \
 	fanCtl.c \
 	autotrim.c \
@@ -88,6 +89,7 @@ __HDR_FILES = \
 	adcProcessing.h \
 	afe.h \
 	ami.h \
+	boardInfo.h \
 	rpb.h \
 	fanCtl.h \
 	autotrim.h \
