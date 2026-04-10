@@ -99,36 +99,36 @@ void
 boardInfoDisplay(void)
 {
     printf("Board info:\n");
-    printf("name: %.*s\n",
+    printf("    name: %.*s\n",
             (int) sizeof(boardInfo.name), (const char *) boardInfo.name);
-    printf("revision: %.*s\n",
+    printf("    revision: %.*s\n",
             (int) sizeof(boardInfo.rev), (const char *) boardInfo.rev);
-    printf("serial number: %.*s\n",
+    printf("    serial number: %.*s\n",
             (int) sizeof(boardInfo.sn), (const char *) boardInfo.sn);
-    printf("format version: %.*s\n",
+    printf("    format version: %.*s\n",
             (int) sizeof(boardInfo.formatVer), (const char *) boardInfo.formatVer);
-    printf("mac0: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+    printf("    mac0: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
             *boardInfo.mac0, *(boardInfo.mac0+1),
             *(boardInfo.mac0+2), *(boardInfo.mac0+3),
             *(boardInfo.mac0+4), *(boardInfo.mac0+5),
             *(boardInfo.mac0+6), *(boardInfo.mac0+7));
-    printf("mac1: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+    printf("    mac1: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
             *boardInfo.mac1, *(boardInfo.mac1+1),
             *(boardInfo.mac1+2), *(boardInfo.mac1+3),
             *(boardInfo.mac1+4), *(boardInfo.mac1+5),
             *(boardInfo.mac1+6), *(boardInfo.mac1+7));
-    printf("mac2: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+    printf("    mac2: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
             *boardInfo.mac2, *(boardInfo.mac2+1),
             *(boardInfo.mac2+2), *(boardInfo.mac2+3),
             *(boardInfo.mac2+4), *(boardInfo.mac2+5),
             *(boardInfo.mac2+6), *(boardInfo.mac2+7));
-    printf("mac3: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+    printf("    mac3: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
             *boardInfo.mac3, *(boardInfo.mac3+1),
             *(boardInfo.mac3+2), *(boardInfo.mac3+3),
             *(boardInfo.mac3+4), *(boardInfo.mac3+5),
             *(boardInfo.mac3+6), *(boardInfo.mac3+7));
-    printf("active: %c\n", (const char) boardInfo.active);
-    printf("config mode: %02X\n", *boardInfo.configMode);
+    printf("    active: %c\n", (const char) boardInfo.active);
+    printf("    config mode: %02X\n", *boardInfo.configMode);
 }
 
 void
