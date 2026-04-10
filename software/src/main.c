@@ -41,6 +41,7 @@
 #include "waveformRecorder.h"
 #include "cellComm.h"
 #include "fanCtl.h"
+#include "boardInfo.h"
 
 static void
 sfpString(const char *name, int offset)
@@ -117,7 +118,6 @@ tryRequestDHCPIPv4Address(struct netif *netif)
 #endif
 }
 
-static const int EEPROM_MAC_ADDR_START = 0x23;
 static const int MAC_ADDR_SIZE = 6;
 
 static int
@@ -141,26 +141,6 @@ validateMACAddress(uint8_t *buf, int size)
     }
 
     if (zeros == 6 || ones == 6) {
-        return -1;
-    }
-
-    return 0;
-}
-
-static int
-tryRetrieveMACAddress(uint8_t *buf, int size)
-{
-    if (size < MAC_ADDR_SIZE) {
-        return -1;
-    }
-
-    int ret = eepromRead(EEPROM_MAC_ADDR_START, buf, MAC_ADDR_SIZE);
-
-    if (!ret) {
-        return -1;
-    }
-
-    if (validateMACAddress(buf, MAC_ADDR_SIZE) != 0) {
         return -1;
     }
 
@@ -197,14 +177,16 @@ main(void)
     iicInit();
     /* Readback configurations from filesystem, if available */
     filesystemReadbacks();
+    /* Read board info */
+    boardInfoInit(1);
 
-    /* Try to retrieve MAC from EEPROM */
-    uint8_t eepromMAC[MAC_ADDR_SIZE];
-    int isMACInvalid = tryRetrieveMACAddress(eepromMAC, MAC_ADDR_SIZE);
+    uint8_t *eepromMAC = boardInfo.mac0;
+    size_t eepromMACSize = sizeof(boardInfo.mac0);
+    int isMACInvalid = validateMACAddress(eepromMAC, eepromMACSize);
 
     if (isMACInvalid == 0) {
         printf("EEPROM MAC:\n");
-        eepromDisplay(eepromMAC, MAC_ADDR_SIZE);
+        eepromDisplay(eepromMAC, eepromMACSize);
     }
 
     /*
@@ -214,7 +196,7 @@ main(void)
     setDefaultNetAddress(&currentNetConfig,
             &systemParameters.netConfig,
             &netDefault, isRecovery,
-            eepromMAC, MAC_ADDR_SIZE,
+            eepromMAC, eepromMACSize,
             (isMACInvalid == 0));
 
     /* Set up hardware */
