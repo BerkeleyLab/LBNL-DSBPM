@@ -155,10 +155,12 @@ boardInfoFetch(uint32_t *buf, enum boardInfoProp prop)
 {
     size_t size = infoChunks[prop].size;
     size_t offset = infoChunks[prop].offset;
+    size_t size_align4 = ((size + 3) / 4) * 4;
 
-    memcpy((char *)buf,
+    memset((char *) buf, 0, size_align4);
+    memcpy((char *) buf,
             (const char *)&boardInfo + offset,
             size);
 
-    return (size + 3)/4;
+    return size_align4 / 4;
 }
