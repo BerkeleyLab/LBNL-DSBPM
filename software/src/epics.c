@@ -220,27 +220,33 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         if (commandArgCount != 0) return -1;
         switch (idx) {
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_NAME:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_NAME);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_NAME);
             break;
 
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_REV:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_REV);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_REV);
             break;
 
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_SN:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_SN);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_SN);
             break;
 
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_MAC:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_MAC_0);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_MAC_0);
             break;
 
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_ACTIVE:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_ACTIVE);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_ACTIVE);
             break;
 
         case DSBPM_PROTOCOL_CMD_OCTET_IDX_CFG_MODE:
-            replyArgCount = boardInfoFetch(replyp->args, BOARD_INFO_CFG_MODE);
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_CFG_MODE);
             break;
 
         default: return -1;

@@ -39,10 +39,11 @@ struct infoChunks {
     size_t size;
     size_t offset;
     size_t memOffset;
+    char   *(*format)(const void *val, size_t size);
 };
 
 void boardInfoDisplay(void);
 void boardInfoInit(int verbose);
-int boardInfoFetch(uint32_t *buf, enum boardInfoProp prop);
+int boardInfoFetch(uint32_t *buf, size_t capacity, enum boardInfoProp prop);
 
 #endif

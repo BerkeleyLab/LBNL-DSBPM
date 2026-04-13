@@ -4,59 +4,79 @@
 #include "boardInfo.h"
 #include "util.h"
 #include "iic.h"
+#include "serdes.h"
 
 static uint8_t eepromBuf[128];
+static char cbuf[40];
+
+static char *
+formatCfgMode(const void *val, size_t size)
+{
+    (void) size;
+    snprintf(cbuf, sizeof(cbuf), "%02X", *(const uint8_t *)val);
+    return cbuf;
+}
 
 static const struct infoChunks infoChunks[] ={
     [BOARD_INFO_NAME] = {
         .size = member_size(struct boardInfo, name),
         .offset = offsetof(struct boardInfo, name),
         .memOffset = 0x0,
+        .format = formatNonTermString,
     },
     [BOARD_INFO_REV] = {
         .size = member_size(struct boardInfo, rev),
         .offset = offsetof(struct boardInfo, rev),
         .memOffset = 0x11,
+        .format = formatNonTermString,
     },
     [BOARD_INFO_SN] = {
         .size = member_size(struct boardInfo, sn),
         .offset = offsetof(struct boardInfo, sn),
         .memOffset = 0x14,
+        .format = formatNonTermString,
     },
     [BOARD_INFO_FORMAT_VER] = {
         .size = member_size(struct boardInfo, formatVer),
         .offset = offsetof(struct boardInfo, formatVer),
         .memOffset = 0x20,
+        .format = formatNonTermString,
     },
     [BOARD_INFO_MAC_0] = {
         .size = member_size(struct boardInfo, mac0),
         .offset = offsetof(struct boardInfo, mac0),
         .memOffset = 0x23,
+        .format = formatMAC,
     },
     [BOARD_INFO_MAC_1] = {
         .size = member_size(struct boardInfo, mac1),
         .offset = offsetof(struct boardInfo, mac1),
         .memOffset = 0x29,
+        .format = formatMAC,
     },
     [BOARD_INFO_MAC_2] = {
         .size = member_size(struct boardInfo, mac2),
         .offset = offsetof(struct boardInfo, mac2),
         .memOffset = 0x2f,
+        .format = formatMAC,
     },
     [BOARD_INFO_MAC_3] = {
         .size = member_size(struct boardInfo, mac3),
         .offset = offsetof(struct boardInfo, mac3),
         .memOffset = 0x35,
+        .format = formatMAC,
     },
     [BOARD_INFO_ACTIVE] = {
         .size = member_size(struct boardInfo, active),
         .offset = offsetof(struct boardInfo, active),
         .memOffset = 0x3b,
+        .format = formatNonTermString,
     },
     [BOARD_INFO_CFG_MODE] = {
         .size = member_size(struct boardInfo, configMode),
         .offset = offsetof(struct boardInfo, configMode),
         .memOffset = 0x3c,
+        .format = formatCfgMode,
     },
 };
 
@@ -147,20 +167,37 @@ boardInfoInit(int verbose)
 }
 
 /*
- * To be used with EPICS routines. This returns the number of uint32_t
- * words used
+ * To be used with EPICS routines. Always formats the property as a
+ * null-terminated string. Returns the number of uint32_t words used
  */
 int
-boardInfoFetch(uint32_t *buf, enum boardInfoProp prop)
+boardInfoFetch(uint32_t *buf, size_t capacity, enum boardInfoProp prop)
 {
+    size_t capacityBytes = capacity * sizeof(uint32_t);
     size_t size = infoChunks[prop].size;
     size_t offset = infoChunks[prop].offset;
-    size_t size_align4 = ((size + 3) / 4) * 4;
 
-    memset((char *) buf, 0, size_align4);
-    memcpy((char *) buf,
-            (const char *)&boardInfo + offset,
-            size);
+    int len = snprintf((char *) buf, capacityBytes, "%s",
+            infoChunks[prop].format((const char *)&boardInfo + offset, size));
 
-    return size_align4 / 4;
+    if (len < 0 || len >= capacityBytes) {
+        return -1;
+    }
+
+    // Count the '\0'
+    len++;
+
+    if (debugFlags & DEBUGFLAG_EPICS) {
+        printf("boardInfoFetch(%d): %s\n", len, (const char *) buf);
+    }
+
+    int lenAlignU32 = ((len + sizeof(uint32_t)-1) /
+            sizeof(uint32_t)) * sizeof(uint32_t);
+
+    if ((len % lenAlignU32) != 0 && lenAlignU32 < capacityBytes) {
+        memset((char *)buf+len+1, '\0', lenAlignU32-len);
+    }
+
+    // number of 32-bit words used
+    return lenAlignU32 / sizeof(uint32_t);
 }
