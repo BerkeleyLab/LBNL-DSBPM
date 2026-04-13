@@ -8,6 +8,7 @@
 #include "user_mgt_refclk.h"
 #include "util.h"
 #include "ffs.h"
+#include "serdes.h"
 
 struct systemParameters systemParameters;
 struct systemParameters systemParametersCandidate;
@@ -106,73 +107,7 @@ systemParametersCommit(void)
     }
 }
 
-/*
- * Serializer/deserializers
- * Note -- Format routines share common static buffer.
- */
 static char cbuf[40];
-char *
-formatMAC(const void *val)
-{
-    const unsigned char *addr = (const unsigned char *)val;
-    sprintf(cbuf, "%02X:%02X:%02X:%02X:%02X:%02X", addr[0], addr[1], addr[2],
-                                                   addr[3], addr[4], addr[5]);
-    return cbuf;
-}
-
-int
-parseMAC(const char *str, void *val)
-{
-    const char *cp = str;
-    int i = 0;
-    long l;
-    char *endp;
-
-    for (;;) {
-        l = strtol(cp, &endp, 16);
-        if ((l < 0) || (l > 255))
-            return -1;
-        *((uint8_t*)val + i) = l;
-        if (++i == 6)
-            return endp - str;
-        if (*endp++ != ':')
-            return -1;
-        cp = endp;
-    }
-}
-
-char *
-formatIP(const void *val)
-{
-    uint32_t l = ntohl(*(uint32_t *)val);
-    sprintf(cbuf, "%d.%d.%d.%d", (int)(l >> 24) & 0xFF, (int)(l >> 16) & 0xFF,
-                                 (int)(l >>  8) & 0xFF, (int)(l >>  0) & 0xFF);
-    return cbuf;
-}
-
-int
-parseIP(const char *str, void *val)
-{
-    const char *cp = str;
-    uint32_t addr = 0;
-    int i = 0;
-    long l;
-    char *endp;
-
-    for (;;) {
-        l = strtol(cp, &endp, 10);
-        if ((l < 0) || (l > 255))
-            return -1;
-        addr = (addr << 8) | l;
-        if (++i == 4) {
-            *(uint32_t *)val = htonl(addr);
-            return endp - str;
-        }
-        if (*endp++ != '.')
-            return -1;
-        cp = endp;
-    }
-}
 
 static char *
 formatAtrim(const void *val)
@@ -215,91 +150,6 @@ parseAtrim(const char *str, void *val)
     }
 }
 
-#if 0  // Unused for now -- '#if'd out to inhibit unused function warning */
-static char *formatDouble(void *val)
-{
-    sprintf(cbuf, "%.15g", *(double *)val);
-    return cbuf;
-}
-#endif
-
-static int
-parseDouble(const char *str, void *val)
-{
-    char *endp;
-    double d = strtod(str, &endp);
-    if ((endp != str)
-     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
-        *(double *)val = d;
-        return endp - str;
-    }
-    return -1;
-}
-
-static char *
-formatFloat(const void *val)
-{
-    sprintf(cbuf, "%.7g", *(const float *)val);
-    return cbuf;
-}
-
-static int
-parseFloat(const char *str, void *val)
-{
-    int i;
-    double d;
-
-    i = parseDouble(str, &d);
-    if (i > 0)
-        *(float *)val = d;
-    return i;
-}
-
-static char *
-formatInt(const void *val)
-{
-    sprintf(cbuf, "%d", *(const int *)val);
-    return cbuf;
-}
-
-static int
-parseInt(const char *str, void *val)
-{
-    int i;
-    double d;
-
-    i = parseDouble(str, &d);
-    if ((i > 0) && ((int)d == d))
-        *(int *)val = d;
-    return i;
-}
-
-static char *
-formatInt4(const void *val)
-{
-    sprintf(cbuf, "%04d", *(const int *)val);
-    return cbuf;
-}
-
-static int
-parseHex(const char *str, void *val)
-{
-    char *endp;
-    int d = strtol(str, &endp, 16);
-    if ((endp != str)
-     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
-        *(unsigned long *)val = d;
-        return endp - str;
-    }
-    return -1;
-}
-
-static char *
-formatHex(const void *val)
-{
-    sprintf(cbuf, "0x%x", *(const int *)val);
-    return cbuf;
-}
 
 /*
  * Conversion table

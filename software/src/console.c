@@ -31,6 +31,7 @@
 #include "user_mgt_refclk.h"
 #include "util.h"
 #include "fanCtl.h"
+#include "serdes.h"
 
 /* FIXME. MOve this to per-bpm cellComm routine file */
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))

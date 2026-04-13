@@ -42,6 +42,7 @@
 #include "cellComm.h"
 #include "fanCtl.h"
 #include "boardInfo.h"
+#include "serdes.h"
 
 static void
 sfpString(const char *name, int offset)

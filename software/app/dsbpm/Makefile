@@ -76,6 +76,7 @@ __SRC_FILES = \
 	sysmon2.c \
 	sysref.c \
 	systemParameters.c \
+	serdes.c \
 	tftp.c \
 	localOscillator.c \
 	user_mgt_refclk.c \
@@ -123,6 +124,7 @@ __HDR_FILES = \
 	sysmon2.h \
 	sysref.h \
 	systemParameters.h \
+	serdes.h \
 	tftp.h \
 	localOscillator.h \
 	loTables.h \

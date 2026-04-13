@@ -9,6 +9,7 @@
 #include "sysmon.h"
 #include "systemParameters.h"
 #include "util.h"
+#include "serdes.h"
 
 /*
  * Special display modes for internal use

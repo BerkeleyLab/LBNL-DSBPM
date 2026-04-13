@@ -53,11 +53,6 @@ int systemParametersFetchEEPROM(void);
 int systemParametersStashEEPROM(void);
 void systemParametersCommit(void);
 
-char *formatIP(const void *val);
-int   parseIP(const char *str, void *val);
-char *formatMAC(const void *val);
-int   parseMAC(const char *str, void *val);
-
 void setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery,
