@@ -128,7 +128,7 @@ boardInfoDisplay(void)
             *(boardInfo.mac3+4), *(boardInfo.mac3+5),
             *(boardInfo.mac3+6), *(boardInfo.mac3+7));
     printf("    active: %c\n", (const char) boardInfo.active);
-    printf("    config mode: %02X\n", *boardInfo.configMode);
+    printf("    config mode: %02X\n", boardInfo.configMode);
 }
 
 void

@@ -30,7 +30,7 @@ struct boardInfo {
     uint8_t mac2[8];
     uint8_t mac3[8];
     uint8_t active;
-    uint8_t configMode[2];
+    uint8_t configMode;
 };
 
 extern struct boardInfo boardInfo;
