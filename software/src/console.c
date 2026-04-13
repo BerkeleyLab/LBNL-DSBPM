@@ -355,7 +355,7 @@ macQueryCallback(int argc, char **argv)
             return;
         }
     }
-    printf("   ETHERNET ADDRESS: %s\n", formatMAC(&macBuf));
+    printf("   ETHERNET ADDRESS: %s\n", formatMAC(&macBuf, sizeof(macBuf)));
     if ((consoleMode == consoleModeMacQuery)
      || (memcmp(systemParameters.netConfig.ethernetMAC,macBuf,sizeof macBuf))) {
         printf("Write parameters to flash (y or n)? ");

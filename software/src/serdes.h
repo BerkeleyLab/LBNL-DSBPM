@@ -7,28 +7,28 @@
 
 #include <stdint.h>
 
-char *formatIP(const void *val);
+char *formatIP(const void *val, size_t size);
 int   parseIP(const char *str, void *val);
-char *formatMAC(const void *val);
+
+char *formatMAC(const void *val, size_t size);
 int   parseMAC(const char *str, void *val);
 
-char *formatMAC(const void *val);
-int parseMAC(const char *str, void *val);
-
-char * formatIP(const void *val);
+char *formatIP(const void *val, size_t size);
 int parseIP(const char *str, void *val);
 
-char *formatDouble(void *val);
+char *formatDouble(void *val, size_t size);
 int parseDouble(const char *str, void *val);
 
-char *formatFloat(const void *val);
+char *formatFloat(const void *val, size_t size);
 int parseFloat(const char *str, void *val);
 
-char *formatInt(const void *val);
-char *formatInt4(const void *val);
+char *formatInt(const void *val, size_t size);
+char *formatInt4(const void *val, size_t size);
 int parseInt(const char *str, void *val);
 
+char *formatHex(const void *val, size_t size);
 int parseHex(const char *str, void *val);
-char *formatHex(const void *val);
+
+char *formatNonTermString(const void *val, size_t size);
 
 #endif

@@ -270,7 +270,8 @@ main(void)
     currentNetConfig.ipv4.gateway = netif.gw.addr;
 
     printf("Network:\n");
-    printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC));
+    printf("       MAC: %s\n", formatMAC(currentNetConfig.ethernetMAC,
+                sizeof(currentNetConfig.ethernetMAC)));
     showNetworkConfiguration(&currentNetConfig.ipv4);
     drawIPv4Address(&currentNetConfig.ipv4.address, isRecovery);
     displayShowStatusLine("");

@@ -9,8 +9,9 @@
 static char cbuf[40];
 
 char *
-formatMAC(const void *val)
+formatMAC(const void *val, size_t size)
 {
+    (void) size;
     const unsigned char *addr = (const unsigned char *)val;
     snprintf(cbuf, sizeof(cbuf), "%02X:%02X:%02X:%02X:%02X:%02X",
             addr[0], addr[1], addr[2],
@@ -40,8 +41,9 @@ parseMAC(const char *str, void *val)
 }
 
 char *
-formatIP(const void *val)
+formatIP(const void *val, size_t size)
 {
+    (void) size;
     uint32_t l = ntohl(*(uint32_t *)val);
     snprintf(cbuf, sizeof(cbuf), "%d.%d.%d.%d", (int)(l >> 24) & 0xFF, (int)(l >> 16) & 0xFF,
                                  (int)(l >>  8) & 0xFF, (int)(l >>  0) & 0xFF);
@@ -73,8 +75,9 @@ parseIP(const char *str, void *val)
 }
 
 char
-*formatDouble(void *val)
+*formatDouble(void *val, size_t size)
 {
+    (void) size;
     snprintf(cbuf, sizeof(cbuf), "%.15g", *(double *)val);
     return cbuf;
 }
@@ -93,8 +96,9 @@ parseDouble(const char *str, void *val)
 }
 
 char *
-formatFloat(const void *val)
+formatFloat(const void *val, size_t size)
 {
+    (void) size;
     snprintf(cbuf, sizeof(cbuf), "%.7g", *(const float *)val);
     return cbuf;
 }
@@ -112,8 +116,9 @@ parseFloat(const char *str, void *val)
 }
 
 char *
-formatInt(const void *val)
+formatInt(const void *val, size_t size)
 {
+    (void) size;
     snprintf(cbuf, sizeof(cbuf), "%d", *(const int *)val);
     return cbuf;
 }
@@ -131,8 +136,9 @@ parseInt(const char *str, void *val)
 }
 
 char *
-formatInt4(const void *val)
+formatInt4(const void *val, size_t size)
 {
+    (void) size;
     snprintf(cbuf, sizeof(cbuf), "%04d", *(const int *)val);
     return cbuf;
 }
@@ -151,8 +157,17 @@ parseHex(const char *str, void *val)
 }
 
 char *
-formatHex(const void *val)
+formatHex(const void *val, size_t size)
 {
+    (void) size;
     snprintf(cbuf, sizeof(cbuf), "0x%x", *(const int *)val);
+    return cbuf;
+}
+
+char *
+formatNonTermString(const void *val, size_t size)
+{
+    const char *str = (const char *)val;
+    snprintf(cbuf, sizeof(cbuf), "%.*s", (int) size, str);
     return cbuf;
 }
