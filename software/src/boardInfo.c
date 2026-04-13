@@ -8,52 +8,52 @@
 static uint8_t eepromBuf[128];
 
 static const struct infoChunks infoChunks[] ={
-    {
+    [BOARD_INFO_NAME] = {
         .size = member_size(struct boardInfo, name),
         .offset = offsetof(struct boardInfo, name),
         .memOffset = 0x0,
     },
-    {
+    [BOARD_INFO_REV] = {
         .size = member_size(struct boardInfo, rev),
         .offset = offsetof(struct boardInfo, rev),
         .memOffset = 0x11,
     },
-    {
+    [BOARD_INFO_SN] = {
         .size = member_size(struct boardInfo, sn),
         .offset = offsetof(struct boardInfo, sn),
         .memOffset = 0x14,
     },
-    {
+    [BOARD_INFO_FORMAT_VER] = {
         .size = member_size(struct boardInfo, formatVer),
         .offset = offsetof(struct boardInfo, formatVer),
         .memOffset = 0x20,
     },
-    {
+    [BOARD_INFO_MAC_0] = {
         .size = member_size(struct boardInfo, mac0),
         .offset = offsetof(struct boardInfo, mac0),
         .memOffset = 0x23,
     },
-    {
+    [BOARD_INFO_MAC_1] = {
         .size = member_size(struct boardInfo, mac1),
         .offset = offsetof(struct boardInfo, mac1),
         .memOffset = 0x29,
     },
-    {
+    [BOARD_INFO_MAC_2] = {
         .size = member_size(struct boardInfo, mac2),
         .offset = offsetof(struct boardInfo, mac2),
         .memOffset = 0x2f,
     },
-    {
+    [BOARD_INFO_MAC_3] = {
         .size = member_size(struct boardInfo, mac3),
         .offset = offsetof(struct boardInfo, mac3),
         .memOffset = 0x35,
     },
-    {
+    [BOARD_INFO_ACTIVE] = {
         .size = member_size(struct boardInfo, active),
         .offset = offsetof(struct boardInfo, active),
         .memOffset = 0x3b,
     },
-    {
+    [BOARD_INFO_CFG_MODE] = {
         .size = member_size(struct boardInfo, configMode),
         .offset = offsetof(struct boardInfo, configMode),
         .memOffset = 0x3c,
@@ -144,4 +144,21 @@ boardInfoInit(int verbose)
     if (verbose) {
         boardInfoDisplay();
     }
+}
+
+/*
+ * To be used with EPICS routines. This returns the number of uint32_t
+ * words used
+ */
+int
+boardInfoFetch(uint32_t *buf, enum boardInfoProp prop)
+{
+    size_t size = infoChunks[prop].size;
+    size_t memOffset = infoChunks[prop].memOffset;
+
+    memcpy((char *)buf,
+            (const char *)&boardInfo + memOffset,
+            size);
+
+    return (size + 3)/4;
 }
