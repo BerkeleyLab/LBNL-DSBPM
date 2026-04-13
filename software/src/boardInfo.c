@@ -154,10 +154,10 @@ int
 boardInfoFetch(uint32_t *buf, enum boardInfoProp prop)
 {
     size_t size = infoChunks[prop].size;
-    size_t memOffset = infoChunks[prop].memOffset;
+    size_t offset = infoChunks[prop].offset;
 
     memcpy((char *)buf,
-            (const char *)&boardInfo + memOffset,
+            (const char *)&boardInfo + offset,
             size);
 
     return (size + 3)/4;
