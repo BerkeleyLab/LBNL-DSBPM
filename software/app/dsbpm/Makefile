@@ -44,6 +44,7 @@ __SRC_FILES = \
 	adcProcessing.c \
 	afe.c \
 	ami.c \
+	boardInfo.c \
 	rpb.c \
 	fanCtl.c \
 	autotrim.c \
@@ -75,6 +76,7 @@ __SRC_FILES = \
 	sysmon2.c \
 	sysref.c \
 	systemParameters.c \
+	serdes.c \
 	tftp.c \
 	localOscillator.c \
 	user_mgt_refclk.c \
@@ -88,6 +90,7 @@ __HDR_FILES = \
 	adcProcessing.h \
 	afe.h \
 	ami.h \
+	boardInfo.h \
 	rpb.h \
 	fanCtl.h \
 	autotrim.h \
@@ -121,6 +124,7 @@ __HDR_FILES = \
 	sysmon2.h \
 	sysref.h \
 	systemParameters.h \
+	serdes.h \
 	tftp.h \
 	localOscillator.h \
 	loTables.h \

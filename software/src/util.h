@@ -18,6 +18,10 @@
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 
+#ifndef member_size
+#define member_size(TYPE, MEMBER)  (sizeof(((TYPE *)0)->MEMBER))
+#endif
+
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 #define IP4_FORMAT(a,b,c,d) PP_HTONL(LWIP_MAKEU32(a,b,c,d))

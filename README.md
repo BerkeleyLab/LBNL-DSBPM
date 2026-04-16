@@ -1,14 +1,13 @@
-Direct-Sampling Beam Position Monitor
-=====================================
+# Direct-Sampling Beam Position Monitor
 
 Gateware/Software for Direct-Sampling Beam Position Monitor
 
-### Building
+## Building
 
 This repository contains both gateware and software
 for the Direct-Sampling Beam Position Monitor.
 
-#### Gateware Dependencies
+### Gateware Dependencies
 
 To build the gateware the following dependencies are needed:
 
@@ -18,13 +17,13 @@ To build the gateware the following dependencies are needed:
 
 Make sure `vivado` and `vitis` are in PATH.
 
-#### Software Dependencies
+### Software Dependencies
 
 To build the software the following dependencies are needed:
 
 * aarch64-none toolchain, bundled within Vitis
 
-#### Building Instructions
+### Building Instructions
 
 With the dependencies in place a simple `make` should be able to generate
 both gateware and software, plus the SD boot image .bin.
@@ -49,14 +48,14 @@ ARM_TOOLCHAIN_LOCATION=/media/Xilinx/Vivado/2022.1/Vitis/2022.1/gnu/aarch64/lin/
 (time make PLATFORM=zcu208 APP=dsbpm SAMPLES_PER_TURN=81 VCXO_TYPE=160 CROSS_COMPILE=${ARM_TOOLCHAIN_LOCATION}/bin/aarch64-none-elf- && notify-send 'Compilation SUCCESS' || notify-send 'Compilation ERROR'; date) 2>&1 | tee make_output
 ```
 
-### Deploying
+## Deploying
 
 To deploy the gateware and the software we can use a variety of
 methods. For development, JTAG is being used. Remember to check
 the DIP switches on development boards and ensure the switches
 are set to JTAG mode and NOT SD Card mode.
 
-#### Deploying gateware
+### Deploying gateware
 
 The following script can download the gateware via JTAG:
 
@@ -65,7 +64,7 @@ cd gateware/scripts
 xsct download_bit.tcl ../syn/<APP>_<PLATFORM>/<APP>_<PLATFORM>_top.bit
 ```
 
-#### Deploying software
+### Deploying software
 
 The following script can download the software via JTAG:
 
@@ -74,12 +73,12 @@ cd software/scripts
 xsct download_elf.tcl ../../gateware/syn/<APP>_<PLATFORM>/psu_init.tcl ../app/<APP>/<APP>_<PLATFORM>.elf
 ```
 
-#### Depoying configuration files
+### Depoying configuration files
 
 The `dsbpm` project makes use of the following configuration files loaded on boot
-from the SD card:
+from the SD card. The filenames are crucial and must be the ones specified here:
 
-* SYSPARMS.CSV
+#### SYSPARMS.CSV
 
 Configuration parameters in .csv format with the following lines, for example:
 
@@ -139,7 +138,7 @@ RFDC MMCM Clk Multiplier,20250
 RFDC MMCM Clk0 Divider,10250
 ```
 
-* RFTABLE.CSV
+#### RFTABLE.CSV
 
 RF Demodulation table for the synchronous Digital Down-Conversion (DDC) local
 oscillator. It needs 2 floating point ([-1,1]) values separated by a comma
@@ -154,7 +153,14 @@ embedded software. Example:
 ...
 ```
 
-* PTTABLE.CSV
+Check `software/scripts/createDemodGenTables.py` for more information. In order
+to run the script:
+
+```bash
+python3 software/scripts/createDemodGenTables.py
+```
+
+#### PTTABLE.CSV
 
 PT low/high demodulation table for the synchronous Digital Down-Conversion (DDC)
 local oscillator. It needs 4 floating point ([-1,1]) values separated by a comma
@@ -169,7 +175,15 @@ scaled to the full ADC range by the embedded software. Example:
 ...
 ```
 
-* PTGEN.CSV
+Check `software/scripts/createDemodGenTables.py` for more information. In order
+to run the script:
+
+```bash
+cd software/scripts
+python3 createDemodGenTables.py
+```
+
+#### PTGEN.CSV
 
 PT generation table for the synchronous DAC. It needs 2 floating point ([-1,1])
 values separated by a comma representing I and Q values. The values are scaled
@@ -182,15 +196,56 @@ to the full DAC range by the embedded software. Example:
  0.941496, 0.023072
 ```
 
-* LMK04XX.CSV (optional)
-* LMXADC.CSV (optional)
-* LMXDAC.CSV (optional)
+Check `software/scripts/createDemodGenTables.py` for more information. In order
+to run the script:
 
-Values for the LMK 04828B, LMX2594 (ADC) and LMX2594 (DAC) chips. It requires
-1 decimal value per line, using the format specified by the SPI transaction
-of the corresponding chip.
+```bash
+python3 software/scripts/createDemodGenTables.py
+```
 
-### Updates
+#### LMK04XX.CSV (optional)
+
+Register map for the LMK04XX chip. These are processes TICS pro files, without
+the headers and comments.
+
+Check files under `software/target/<BOARD_FLAVOR>/lmk04828B.tcs` and run the script:
+
+```
+cd software/scripts
+sh createRFCLKtable.sh <TICS_pro_filename.tcs> > <CSV_filename.csv>
+```
+
+It requires 1 decimal value per line, using the format specified by the SPI
+transaction of the corresponding chip.
+
+#### LMXADC.CSV (optional)
+
+Register map for the LMX ADC chip. These are processes TICS pro files, without
+the headers and comments.
+
+Check files under `software/target/<BOARD_FLAVOR>/lmx2594ADC.tcs` and run the script:
+
+```
+cd software/scripts
+sh createRFCLKtable.sh <TICS_pro_filename.tcs> > <CSV_filename.csv>
+```
+
+It requires 1 decimal value per line, using the format specified by the SPI
+transaction of the corresponding chip.
+
+#### LMXDAC.CSV (optional)
+
+Check files under `software/target/<BOARD_FLAVOR>/lmx2594DAC.tcs` and run the script:
+
+```
+cd software/scripts
+sh createRFCLKtable.sh <TICS_pro_filename.tcs> > <CSV_filename.csv>
+```
+
+It requires 1 decimal value per line, using the format specified by the SPI
+transaction of the corresponding chip.
+
+## Updates
 
 The following system parameters can be updated via TFTP:
 
@@ -203,7 +258,7 @@ The following system parameters can be updated via TFTP:
 * System parameters
 * Gateware + Software boot file (BOOT.bin)
 
-#### Update System parameters table
+### Update System parameters table
 
 An example of the parameters used can be found at: `software/app/<APP>/scripts/sysParms.csv`
 
@@ -211,7 +266,7 @@ An example of the parameters used can be found at: `software/app/<APP>/scripts/s
 tftp -v -m binary <system IP> -c put sysParms.csv sysParms.csv
 ```
 
-#### Generating demodulation/generation tables
+### Generating demodulation/generation tables
 
 The tables are generated by a python script `createDemodGenTables.py` located at:
 `software/scripts`
@@ -223,7 +278,7 @@ cd software/scripts
 python3 createDemodGenTables.py
 ```
 
-#### Generating LMK/LMX tables
+### Generating LMK/LMX tables
 
 The tables are generated from a [TICS Pro](https://www.ti.com/tool/TICSPRO-SW)
 file by a shell script `createRFCLKtable.sh` located at: `software/scripts`
@@ -235,7 +290,7 @@ cd software/scripts
 sh createRFCLKtable.sh <TICS_pro_filename.tcs> > <CSV_filename.csv>
 ```
 
-#### Update the RF demodulation table
+### Update the RF demodulation table
 
 An example of the RF table can be found at: `software/scripts/rfTableSR_81_328_bin_20_conjugate.csv`
 
@@ -243,7 +298,7 @@ An example of the RF table can be found at: `software/scripts/rfTableSR_81_328_b
 tftp -v -m binary <system IP> -c put <RF TABLE>.csv rfTable.csv
 ```
 
-#### Update Pilot tone demodulation table
+### Update Pilot tone demodulation table
 
 An example of the PT table can be found at: `software/scripts/ptTableSR_81_328_L7_19_H11_19_bin_20_conjugate.csv`
 
@@ -251,7 +306,15 @@ An example of the PT table can be found at: `software/scripts/ptTableSR_81_328_L
 tftp -v -m binary <system IP> -c put <PT TABLE>.csv ptTable.csv
 ```
 
-#### Update LMK04828B table
+### Update Pilot tone generation table
+
+An example of the PT generation table can be found at: `software/scripts/ptGen_81_7_low_11_high_19.csv`
+
+```bash
+tftp -v -m binary <system IP> -c put <PTGEN TABLE>.csv ptGen.csv
+```
+
+### Update LMK04828B table
 
 The LMK table can be generated by using one of the default TICS pro files available
 at: `software/target/<TARGET_NAME>/lmk04828B.tcs`
@@ -260,7 +323,7 @@ at: `software/target/<TARGET_NAME>/lmk04828B.tcs`
 tftp -v -m binary <system IP> -c put <LMK TABLE>.csv LMK04XX.csv
 ```
 
-#### Update LMK2594 ADC/DAC tables
+### Update LMK2594 ADC/DAC tables
 
 The LMX tables (ADC/DAC) can be generated by using one of the default TICS pro files available
 at : `software/target/<TARGET_NAME>/lmx2594(ADC/DAC).tcs`
@@ -269,15 +332,7 @@ at : `software/target/<TARGET_NAME>/lmx2594(ADC/DAC).tcs`
 tftp -v -m binary <system IP> -c put <LMK TABLE>.csv [LMXADC|LMXDAC].csv
 ```
 
-#### Update Pilot tone generation table
-
-An example of the PT generation table can be found at: `software/scripts/ptGen_81_7_low_11_high_19.csv`
-
-```bash
-tftp -v -m binary <system IP> -c put <PTGEN TABLE>.csv ptGen.csv
-```
-
-#### Update system image file (BOOT.bin):
+### Update system image file (BOOT.bin):
 
 ```bash
 tftp -v -m binary <system IP> -c put BOOT.bin BOOT.bin

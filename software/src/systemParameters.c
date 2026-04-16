@@ -8,6 +8,7 @@
 #include "user_mgt_refclk.h"
 #include "util.h"
 #include "ffs.h"
+#include "serdes.h"
 
 struct systemParameters systemParameters;
 struct systemParameters systemParametersCandidate;
@@ -106,77 +107,12 @@ systemParametersCommit(void)
     }
 }
 
-/*
- * Serializer/deserializers
- * Note -- Format routines share common static buffer.
- */
 static char cbuf[40];
-char *
-formatMAC(const void *val)
-{
-    const unsigned char *addr = (const unsigned char *)val;
-    sprintf(cbuf, "%02X:%02X:%02X:%02X:%02X:%02X", addr[0], addr[1], addr[2],
-                                                   addr[3], addr[4], addr[5]);
-    return cbuf;
-}
-
-int
-parseMAC(const char *str, void *val)
-{
-    const char *cp = str;
-    int i = 0;
-    long l;
-    char *endp;
-
-    for (;;) {
-        l = strtol(cp, &endp, 16);
-        if ((l < 0) || (l > 255))
-            return -1;
-        *((uint8_t*)val + i) = l;
-        if (++i == 6)
-            return endp - str;
-        if (*endp++ != ':')
-            return -1;
-        cp = endp;
-    }
-}
-
-char *
-formatIP(const void *val)
-{
-    uint32_t l = ntohl(*(uint32_t *)val);
-    sprintf(cbuf, "%d.%d.%d.%d", (int)(l >> 24) & 0xFF, (int)(l >> 16) & 0xFF,
-                                 (int)(l >>  8) & 0xFF, (int)(l >>  0) & 0xFF);
-    return cbuf;
-}
-
-int
-parseIP(const char *str, void *val)
-{
-    const char *cp = str;
-    uint32_t addr = 0;
-    int i = 0;
-    long l;
-    char *endp;
-
-    for (;;) {
-        l = strtol(cp, &endp, 10);
-        if ((l < 0) || (l > 255))
-            return -1;
-        addr = (addr << 8) | l;
-        if (++i == 4) {
-            *(uint32_t *)val = htonl(addr);
-            return endp - str;
-        }
-        if (*endp++ != '.')
-            return -1;
-        cp = endp;
-    }
-}
 
 static char *
-formatAtrim(const void *val)
+formatAtrim(const void *val, size_t size)
 {
+    (void) size;
     int i;
     const int *ip = (const int *)val;
     char *cp = cbuf;
@@ -215,91 +151,6 @@ parseAtrim(const char *str, void *val)
     }
 }
 
-#if 0  // Unused for now -- '#if'd out to inhibit unused function warning */
-static char *formatDouble(void *val)
-{
-    sprintf(cbuf, "%.15g", *(double *)val);
-    return cbuf;
-}
-#endif
-
-static int
-parseDouble(const char *str, void *val)
-{
-    char *endp;
-    double d = strtod(str, &endp);
-    if ((endp != str)
-     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
-        *(double *)val = d;
-        return endp - str;
-    }
-    return -1;
-}
-
-static char *
-formatFloat(const void *val)
-{
-    sprintf(cbuf, "%.7g", *(const float *)val);
-    return cbuf;
-}
-
-static int
-parseFloat(const char *str, void *val)
-{
-    int i;
-    double d;
-
-    i = parseDouble(str, &d);
-    if (i > 0)
-        *(float *)val = d;
-    return i;
-}
-
-static char *
-formatInt(const void *val)
-{
-    sprintf(cbuf, "%d", *(const int *)val);
-    return cbuf;
-}
-
-static int
-parseInt(const char *str, void *val)
-{
-    int i;
-    double d;
-
-    i = parseDouble(str, &d);
-    if ((i > 0) && ((int)d == d))
-        *(int *)val = d;
-    return i;
-}
-
-static char *
-formatInt4(const void *val)
-{
-    sprintf(cbuf, "%04d", *(const int *)val);
-    return cbuf;
-}
-
-static int
-parseHex(const char *str, void *val)
-{
-    char *endp;
-    int d = strtol(str, &endp, 16);
-    if ((endp != str)
-     && ((*endp == ',') || (*endp == '\r') || (*endp == '\n'))) {
-        *(unsigned long *)val = d;
-        return endp - str;
-    }
-    return -1;
-}
-
-static char *
-formatHex(const void *val)
-{
-    sprintf(cbuf, "0x%x", *(const int *)val);
-    return cbuf;
-}
 
 /*
  * Conversion table
@@ -307,13 +158,15 @@ formatHex(const void *val)
 static struct conv {
     const char *name;
     size_t      offset;
+    size_t      size;
     bool        visited;
-    char     *(*format)(const void *val);
+    char     *(*format)(const void *val, size_t num);
     int       (*parse)(const char *str, void *val);
 } conv[] = {
     {
         .name = "Ethernet Address",
         .offset = offsetof(struct systemParameters, netConfig.ethernetMAC),
+        .size = member_size(struct systemParameters, netConfig.ethernetMAC),
         .visited = false,
         .format = formatMAC,
         .parse= parseMAC,
@@ -321,6 +174,7 @@ static struct conv {
     {
         .name = "Use DHCP",
         .offset = offsetof(struct systemParameters, netConfig.useDHCP),
+        .size = member_size(struct systemParameters, netConfig.useDHCP),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -328,6 +182,7 @@ static struct conv {
     {
         .name = "IP Address",
         .offset = offsetof(struct systemParameters, netConfig.ipv4.address),
+        .size = member_size(struct systemParameters, netConfig.ipv4.address),
         .visited = false,
         .format = formatIP,
         .parse = parseIP,
@@ -335,6 +190,7 @@ static struct conv {
     {
         .name = "IP Netmask",
         .offset = offsetof(struct systemParameters, netConfig.ipv4.netmask),
+        .size = member_size(struct systemParameters, netConfig.ipv4.netmask),
         .visited = false,
         .format = formatIP,
         .parse = parseIP,
@@ -342,6 +198,7 @@ static struct conv {
     {
         .name = "IP Gateway",
         .offset = offsetof(struct systemParameters, netConfig.ipv4.gateway),
+        .size = member_size(struct systemParameters, netConfig.ipv4.gateway),
         .visited = false,
         .format = formatIP,
         .parse = parseIP,
@@ -349,6 +206,7 @@ static struct conv {
     {
         .name = "User MGT ref offset",
         .offset = offsetof(struct systemParameters, userMGTrefClkOffsetPPM),
+        .size = member_size(struct systemParameters, userMGTrefClkOffsetPPM),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -356,6 +214,7 @@ static struct conv {
     {
         .name = "Startup debug flags",
         .offset = offsetof(struct systemParameters, startupDebugFlags),
+        .size = member_size(struct systemParameters, startupDebugFlags),
         .visited = false,
         .format = formatHex,
         .parse = parseHex,
@@ -363,6 +222,7 @@ static struct conv {
     {
         .name = "PLL RF divisor",
         .offset = offsetof(struct systemParameters, rfDivisor),
+        .size = member_size(struct systemParameters, rfDivisor),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -370,6 +230,7 @@ static struct conv {
     {
         .name = "PLL multiplier",
         .offset = offsetof(struct systemParameters, pllMultiplier),
+        .size = member_size(struct systemParameters, pllMultiplier),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -377,6 +238,7 @@ static struct conv {
     {
         .name = "Single pass?",
         .offset = offsetof(struct systemParameters, isSinglePass),
+        .size = member_size(struct systemParameters, isSinglePass),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -384,6 +246,7 @@ static struct conv {
     {
         .name = "Single pass event",
         .offset = offsetof(struct systemParameters, singlePassEvent),
+        .size = member_size(struct systemParameters, singlePassEvent),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -391,6 +254,7 @@ static struct conv {
     {
         .name = "ADC clocks per heartbeat",
         .offset = offsetof(struct systemParameters, adcHeartbeatMarker),
+        .size = member_size(struct systemParameters, adcHeartbeatMarker),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -398,6 +262,7 @@ static struct conv {
     {
         .name = "EVR clocks per fast acquisition",
         .offset = offsetof(struct systemParameters, evrPerFaMarker),
+        .size = member_size(struct systemParameters, evrPerFaMarker),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -405,6 +270,7 @@ static struct conv {
     {
         .name = "EVR clocks per slow acquisition",
         .offset = offsetof(struct systemParameters, evrPerSaMarker),
+        .size = member_size(struct systemParameters, evrPerSaMarker),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -412,6 +278,7 @@ static struct conv {
     {
         .name = "ADC for button ABCD",
         .offset = offsetof(struct systemParameters, adcOrder),
+        .size = member_size(struct systemParameters, adcOrder),
         .visited = false,
         .format = formatInt4,
         .parse = parseInt,
@@ -419,6 +286,7 @@ static struct conv {
     {
         .name = "RFDC MMCM DivClk Divider",
         .offset = offsetof(struct systemParameters, rfdcMMCMDivClkDivider),
+        .size = member_size(struct systemParameters, rfdcMMCMDivClkDivider),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -426,6 +294,7 @@ static struct conv {
     {
         .name = "RFDC MMCM Clk Multiplier",
         .offset = offsetof(struct systemParameters, rfdcMMCMMultiplier),
+        .size = member_size(struct systemParameters, rfdcMMCMMultiplier),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -433,6 +302,7 @@ static struct conv {
     {
         .name = "RFDC MMCM Clk0 Divider",
         .offset = offsetof(struct systemParameters, rfdcMMCMClk0Divider),
+        .size = member_size(struct systemParameters, rfdcMMCMClk0Divider),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -440,6 +310,7 @@ static struct conv {
     {
         .name = "X calibration (mm p.u.)",
         .offset = offsetof(struct systemParameters, xCalibration),
+        .size = member_size(struct systemParameters, xCalibration),
         .visited = false,
         .format = formatFloat,
         .parse = parseFloat,
@@ -447,6 +318,7 @@ static struct conv {
     {
         .name = "Y calibration (mm p.u.)",
         .offset = offsetof(struct systemParameters, yCalibration),
+        .size = member_size(struct systemParameters, yCalibration),
         .visited = false,
         .format = formatFloat,
         .parse = parseFloat,
@@ -454,6 +326,7 @@ static struct conv {
     {
         .name = "Q calibration (p.u.)",
         .offset = offsetof(struct systemParameters, qCalibration),
+        .size = member_size(struct systemParameters, qCalibration),
         .visited = false,
         .format = formatFloat,
         .parse = parseFloat,
@@ -461,6 +334,7 @@ static struct conv {
     {
         .name = "Button rotation (0 or 45)",
         .offset = offsetof(struct systemParameters, buttonRotation),
+        .size = member_size(struct systemParameters, buttonRotation),
         .visited = false,
         .format = formatInt,
         .parse = parseInt,
@@ -468,6 +342,7 @@ static struct conv {
     {
         .name = "AFE attenuator trims (dB)",
         .offset = offsetof(struct systemParameters, afeTrim[0]),
+        .size = member_size(struct systemParameters, afeTrim),
         .visited = false,
         .format = formatAtrim,
         .parse = parseAtrim,
@@ -541,7 +416,7 @@ systemParametersGetTable(unsigned char *buf, int capacity,
 
     for (i = 0 ; i < (sizeof conv / sizeof conv[0]) ; i++)
         cp += sprintf(cp, "%s,%s\n", conv[i].name, (*conv[i].format)(
-                    (char *) sysParams + conv[i].offset));
+                    (char *) sysParams + conv[i].offset, conv[i].size));
     return cp - (char *)buf;
 }
 
@@ -753,9 +628,9 @@ setDefaultNetAddress(struct sysNetConfig *netConfig,
 void
 showNetworkConfiguration(const struct sysNetParms *ipv4)
 {
-    printf("   IP ADDR: %s\n", formatIP(&ipv4->address));
-    printf("  NET MASK: %s\n", formatIP(&ipv4->netmask));
-    printf("   GATEWAY: %s\n", formatIP(&ipv4->gateway));
+    printf("   IP ADDR: %s\n", formatIP(&ipv4->address, sizeof(ipv4->address)));
+    printf("  NET MASK: %s\n", formatIP(&ipv4->netmask, sizeof(ipv4->netmask)));
+    printf("   GATEWAY: %s\n", formatIP(&ipv4->gateway, sizeof(ipv4->gateway)));
 }
 
 void

@@ -7,6 +7,7 @@
 #include "adcProcessing.h"
 #include "afe.h"
 #include "ami.h"
+#include "boardInfo.h"
 #include "platform_config.h"
 #include "dsbpmProtocol.h"
 #include "epics.h"
@@ -209,6 +210,43 @@ epicsCommonCommand(int commandArgCount, struct dsbpmPacket *cmdp,
         case DSBPM_PROTOCOL_CMD_PLL_CONFIG_LO_GET:
             replyArgCount = lmx2594ReadbackFirst(replyp->args,
                                                      DSBPM_PROTOCOL_ARG_CAPACITY);
+            break;
+
+        default: return -1;
+        }
+        break;
+
+    case DSBPM_PROTOCOL_CMD_HI_OCTET:
+        if (commandArgCount != 0) return -1;
+        switch (idx) {
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_NAME:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_NAME);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_REV:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_REV);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_SN:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_SN);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_MAC:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_MAC_0);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_ACTIVE:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_ACTIVE);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_OCTET_IDX_CFG_MODE:
+            replyArgCount = boardInfoFetch(replyp->args, DSBPM_PROTOCOL_ARG_CAPACITY,
+                    BOARD_INFO_CFG_MODE);
             break;
 
         default: return -1;

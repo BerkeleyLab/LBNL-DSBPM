@@ -9,6 +9,7 @@
 #include "sysmon.h"
 #include "systemParameters.h"
 #include "util.h"
+#include "serdes.h"
 
 /*
  * Special display modes for internal use
@@ -126,7 +127,7 @@ drawIPv4Address(const void *ipv4address, int isRecoveryMode)
     static int recovery;
     static char cbuf[20];
     if (ipv4address) {
-        strncpy(cbuf, formatIP(ipv4address), sizeof(cbuf) - 1);
+        strncpy(cbuf, formatIP(ipv4address, sizeof(uint32_t)), sizeof(cbuf) - 1);
         recovery = isRecoveryMode;
     };
     if (recovery) {

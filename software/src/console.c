@@ -31,6 +31,7 @@
 #include "user_mgt_refclk.h"
 #include "util.h"
 #include "fanCtl.h"
+#include "serdes.h"
 
 /* FIXME. MOve this to per-bpm cellComm routine file */
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
@@ -354,7 +355,7 @@ macQueryCallback(int argc, char **argv)
             return;
         }
     }
-    printf("   ETHERNET ADDRESS: %s\n", formatMAC(&macBuf));
+    printf("   ETHERNET ADDRESS: %s\n", formatMAC(&macBuf, sizeof(macBuf)));
     if ((consoleMode == consoleModeMacQuery)
      || (memcmp(systemParameters.netConfig.ethernetMAC,macBuf,sizeof macBuf))) {
         printf("Write parameters to flash (y or n)? ");
