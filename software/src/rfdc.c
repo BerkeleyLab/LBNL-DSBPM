@@ -348,6 +348,7 @@ static void rfDACCfgDefaults(void)
                         tile, dac*CFG_DAC_DUC_OFFSET + duc, i);
 
                 mixer.Freq = DAC_NCO_FREQ;
+                mixer.FineMixerScale = XRFDC_MIXER_SCALE_1P0;
                 mixer.EventSource = XRFDC_EVNT_SRC_SYSREF;
                 i = XRFdc_SetMixerSettings(&rfDC, XRFDC_DAC_TILE, tile, dac*CFG_DAC_DUC_OFFSET + duc, &mixer);
                 if (i != XST_SUCCESS) warn("DAC Tile:Block %d:%d XRFdc_SetMixerSettings() = %d",
