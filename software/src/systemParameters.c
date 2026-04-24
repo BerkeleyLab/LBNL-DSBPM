@@ -9,6 +9,7 @@
 #include "util.h"
 #include "ffs.h"
 #include "serdes.h"
+#include "rfdc.h"
 
 struct systemParameters systemParameters;
 struct systemParameters systemParametersCandidate;
@@ -73,6 +74,10 @@ systemParametersSetDefaults(void)
     systemParametersDefault.adcHeartbeatMarker = 152 * 81 * 1000 * 10;
     systemParametersDefault.evrPerFaMarker = 152 * 82;
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
+    systemParametersDefault.rfdcADCSampRate = ADC_SAMPLING_CLK_FREQ;
+    systemParametersDefault.rfdcADCNCOFreq = ADC_NCO_FREQ;
+    systemParametersDefault.rfdcDACSampRate = DAC_SAMPLING_CLK_FREQ;
+    systemParametersDefault.rfdcDACNCOFreq = DAC_NCO_FREQ;
     systemParametersDefault.rfdcMMCMDivClkDivider = ADC_CLK_MMCM_DIVCLK_DIVIDER;
     systemParametersDefault.rfdcMMCMMultiplier = ADC_CLK_MMCM_MULTIPLIER;
     systemParametersDefault.rfdcMMCMClk0Divider = ADC_CLK_MMCM_CLK0_DIVIDER;
@@ -105,6 +110,12 @@ systemParametersCommit(void)
     if (userMGTrefClkAdjust(systemParameters.userMGTrefClkOffsetPPM)) {
         systemParametersShowUserMGTrefClkOffsetPPM();
     }
+
+    rfADCSetCfg(systemParameters.rfdcADCSampRate, systemParameters.rfdcADCSampRate,
+            systemParameters.rfdcADCNCOFreq);
+    rfDACSetCfg(systemParameters.rfdcDACSampRate, systemParameters.rfdcDACSampRate,
+            systemParameters.rfdcDACNCOFreq);
+    rfDCsync();
 }
 
 static char cbuf[40];
@@ -327,6 +338,38 @@ static struct conv {
         .name = "Q calibration (p.u.)",
         .offset = offsetof(struct systemParameters, qCalibration),
         .size = member_size(struct systemParameters, qCalibration),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC ADC Sampling Rate (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcADCSampRate),
+        .size = member_size(struct systemParameters, rfdcADCSampRate),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC NCO ADC Frequency (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcADCNCOFreq),
+        .size = member_size(struct systemParameters, rfdcADCNCOFreq),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC DAC Sampling Rate (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcDACSampRate),
+        .size = member_size(struct systemParameters, rfdcDACSampRate),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC NCO DAC Frequency (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcDACNCOFreq),
+        .size = member_size(struct systemParameters, rfdcDACNCOFreq),
         .visited = false,
         .format = formatFloat,
         .parse = parseFloat,

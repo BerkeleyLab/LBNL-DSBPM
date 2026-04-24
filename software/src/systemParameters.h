@@ -39,6 +39,10 @@ extern struct systemParameters {
     float               xCalibration;
     float               yCalibration;
     float               qCalibration;
+    float               rfdcADCSampRate;
+    float               rfdcADCNCOFreq;
+    float               rfdcDACSampRate;
+    float               rfdcDACNCOFreq;
     int                 rfdcMMCMDivClkDivider;
     int                 rfdcMMCMMultiplier;
     int                 rfdcMMCMClk0Divider;
