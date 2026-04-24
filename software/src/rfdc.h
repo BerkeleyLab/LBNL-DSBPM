@@ -16,6 +16,9 @@ void rfADCrestart(void);
 void rfADCshow(void);
 int rfADClinkCouplingIsAC(void);
 
+void rfADCSetCfg(double refClk, double sampRate, double NCOFreq);
+void rfDACSetCfg(double refClk, double sampRate, double NCOFreq);
+
 void rfADCfreezeCalibration(int channel, int freeze);
 void rfADCfreezeCalibrationBPM(unsigned int bpm, int channel, int freeze);
 
