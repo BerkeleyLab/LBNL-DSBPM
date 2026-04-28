@@ -60,7 +60,7 @@ void systemParametersCommit(void);
 void setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery,
-        uint8_t *eepromMAC, int size, int isMACValid);
+        uint8_t *eepromMAC, int size);
 void showNetworkConfiguration(const struct sysNetParms *ipv4);
 void systemParametersShowUserMGTrefClkOffsetPPM(void);
 

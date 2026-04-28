@@ -119,35 +119,6 @@ tryRequestDHCPIPv4Address(struct netif *netif)
 #endif
 }
 
-static const int MAC_ADDR_SIZE = 6;
-
-static int
-validateMACAddress(uint8_t *buf, int size)
-{
-    int ones = 0;
-    int zeros = 0;
-
-    if (size < MAC_ADDR_SIZE) {
-        return -1;
-    }
-
-    for (int i = 0; i < MAC_ADDR_SIZE; i++) {
-        if (buf[i] == 0) {
-            zeros++;
-        }
-
-        if (buf[i] == 255) {
-            ones++;
-        }
-    }
-
-    if (zeros == 6 || ones == 6) {
-        return -1;
-    }
-
-    return 0;
-}
-
 int
 main(void)
 {
@@ -183,12 +154,6 @@ main(void)
 
     uint8_t *eepromMAC = boardInfo.mac0;
     size_t eepromMACSize = sizeof(boardInfo.mac0);
-    int isMACInvalid = validateMACAddress(eepromMAC, eepromMACSize);
-
-    if (isMACInvalid == 0) {
-        printf("EEPROM MAC:\n");
-        eepromDisplay(eepromMAC, eepromMACSize);
-    }
 
     /*
      * Set default IPv4 configs based on system parameters file and
@@ -197,8 +162,7 @@ main(void)
     setDefaultNetAddress(&currentNetConfig,
             &systemParameters.netConfig,
             &netDefault, isRecovery,
-            eepromMAC, eepromMACSize,
-            (isMACInvalid == 0));
+            eepromMAC, eepromMACSize);
 
     /* Set up hardware */
     sysmonInit();

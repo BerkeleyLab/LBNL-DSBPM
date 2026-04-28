@@ -629,11 +629,41 @@ systemParametersStashEEPROM(void)
     return nWrite;
 }
 
+static const int MAC_ADDR_SIZE = 6;
+
+static int
+validateMACAddress(uint8_t *buf, int size)
+{
+    int ones = 0;
+    int zeros = 0;
+
+    if (size < MAC_ADDR_SIZE) {
+        return -1;
+    }
+
+    for (int i = 0; i < MAC_ADDR_SIZE; i++) {
+        if (buf[i] == 0) {
+            zeros++;
+        }
+
+        if (buf[i] == 255) {
+            ones++;
+        }
+    }
+
+    if (zeros == 6 || ones == 6) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
 void
 setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery,
-        uint8_t *eepromMAC, int size, int isMACValid)
+        uint8_t *eepromMAC, int size)
 {
     if (isRecovery) {
         netConfig->ipv4 = defaultNetConfig->ipv4;
@@ -655,10 +685,16 @@ setDefaultNetAddress(struct sysNetConfig *netConfig,
 #else
         netConfig->ipv4 = sysParamsNetConfig->ipv4;
 #endif
-        if (isMACValid) {
+
+        int isMACInvalid = validateMACAddress(eepromMAC, size);
+
+        if (!isMACInvalid) {
+            printf("EEPROM MAC:\n");
+            eepromDisplay(eepromMAC, size);
             memcpy (netConfig->ethernetMAC, eepromMAC, size);
         }
         else {
+            printf("EEPROM MAC is invalid! ASSIGNING DEFAULT\n");
             memcpy (netConfig->ethernetMAC, sysParamsNetConfig->ethernetMAC,
                     sizeof (netConfig->ethernetMAC));
         }
