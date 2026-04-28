@@ -93,7 +93,7 @@ rfADCshow(void)
                         v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
         if (v == XRFDC_INTERNAL_PLL_CLK) {
             XRFdc_GetPLLLockStatus(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, &v);
-            printf("       ADC PLL locked state %d\n", (int)v);
+            printf("      ADC PLL locked state %d\n", (int)v);
         }
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             int adcIdx = (tile * CFG_ADC_PER_TILE) + adc;
@@ -102,7 +102,7 @@ rfADCshow(void)
             XRFdc_Cal_Freeze_Settings cfs;
             if (adcIdx >= CFG_ADC_PHYSICAL_COUNT) break;
             XRFdc_GetLinkCoupling(&rfDCCfg.rfDC, tile, adc, &v);
-            printf("         ADC %d: %cC link", adcIdx,  v ? 'A' : 'D');
+            printf("   ADC %d: %cC link", adcIdx,  v ? 'A' : 'D');
             XRFdc_GetIntrStatus(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, adc, &v);
             if (v) {
                 if (v & XRFDC_ADC_OVR_RANGE_MASK) printf(", Overrange");
@@ -119,20 +119,20 @@ rfADCshow(void)
             }
             printf("\n");
             XRFdc_GetDither(&rfDCCfg.rfDC, tile, adc, &v);
-            printf("         Dither: %s\n", v ? "enabled" : "disabled");
+            printf("      Dither: %s\n", v ? "enabled" : "disabled");
             i = XRFdc_GetMixerSettings(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile,adc,&mixer);
             if (i == XST_SUCCESS) {
-                printf("   Mixer Settings\n");
-                printf("          Freq: %g\n", mixer.Freq);
-                printf("   PhaseOffset: %g\n", mixer.PhaseOffset);
-                printf("   EventSource: %d\n", mixer.EventSource);
-                printf(" CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
-                printf("     MixerMode: %d\n", mixer.MixerMode);
-                printf("FineMixerScale: %d\n", mixer.FineMixerScale);
-                printf("     MixerType: %d\n", mixer.MixerType);
+                printf("      Mixer Settings\n");
+                printf("               Freq: %g\n", mixer.Freq);
+                printf("        PhaseOffset: %g\n", mixer.PhaseOffset);
+                printf("        EventSource: %d\n", mixer.EventSource);
+                printf("      CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
+                printf("          MixerMode: %d\n", mixer.MixerMode);
+                printf("     FineMixerScale: %d\n", mixer.FineMixerScale);
+                printf("          MixerType: %d\n", mixer.MixerType);
             }
             else {
-                printf("   XRFdc_GetMixerSettings()=%d\n", i);
+                printf("      XRFdc_GetMixerSettings()=%d\n", i);
             }
         }
     }
@@ -160,7 +160,7 @@ rfDACshow(void)
                         v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
         if (v == XRFDC_INTERNAL_PLL_CLK) {
             XRFdc_GetPLLLockStatus(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile, &v);
-            printf("       DAC PLL locked state %d\n", (int)v);
+            printf("      DAC PLL locked state %d\n", (int)v);
         }
         for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
             for (duc = 0; duc < CFG_DAC_DUC_PER_DAC; duc++) {
@@ -170,17 +170,17 @@ rfDACshow(void)
                 i = XRFdc_GetMixerSettings(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile, dac*CFG_DAC_DUC_OFFSET + duc,
                         &mixer);
                 if (i == XST_SUCCESS) {
-                    printf("   Mixer Settings\n");
-                    printf("          Freq: %g\n", mixer.Freq);
-                    printf("   PhaseOffset: %g\n", mixer.PhaseOffset);
-                    printf("   EventSource: %d\n", mixer.EventSource);
-                    printf(" CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
-                    printf("     MixerMode: %d\n", mixer.MixerMode);
-                    printf("FineMixerScale: %d\n", mixer.FineMixerScale);
-                    printf("     MixerType: %d\n", mixer.MixerType);
+                    printf("      Mixer Settings\n");
+                    printf("               Freq: %g\n", mixer.Freq);
+                    printf("        PhaseOffset: %g\n", mixer.PhaseOffset);
+                    printf("        EventSource: %d\n", mixer.EventSource);
+                    printf("      CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
+                    printf("          MixerMode: %d\n", mixer.MixerMode);
+                    printf("     FineMixerScale: %d\n", mixer.FineMixerScale);
+                    printf("          MixerType: %d\n", mixer.MixerType);
                 }
                 else {
-                    printf("   XRFdc_GetMixerSettings()=%d\n", i);
+                    printf("      XRFdc_GetMixerSettings()=%d\n", i);
                 }
             }
         }
