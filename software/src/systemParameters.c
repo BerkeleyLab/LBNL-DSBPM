@@ -666,6 +666,7 @@ setDefaultNetAddress(struct sysNetConfig *netConfig,
         uint8_t *eepromMAC, int size)
 {
     if (isRecovery) {
+        printf("\n====== RECOVERY MODE. ASSIGNING DEFAULT NETWORK PARAMETERS ===\n\n");
         netConfig->ipv4 = defaultNetConfig->ipv4;
         netConfig->useDHCP = defaultNetConfig->useDHCP;
         memcpy(netConfig->ethernetMAC, defaultNetConfig->ethernetMAC,
