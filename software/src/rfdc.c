@@ -104,8 +104,8 @@ rfADCshow(void)
 
         XRFdc_GetPLLConfig(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, &PLLSettings);
         printf("       PLL %s\n", PLLSettings.Enabled ? "enabled" : "disabled");
-        printf("     Ref Clk Freq: %g\n", PLLSettings.RefClkFreq);
-        printf("    Sampling Rate: %g\n", PLLSettings.SampleRate);
+        printf("     Ref Clk Freq: %g MHz\n", PLLSettings.RefClkFreq);
+        printf("    Sampling Rate: %g GHz\n", PLLSettings.SampleRate);
 
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             int adcIdx = (tile * CFG_ADC_PER_TILE) + adc;
@@ -154,8 +154,8 @@ rfADCshow(void)
             i = XRFdc_GetMixerSettings(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile,adc,&mixer);
             if (i == XST_SUCCESS) {
                 printf("      Mixer Settings\n");
-                printf("               Freq: %g\n", mixer.Freq);
-                printf("        PhaseOffset: %g\n", mixer.PhaseOffset);
+                printf("               Freq: %g MHz\n", mixer.Freq);
+                printf("        PhaseOffset: %g degrees\n", mixer.PhaseOffset);
                 printf("        EventSource: %d\n", mixer.EventSource);
                 printf("      CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
                 printf("          MixerMode: %d\n", mixer.MixerMode);
@@ -202,8 +202,8 @@ rfDACshow(void)
 
         XRFdc_GetPLLConfig(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile, &PLLSettings);
         printf("       PLL %s\n", PLLSettings.Enabled ? "enabled" : "disabled");
-        printf("     Ref Clk Freq: %g\n", PLLSettings.RefClkFreq);
-        printf("    Sampling Rate: %g\n", PLLSettings.SampleRate);
+        printf("     Ref Clk Freq: %g MHz\n", PLLSettings.RefClkFreq);
+        printf("    Sampling Rate: %g GHz\n", PLLSettings.SampleRate);
 
         for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
             for (duc = 0; duc < CFG_DAC_DUC_PER_DAC; duc++) {
@@ -214,8 +214,8 @@ rfDACshow(void)
                         &mixer);
                 if (i == XST_SUCCESS) {
                     printf("      Mixer Settings\n");
-                    printf("               Freq: %g\n", mixer.Freq);
-                    printf("        PhaseOffset: %g\n", mixer.PhaseOffset);
+                    printf("               Freq: %g MHz\n", mixer.Freq);
+                    printf("        PhaseOffset: %g degrees\n", mixer.PhaseOffset);
                     printf("        EventSource: %d\n", mixer.EventSource);
                     printf("      CoarseMixFreq: %d\n", mixer.CoarseMixFreq);
                     printf("          MixerMode: %d\n", mixer.MixerMode);
