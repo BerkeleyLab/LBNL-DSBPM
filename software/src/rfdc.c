@@ -77,13 +77,18 @@ rfADCshow(void)
     int adc;
     uint32_t v;
     XRFdc_IPStatus IPStatus;
+    XRFdc_PLL_Settings PLLSettings;
 
     if (XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus) != 0) {
         printf("Can't get IP status.\n");
         return;
     }
+
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        if (!IPStatus.ADCTileStatus[tile].IsEnabled) continue;
+        if (!IPStatus.ADCTileStatus[tile].IsEnabled) {
+            continue;
+        }
+
         printf("ADC Tile %d (%d) enabled\n", tile, 224 + tile);
         printf("   ADC Tile state: %#X\n", IPStatus.ADCTileStatus[tile].TileState);
         printf("        ADC  Mask: %#X\n", IPStatus.ADCTileStatus[tile].BlockStatusMask);
@@ -91,35 +96,61 @@ rfADCshow(void)
         printf("     Clock source: %s\n",
                         v == XRFDC_INTERNAL_PLL_CLK ? "Internal PLL" :
                         v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
+
         if (v == XRFDC_INTERNAL_PLL_CLK) {
             XRFdc_GetPLLLockStatus(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, &v);
             printf("      ADC PLL locked state %d\n", (int)v);
         }
+
+        XRFdc_GetPLLConfig(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, &PLLSettings);
+        printf("       PLL %s\n", PLLSettings.Enabled ? "enabled" : "disabled");
+        printf("     Ref Clk Freq: %g\n", PLLSettings.RefClkFreq);
+        printf("    Sampling Rate: %g\n", PLLSettings.SampleRate);
+
         for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
             int adcIdx = (tile * CFG_ADC_PER_TILE) + adc;
             int i;
             XRFdc_Mixer_Settings mixer;
             XRFdc_Cal_Freeze_Settings cfs;
-            if (adcIdx >= CFG_ADC_PHYSICAL_COUNT) break;
+
+            if (adcIdx >= CFG_ADC_PHYSICAL_COUNT) {
+                break;
+            }
+
             XRFdc_GetLinkCoupling(&rfDCCfg.rfDC, tile, adc, &v);
             printf("   ADC %d: %cC link", adcIdx,  v ? 'A' : 'D');
             XRFdc_GetIntrStatus(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile, adc, &v);
+
             if (v) {
-                if (v & XRFDC_ADC_OVR_RANGE_MASK) printf(", Overrange");
-                if (v & XRFDC_ADC_OVR_VOLTAGE_MASK) printf(", Overvoltage");
+                if (v & XRFDC_ADC_OVR_RANGE_MASK) {
+                    printf(", Overrange");
+                }
+                if (v & XRFDC_ADC_OVR_VOLTAGE_MASK) {
+                    printf(", Overvoltage");
+                }
             }
+
             i = XRFdc_GetCalFreeze(&rfDCCfg.rfDC, tile, adc, &cfs);
+
             if (i == XST_SUCCESS) {
-                if (cfs.FreezeCalibration) printf(", Freeze");
-                if (cfs.CalFrozen) printf(", Frozen");
-                if (cfs.DisableFreezePin) printf(", freeze pin disabled");
+                if (cfs.FreezeCalibration) {
+                    printf(", Freeze");
+                }
+                if (cfs.CalFrozen) {
+                    printf(", Frozen");
+                }
+                if (cfs.DisableFreezePin) {
+                    printf(", freeze pin disabled");
+                }
             }
             else {
                 printf(", XRFdc_GetCalFreeze=%d", i);
             }
+
             printf("\n");
             XRFdc_GetDither(&rfDCCfg.rfDC, tile, adc, &v);
             printf("      Dither: %s\n", v ? "enabled" : "disabled");
+
             i = XRFdc_GetMixerSettings(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile,adc,&mixer);
             if (i == XST_SUCCESS) {
                 printf("      Mixer Settings\n");
@@ -144,13 +175,18 @@ rfDACshow(void)
     int tile, dac, duc;
     uint32_t v;
     XRFdc_IPStatus IPStatus;
+    XRFdc_PLL_Settings PLLSettings;
 
     if (XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus) != 0) {
         printf("Can't get IP status.\n");
         return;
     }
+
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        if (!IPStatus.DACTileStatus[tile].IsEnabled) continue;
+        if (!IPStatus.DACTileStatus[tile].IsEnabled) {
+            continue;
+        }
+
         printf("DAC Tile %d (%d) enabled\n", tile, 228 + tile);
         printf("   DAC Tile state: %#X\n", IPStatus.DACTileStatus[tile].TileState);
         printf("         DAC Mask: %#X\n", IPStatus.DACTileStatus[tile].BlockStatusMask);
@@ -158,10 +194,17 @@ rfDACshow(void)
         printf("     Clock source: %s\n",
                         v == XRFDC_INTERNAL_PLL_CLK ? "Internal PLL" :
                         v == XRFDC_EXTERNAL_CLK ? "External clock" : "Unknown");
+
         if (v == XRFDC_INTERNAL_PLL_CLK) {
             XRFdc_GetPLLLockStatus(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile, &v);
             printf("      DAC PLL locked state %d\n", (int)v);
         }
+
+        XRFdc_GetPLLConfig(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile, &PLLSettings);
+        printf("       PLL %s\n", PLLSettings.Enabled ? "enabled" : "disabled");
+        printf("     Ref Clk Freq: %g\n", PLLSettings.RefClkFreq);
+        printf("    Sampling Rate: %g\n", PLLSettings.SampleRate);
+
         for (dac = 0 ; dac < CFG_DAC_PER_TILE ; dac++) {
             for (duc = 0; duc < CFG_DAC_DUC_PER_DAC; duc++) {
                 int i;
