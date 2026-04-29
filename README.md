@@ -119,8 +119,8 @@ and `IP Gateway` from the `sysParms.csv` configuration file.
 If `sysParms.csv` file corrupted, the default IP address 192.168.1.128/24 will
 be used.
 
-**IMPORTANT NOTE 2**: There are 2 common sets of values for the `RFDC MMCM` values.
-The first one is when using the CLk104 with the on-bord 160MHz oscillator.
+**IMPORTANT NOTE 2**: There are 3 common sets of values for the `RFDC MMCM` values.
+The first one is when using the CLk104 with the on-board 160MHz oscillator.
 
 ```
 RFDC MMCM DivClk Divider,1000
@@ -128,14 +128,24 @@ RFDC MMCM Clk Multiplier,3375
 RFDC MMCM Clk0 Divider,10250
 ```
 
-The second set of values are using when using CLK104a and bypassing the LMK04828B
-(setting it to distribution mode). This effectively limits the `FPGA REF` clock.
-For this reason the MMC vlaues need to be different:
+The second set of values is using when using CLK104a and bypassing the LMK04828B
+(setting it to distribution mode) for ALS-U SR. This effectively limits the
+`FPGA REF` clock. For this reason the MMC vlaues need to be different:
 
 ```
 RFDC MMCM DivClk Divider,1000
 RFDC MMCM Clk Multiplier,20250
 RFDC MMCM Clk0 Divider,10250
+```
+
+The third set of values is using when using CLK104a and bypassing the LMK04828B
+(setting it to distribution mode) for ALS-U AR. This effectively limits the
+`FPGA REF` clock. For this reason the MMC vlaues need to be different:
+
+```
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,18250
+RFDC MMCM Clk0 Divider,9500
 ```
 
 #### RFTABLE.CSV
