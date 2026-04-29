@@ -106,6 +106,10 @@ writeTable('rfTableSR_77_328_bin_20_conjugate.csv',
           rfTable(499.64, 328, 77, 77,
                   scaleFactor = args.demodScaleFactor,
                   Feff = 499.64/328*20, conjugate = True))
+writeTable('rfTableSR_73_304_bin_20_conjugate.csv',
+          rfTable(500.392, 304, 73, 73,
+                  scaleFactor = args.demodScaleFactor,
+                  Feff = 500.392/304*20, conjugate = True))
 
 ###############################################################################
 # Pilot Tone demodulation tables
@@ -121,6 +125,10 @@ writeTable('ptTableSR_81_328_L7_19_H11_19_bin_20_conjugate.csv',
            ptDemodTableGen((499.64/328.0)*(1+7.0/19.0), (499.64/328.0)*(1+11.0/19.0),
                            499.64, 328, 81, 81*19, scaleFactor = args.demodScaleFactor,
                            Feff = 499.64/328*20, conjugate = True))
+writeTable('ptTableSR_73_304_L7_41_H11_41_bin_20_conjugate.csv',
+           ptDemodTableGen((500.392/304.0)*(1+7.0/41.0), (500.392/304.0)*(1+11.0/41.0),
+                           500.392, 304, 73, 73*41, scaleFactor = args.demodScaleFactor,
+                           Feff = 500.392/304*20, conjugate = True))
 
 ###############################################################################
 # Pilot Tone generation tables
@@ -132,4 +140,8 @@ writeTable('ptGen_81_7_low_11_high_19.csv',
 writeTable('ptGen_77_7_low_11_high_19.csv',
            ptGenTable((499.64/328.0)*(1+7.0/19.0), (499.64/328.0)*(1+11.0/19.0),
                            499.64, 328, 77, 77*19, scaleFactor = args.ptScaleFactor,
+                           Feff = 0, conjugate = False))
+writeTable('ptGen_73_7_low_11_high_41.csv',
+           ptGenTable((500.392/304.0)*(1+7.0/41.0), (500.392/304.0)*(1+11.0/41.0),
+                           500.392, 304, 73, 73*41, scaleFactor = args.ptScaleFactor,
                            Feff = 0, conjugate = False))
