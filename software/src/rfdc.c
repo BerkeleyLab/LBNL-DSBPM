@@ -653,12 +653,12 @@ rfDCsyncType(int type)
 
 void
 rfDCsync(){
-    rfDCsyncType(RFDC_ADC);
-    rfDCsyncType(RFDC_DAC);
     rfADCCfgStatic();
     rfADCCfg();
     rfDACCfgStatic();
     rfDACCfg();
+    rfDCsyncType(RFDC_ADC);
+    rfDCsyncType(RFDC_DAC);
 }
 
 void
