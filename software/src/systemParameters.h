@@ -39,6 +39,10 @@ extern struct systemParameters {
     float               xCalibration;
     float               yCalibration;
     float               qCalibration;
+    float               rfdcADCSampRate;
+    float               rfdcADCNCOFreq;
+    float               rfdcDACSampRate;
+    float               rfdcDACNCOFreq;
     int                 rfdcMMCMDivClkDivider;
     int                 rfdcMMCMMultiplier;
     int                 rfdcMMCMClk0Divider;
@@ -56,7 +60,7 @@ void systemParametersCommit(void);
 void setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery,
-        uint8_t *eepromMAC, int size, int isMACValid);
+        uint8_t *eepromMAC, int size);
 void showNetworkConfiguration(const struct sysNetParms *ipv4);
 void systemParametersShowUserMGTrefClkOffsetPPM(void);
 

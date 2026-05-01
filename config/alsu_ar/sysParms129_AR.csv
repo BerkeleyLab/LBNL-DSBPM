@@ -1,0 +1,27 @@
+Ethernet Address,AA:4C:42:4E:4C:02
+Use DHCP,0
+IP Address,192.168.1.129
+IP Netmask,255.255.255.0
+IP Gateway,192.168.1.1
+User MGT ref offset,700
+Startup debug flags,0x0
+PLL RF divisor,304
+PLL multiplier,73
+Single pass?,0
+Single pass event,80
+ADC clocks per heartbeat,123120000
+EVR clocks per fast acquisition,12464
+EVR clocks per slow acquisition,12464000
+ADC for button ABCD,0123
+X calibration (mm p.u.),16
+Y calibration (mm p.u.),16
+Q calibration (p.u.),16
+RFDC ADC Sampling Rate (Hz),2920
+RFDC NCO ADC Frequency (Hz),-284
+RFDC DAC Sampling Rate (Hz),2920
+RFDC NCO DAC Frequency (Hz),304
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,18250
+RFDC MMCM Clk0 Divider,9500
+Button rotation (0 or 45),45
+AFE attenuator trims (dB),0 0 0 0

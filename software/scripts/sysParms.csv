@@ -12,11 +12,15 @@ ADC clocks per heartbeat,24928000
 EVR clocks per fast acquisition,12464
 EVR clocks per slow acquisition,12464000
 ADC for button ABCD,3210
-RFDC MMCM DivClk Divider,1000
-RFDC MMCM Clk Multiplier,3375
-RFDC MMCM Clk0 Divider,10250
 X calibration (mm p.u.),16.0
 Y calibration (mm p.u.),16.0
 Q calibration (p.u.),16.0
+RFDC ADC Sampling Rate (Hz),3240
+RFDC NCO ADC Frequency (Hz),-308
+RFDC DAC Sampling Rate (Hz),3240
+RFDC NCO DAC Frequency (Hz),-308
+RFDC MMCM DivClk Divider,1000
+RFDC MMCM Clk Multiplier,3375
+RFDC MMCM Clk0 Divider,10250
 Button rotation (0 or 45),45
 AFE attenuator trims (dB),0 0 0 0

@@ -9,6 +9,7 @@
 #include "util.h"
 #include "ffs.h"
 #include "serdes.h"
+#include "rfdc.h"
 
 struct systemParameters systemParameters;
 struct systemParameters systemParametersCandidate;
@@ -73,6 +74,10 @@ systemParametersSetDefaults(void)
     systemParametersDefault.adcHeartbeatMarker = 152 * 81 * 1000 * 10;
     systemParametersDefault.evrPerFaMarker = 152 * 82;
     systemParametersDefault.evrPerSaMarker = 152 * 82 * 1000;
+    systemParametersDefault.rfdcADCSampRate = ADC_SAMPLING_CLK_FREQ;
+    systemParametersDefault.rfdcADCNCOFreq = ADC_NCO_FREQ;
+    systemParametersDefault.rfdcDACSampRate = DAC_SAMPLING_CLK_FREQ;
+    systemParametersDefault.rfdcDACNCOFreq = DAC_NCO_FREQ;
     systemParametersDefault.rfdcMMCMDivClkDivider = ADC_CLK_MMCM_DIVCLK_DIVIDER;
     systemParametersDefault.rfdcMMCMMultiplier = ADC_CLK_MMCM_MULTIPLIER;
     systemParametersDefault.rfdcMMCMClk0Divider = ADC_CLK_MMCM_CLK0_DIVIDER;
@@ -105,6 +110,12 @@ systemParametersCommit(void)
     if (userMGTrefClkAdjust(systemParameters.userMGTrefClkOffsetPPM)) {
         systemParametersShowUserMGTrefClkOffsetPPM();
     }
+
+    rfADCSetCfg(systemParameters.rfdcADCSampRate, systemParameters.rfdcADCSampRate,
+            systemParameters.rfdcADCNCOFreq);
+    rfDACSetCfg(systemParameters.rfdcDACSampRate, systemParameters.rfdcDACSampRate,
+            systemParameters.rfdcDACNCOFreq);
+    rfDCsync();
 }
 
 static char cbuf[40];
@@ -284,30 +295,6 @@ static struct conv {
         .parse = parseInt,
     },
     {
-        .name = "RFDC MMCM DivClk Divider",
-        .offset = offsetof(struct systemParameters, rfdcMMCMDivClkDivider),
-        .size = member_size(struct systemParameters, rfdcMMCMDivClkDivider),
-        .visited = false,
-        .format = formatInt,
-        .parse = parseInt,
-    },
-    {
-        .name = "RFDC MMCM Clk Multiplier",
-        .offset = offsetof(struct systemParameters, rfdcMMCMMultiplier),
-        .size = member_size(struct systemParameters, rfdcMMCMMultiplier),
-        .visited = false,
-        .format = formatInt,
-        .parse = parseInt,
-    },
-    {
-        .name = "RFDC MMCM Clk0 Divider",
-        .offset = offsetof(struct systemParameters, rfdcMMCMClk0Divider),
-        .size = member_size(struct systemParameters, rfdcMMCMClk0Divider),
-        .visited = false,
-        .format = formatInt,
-        .parse = parseInt,
-    },
-    {
         .name = "X calibration (mm p.u.)",
         .offset = offsetof(struct systemParameters, xCalibration),
         .size = member_size(struct systemParameters, xCalibration),
@@ -330,6 +317,62 @@ static struct conv {
         .visited = false,
         .format = formatFloat,
         .parse = parseFloat,
+    },
+    {
+        .name = "RFDC ADC Sampling Rate (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcADCSampRate),
+        .size = member_size(struct systemParameters, rfdcADCSampRate),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC NCO ADC Frequency (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcADCNCOFreq),
+        .size = member_size(struct systemParameters, rfdcADCNCOFreq),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC DAC Sampling Rate (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcDACSampRate),
+        .size = member_size(struct systemParameters, rfdcDACSampRate),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC NCO DAC Frequency (Hz)",
+        .offset = offsetof(struct systemParameters, rfdcDACNCOFreq),
+        .size = member_size(struct systemParameters, rfdcDACNCOFreq),
+        .visited = false,
+        .format = formatFloat,
+        .parse = parseFloat,
+    },
+    {
+        .name = "RFDC MMCM DivClk Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMDivClkDivider),
+        .size = member_size(struct systemParameters, rfdcMMCMDivClkDivider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk Multiplier",
+        .offset = offsetof(struct systemParameters, rfdcMMCMMultiplier),
+        .size = member_size(struct systemParameters, rfdcMMCMMultiplier),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
+    },
+    {
+        .name = "RFDC MMCM Clk0 Divider",
+        .offset = offsetof(struct systemParameters, rfdcMMCMClk0Divider),
+        .size = member_size(struct systemParameters, rfdcMMCMClk0Divider),
+        .visited = false,
+        .format = formatInt,
+        .parse = parseInt,
     },
     {
         .name = "Button rotation (0 or 45)",
@@ -586,13 +629,44 @@ systemParametersStashEEPROM(void)
     return nWrite;
 }
 
+static const int MAC_ADDR_SIZE = 6;
+
+static int
+validateMACAddress(uint8_t *buf, int size)
+{
+    int ones = 0;
+    int zeros = 0;
+
+    if (size < MAC_ADDR_SIZE) {
+        return -1;
+    }
+
+    for (int i = 0; i < MAC_ADDR_SIZE; i++) {
+        if (buf[i] == 0) {
+            zeros++;
+        }
+
+        if (buf[i] == 255) {
+            ones++;
+        }
+    }
+
+    if (zeros == 6 || ones == 6) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
 void
 setDefaultNetAddress(struct sysNetConfig *netConfig,
         struct sysNetConfig *sysParamsNetConfig,
         struct sysNetConfig *defaultNetConfig, int isRecovery,
-        uint8_t *eepromMAC, int size, int isMACValid)
+        uint8_t *eepromMAC, int size)
 {
     if (isRecovery) {
+        printf("\n====== RECOVERY MODE. ASSIGNING DEFAULT NETWORK PARAMETERS ===\n\n");
         netConfig->ipv4 = defaultNetConfig->ipv4;
         netConfig->useDHCP = defaultNetConfig->useDHCP;
         memcpy(netConfig->ethernetMAC, defaultNetConfig->ethernetMAC,
@@ -612,10 +686,16 @@ setDefaultNetAddress(struct sysNetConfig *netConfig,
 #else
         netConfig->ipv4 = sysParamsNetConfig->ipv4;
 #endif
-        if (isMACValid) {
+
+        int isMACInvalid = validateMACAddress(eepromMAC, size);
+
+        if (!isMACInvalid) {
+            printf("EEPROM MAC:\n");
+            eepromDisplay(eepromMAC, size);
             memcpy (netConfig->ethernetMAC, eepromMAC, size);
         }
         else {
+            printf("EEPROM MAC is invalid! ASSIGNING DEFAULT\n");
             memcpy (netConfig->ethernetMAC, sysParamsNetConfig->ethernetMAC,
                     sizeof (netConfig->ethernetMAC));
         }

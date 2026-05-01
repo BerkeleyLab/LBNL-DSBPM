@@ -135,12 +135,27 @@ initController(struct controller *cp, int deviceId)
 	XIicPs_SetSClk(&cp->Iic, 80000);
 }
 
+static int
+iicReset(struct controller *cp)
+{
+    if (cp->controllerIndex >= CONTROLLER_COUNT) {
+        return 0;
+    }
+
+    XIicPs_Reset(&cp->Iic);
+    microsecondSpin(10000);
+
+    initController(cp, deviceIds[cp->controllerIndex]);
+    return 1;
+}
+
 void
 iicInit(void)
 {
     int i;
     static const int BUF_MAX_SIZE = 16;
     uint8_t buf[BUF_MAX_SIZE];
+    int ret = 0;
 
     for (i = 0 ; i < CONTROLLER_COUNT ; i++) {
         struct controller *cp = &controllers[i];
@@ -173,28 +188,40 @@ iicInit(void)
      * SC18IS606 has a version register on Function ID FEh.
      * SC18IS602B does not.
      */
-    i2c2spiVersion = I2C2SPI_SC18IS602B;
+    struct deviceInfo *dp = &deviceTable[IIC_INDEX_I2C2SPI];
+    struct controller *cp = &controllers[dp->controllerIndex];
+    i2c2spiVersion = I2C2SPI_UNKNOWN;
 
     buf[0] = 0xFE; /* Function ID FEh */
-    if(!iicWrite(IIC_INDEX_I2C2SPI, buf, 1)) {
+    ret = iicWrite(IIC_INDEX_I2C2SPI, buf, 1);
+    if(ret == 0) {
         warn("Request I2C2SPI version");
-    }
-
-    microsecondSpin(10000);
-
-    static const int I2C2SPI_VERSION_LENGTH = 16;
-    if(!iicRead(IIC_INDEX_I2C2SPI, -1, buf, I2C2SPI_VERSION_LENGTH)) {
-        warn("Read I2C2SPI version. Assumming SC18IS602B");
+        /* Reset IIC and assume the older version */
+        iicReset(cp);
         i2c2spiVersion = I2C2SPI_SC18IS602B;
         buf[0] = '\0';
     }
-    else {
-        buf[BUF_MAX_SIZE-1] = '\0';
-        if (strncasecmp((const char *) buf, "SC18IS606", 9) == 0) {
-            i2c2spiVersion = I2C2SPI_SC18IS606;
+
+    /* Needed by I2C2SPI chip readback */
+    microsecondSpin(10000);
+
+    static const int I2C2SPI_VERSION_LENGTH = 16;
+    if (ret != 0) {
+        if(!iicRead(IIC_INDEX_I2C2SPI, -1, buf, I2C2SPI_VERSION_LENGTH)) {
+            warn("Read I2C2SPI version. Assumming SC18IS602B");
+            /* Reset IIC and assume the older version */
+            iicReset(cp);
+            i2c2spiVersion = I2C2SPI_SC18IS602B;
+            buf[0] = '\0';
         }
         else {
-            i2c2spiVersion = I2C2SPI_SC18IS602B;
+            buf[BUF_MAX_SIZE-1] = '\0';
+            if (strncasecmp((const char *) buf, "SC18IS606", 9) == 0) {
+                i2c2spiVersion = I2C2SPI_SC18IS606;
+            }
+            else {
+                i2c2spiVersion = I2C2SPI_SC18IS602B;
+            }
         }
     }
 
@@ -213,20 +240,6 @@ iicInit(void)
     buf[0] = 0xF0; /* Function ID F0h */
     buf[1] = 0x02; /* See above */
     if (!iicWrite(IIC_INDEX_I2C2SPI, buf, 2)) warn("Configure SC18IS602");
-}
-
-static int
-iicReset(struct controller *cp)
-{
-    if (cp->controllerIndex >= CONTROLLER_COUNT) {
-        return 0;
-    }
-
-    XIicPs_Reset(&cp->Iic);
-    microsecondSpin(10000);
-
-    initController(cp, deviceIds[cp->controllerIndex]);
-    return 1;
 }
 
 static int
