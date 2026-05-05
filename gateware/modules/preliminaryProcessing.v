@@ -353,7 +353,7 @@ adder #(
   dmMulRfSquareSum (
         .clk(adcClk),
         .a(adcRfPrdISquared),
-        .b(adcRfPrdQSquared)
+        .b(adcRfPrdQSquared),
         .valid_in(1'b1),
         .sum(adcRfPrdIandQSquared));
 
@@ -394,7 +394,7 @@ adder #(
   dmMulPlSquareSum (
         .clk(adcClk),
         .a(adcPlPrdISquared),
-        .b(adcPlPrdQSquared)
+        .b(adcPlPrdQSquared),
         .valid_in(1'b1),
         .sum(adcPlPrdIandQSquared));
 
