@@ -169,52 +169,52 @@ initial begin
     @(posedge adcClk);
     adcValidIn <= 1'b1;
     adc0In     <= 16'd0;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd0;
 
     @(posedge adcClk);
     adcValidIn <= 1'b1;
     adc0In     <= 16'd20;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd20;
 
     @(posedge adcClk);
     adc0In     <= 16'd40;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd40;
 
     @(posedge adcClk);
     adc0In     <= 16'd60;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd60;
 
     @(posedge adcClk);
     adc0In     <= 16'd80;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd80;
 
     @(posedge adcClk);
     adc0In     <= 16'd80;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd80;;
 
     @(posedge adcClk);
     adc0In     <= 16'd100;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd100;
 
     @(posedge adcClk);
     adc0In     <= 16'd200;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd200;
 
     @(posedge adcClk);
     adc0In     <= 16'd50;
-    adc0QIn    <= 0;
-
-    @(posedge adcClk);
-    adc0In     <= 16'd80;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd50;
 
     @(posedge adcClk);
     adc0In     <= 16'd40;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd40;
 
     @(posedge adcClk);
-    adc0In     <= 16'd30;
-    adc0QIn    <= 0;
+    adc0In     <= 16'd20;
+    adc0QIn    <= 16'd20;
+
+    @(posedge adcClk);
+    adc0In     <= 16'd10;
+    adc0QIn    <= 16'd10;
 
     repeat(10) begin
         @(posedge adcClk);
@@ -222,7 +222,7 @@ initial begin
 
     @(posedge adcClk);
     adc0In     <= 16'd0;
-    adc0QIn    <= 0;
+    adc0QIn    <= 16'd0;
 end
 
 endmodule

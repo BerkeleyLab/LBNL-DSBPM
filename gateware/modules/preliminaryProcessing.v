@@ -313,7 +313,11 @@ wire signed [PRODUCT_WIDTH-1:0] adcPhPrdIComplex, adcPhPrdQComplex;
 
 wire signed [PRODUCT_WIDTH-1:0] adcRfPrdISquared, adcRfPrdQSquared;
 wire signed [PRODUCT_WIDTH-1:0] adcPlPrdISquared, adcPlPrdQSquared;
-wire signed [PRODUCT_WIDTH-1:0] adcPhPrdISquared, adcPhPrdQSquared;
+// Pilot Tone High = Pilot Tone Low is RMS is on
+
+wire signed [PRODUCT_WIDTH-1:0] adcRfPrdIandQSquared;
+wire signed [PRODUCT_WIDTH-1:0] adcPlPrdIandQSquared;
+// Pilot Tone High = Pilot Tone Low is RMS is on
 
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
@@ -343,8 +347,18 @@ mixer #(.dwi(ADC_WIDTH),
     .mult(adcQLO),
     .mixout(adcRfPrdQSquared));
 
-assign adcRfPrdI = adcUseRMS ? adcRfPrdISquared : adcRfPrdIComplex;
-assign adcRfPrdQ = adcUseRMS ? adcRfPrdQSquared : adcRfPrdQComplex;
+adder #(
+    .INPUT_WIDTH(PRODUCT_WIDTH),
+    .OUTPUT_WIDTH(PRODUCT_WIDTH))
+  dmMulRfSquareSum (
+        .clk(adcClk),
+        .a(adcRfPrdISquared),
+        .b(adcRfPrdQSquared),
+        .valid_in(1'b1),
+        .sum(adcRfPrdIandQSquared));
+
+assign adcRfPrdI = adcUseRMS ? adcRfPrdIandQSquared : adcRfPrdIComplex;
+assign adcRfPrdQ = adcUseRMS ? {PRODUCT_WIDTH{1'b0}} : adcRfPrdQComplex;
 
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
@@ -374,8 +388,18 @@ mixer #(.dwi(ADC_WIDTH),
     .mult(adcQLO),
     .mixout(adcPlPrdQSquared));
 
-assign adcPlPrdI = adcUseRMS ? adcPlPrdISquared : adcPlPrdIComplex;
-assign adcPlPrdQ = adcUseRMS ? adcPlPrdQSquared : adcPlPrdQComplex;
+adder #(
+    .INPUT_WIDTH(PRODUCT_WIDTH),
+    .OUTPUT_WIDTH(PRODUCT_WIDTH))
+  dmMulPlSquareSum (
+        .clk(adcClk),
+        .a(adcPlPrdISquared),
+        .b(adcPlPrdQSquared),
+        .valid_in(1'b1),
+        .sum(adcPlPrdIandQSquared));
+
+assign adcPlPrdI = adcUseRMS ? adcPlPrdIandQSquared : adcPlPrdIComplex;
+assign adcPlPrdQ = adcUseRMS ? {PRODUCT_WIDTH{1'b0}} : adcPlPrdQComplex;
 
 complexMixer #(.AWIDTH(ADC_WIDTH),
                .BWIDTH(LO_WIDTH),
@@ -390,11 +414,8 @@ complexMixer #(.AWIDTH(ADC_WIDTH),
     .pi(adcPhPrdQComplex));
 
 // Pilot Tone High = Pilot Tone Low is RMS is on
-assign adcPhPrdISquared = adcPlPrdISquared;
-assign adcPhPrdQSquared = adcPlPrdQSquared;
-
-assign adcPhPrdI = adcUseRMS ? adcPhPrdISquared : adcPhPrdIComplex;
-assign adcPhPrdQ = adcUseRMS ? adcPhPrdQSquared : adcPhPrdQComplex;
+assign adcPhPrdI = adcUseRMS ? adcPlPrdIandQSquared : adcPhPrdIComplex;
+assign adcPhPrdQ = adcUseRMS ? {PRODUCT_WIDTH{1'b0}} : adcPhPrdQComplex;
 
 end
 else if (IQ_DATA == "FALSE") begin

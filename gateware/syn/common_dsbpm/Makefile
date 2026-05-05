@@ -27,10 +27,17 @@ vpath %.v $(CORDIC_DIR)
 vpath %.v $(MODULES_DIR)
 vpath %.v $(GW_TOP_COMMON_DIR)
 
+# Search for .sv files here
+vpath %.sv $(DSP_DIR)
+vpath %.sv $(CORDIC_DIR)
+vpath %.sv $(MODULES_DIR)
+vpath %.sv $(GW_TOP_COMMON_DIR)
+
 TOP_LVL_DIR = ../../top/$(TARGET)
 
 # top-level files go here
 vpath %.v $(TOP_LVL_DIR)
+vpath %.sv $(TOP_LVL_DIR)
 vpath %.xdc $(TOP_LVL_DIR)
 
 #.tcl.in and .tcl files can be here too
@@ -45,6 +52,9 @@ include $(CORDIC_DIR)/rules.mk
 
 # ignore xilinx primitives
 UNISIM_CRAP += -e 'GTYE4_CHANNEL|MMCME4_ADV'
+
+# Enable support for system verilog
+VERILOG += -g2012
 
 # Top level files for depedency tracking
 SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
@@ -149,6 +159,9 @@ VFLAGS_DEP += -I$(GW_TOP_COMMON_DIR)
 VFLAGS_DEP += -I$(TOP_LVL_DIR)
 VFLAGS_DEP += $(addprefix -I, $(IP_CORES_SRCS_DIRS))
 VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
+
+# Also search for .sv files
+VFLAGS_DEP += -Y .sv
 
 # additional vflags, our files that have more than 1 top-level module
 EXTRA_VFLAGS_DEP += extra_iverilog_cfile.txt
