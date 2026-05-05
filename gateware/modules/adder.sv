@@ -1,6 +1,3 @@
-`resetall
-`default_nettype none
-
 module adder #(
     parameter int INPUT_WIDTH = 32,
     parameter int OUTPUT_WIDTH = 32
@@ -40,7 +37,4 @@ end
 end
 endgenerate
 
-
 endmodule
-
-`resetall
