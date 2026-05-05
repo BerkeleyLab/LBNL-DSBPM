@@ -1,7 +1,9 @@
 # Interaction between newad and auto-dependency generation is confusing.
 # . and $(DSP_DIR) are different when building out-of-tree
-VFLAGS_DEP += -I. -y . -y$(DSP_DIR)
+VFLAGS_DEP += -I. -y . -y$(DSP_DIR) -Y .sv
 VFLAGS += -I. -y . -y$(DSP_DIR) -I$(AUTOGEN_DIR)
+
+VERILOG += -g2012
 
 TEST_BENCH = \
 	csrTestMaster_tb \
@@ -9,7 +11,8 @@ TEST_BENCH = \
 	adcProcessing_tb \
 	genericDPRAM_tb \
 	genericDACStreamer_tb \
-	genericSPI_tb
+	genericSPI_tb \
+	adder_tb
 
 TGT_ := $(TEST_BENCH)
 NO_CHECK =
@@ -18,6 +21,9 @@ CHK_ = $(filter-out $(NO_CHECK), $(TEST_BENCH:%_tb=%_check))
 .PHONY: targets checks
 targets: $(TGT_)
 checks: $(CHK_)
+
+%_tb: %_tb.sv %.sv
+	$(VERILOG_TB)
 
 CLEAN += $(TGT_) *_tb *.pyc *.bit *.in *.vcd *.lxt *~
 CLEAN_DIRS += _xilinx __pycache__

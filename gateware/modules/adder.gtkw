@@ -1,0 +1,56 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Mon May  4 21:46:44 2026
+[*]
+[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/adder.vcd"
+[dumpfile_mtime] "Mon May  4 21:45:45 2026"
+[dumpfile_size] 75368
+[savefile] "/home/lrusso/repos/dsbpm/gateware/modules/adder.gtkw"
+[timestart] 0
+[size] 1143 1340
+[pos] -3 9
+*-5.700000 65 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] adder_tb.
+[sst_width] 249
+[signals_width] 209
+[sst_expanded] 1
+[sst_vpaned_height] 419
+@200
+-TB
+@28
+adder_tb.CLK_PERIOD
+@420
+adder_tb.INPUT_WIDTH
+adder_tb.OUTPUT_WIDTH
+adder_tb.a[31:0]
+adder_tb.b[31:0]
+@28
+adder_tb.clk
+@420
+adder_tb.errors
+adder_tb.expected_val[31:0]
+adder_tb.full_sum[32:0]
+adder_tb.next_a[31:0]
+adder_tb.next_b[31:0]
+adder_tb.sum[31:0]
+@28
+adder_tb.valid_in
+adder_tb.valid_out
+@200
+-DUT
+@420
+adder_tb.dut.INPUT_WIDTH
+adder_tb.dut.OUTPUT_WIDTH
+@421
+adder_tb.dut.a[31:0]
+adder_tb.dut.b[31:0]
+@28
+adder_tb.dut.clk
+@421
+adder_tb.dut.full_sum[32:0]
+adder_tb.dut.sum[31:0]
+@28
+adder_tb.dut.valid_in
+adder_tb.dut.valid_out
+[pattern_trace] 1
+[pattern_trace] 0
