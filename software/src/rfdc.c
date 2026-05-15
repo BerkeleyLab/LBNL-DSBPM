@@ -961,7 +961,7 @@ rfDCGetPowerMode(rfDCType type, int channel)
 
     if (type & RFDC_DAC) {
         tile = channel / CFG_DAC_PER_TILE;
-        block = channel % CFG_DAC_PER_TILE;
+        block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
     }
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
@@ -994,7 +994,7 @@ rfDCSetPowerMode(rfDCType type, int channel, int on)
 
     if (type & RFDC_DAC) {
         tile = channel / CFG_DAC_PER_TILE;
-        block = channel % CFG_DAC_PER_TILE;
+        block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
     }
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
