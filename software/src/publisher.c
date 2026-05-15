@@ -98,6 +98,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->dacCurrent[i] = rfDACGetVOPDSBPM(chainNumber, dacChannel);
         pk->dacCtl[i] = isPtGenRun(chainNumber);
         pk->ptmAtt[i] = amiPtmAttenGet(chainNumber);
+        pk->dacPwr[i] = rfDACGetPowerModeBPM(chainNumber, dacChannel);
     }
 
 
