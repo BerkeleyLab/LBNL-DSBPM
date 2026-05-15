@@ -537,7 +537,7 @@ rfDACrestart(void)
 }
 
 void
-rfDCsyncType(int type)
+rfDCsyncType(rfDCType type)
 {
     int i;
     int tile, latency, status;
@@ -777,6 +777,10 @@ rfADCGetDSA(int channel)
     int tile = channel / CFG_ADC_PER_TILE;
     int adc = channel % CFG_ADC_PER_TILE;
 
+    if (!rfDCCfg.initDone) {
+        return -1.0;
+    }
+
     i = XRFdc_GetDSA(&rfDCCfg.rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
         printf("XRFdc_GetDSA tile %d, adc %d: %d", tile, adc, i);
@@ -793,6 +797,10 @@ rfADCSetDSA(int channel, float att)
     XRFdc_DSA_Settings dsa;
     int tile = channel / CFG_ADC_PER_TILE;
     int adc = channel % CFG_ADC_PER_TILE;
+
+    if (!rfDCCfg.initDone) {
+        return;
+    }
 
     i = XRFdc_GetDSA(&rfDCCfg.rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
@@ -859,6 +867,10 @@ rfDACGetVOP(int channel)
     int dac = channel % CFG_ADC_PER_TILE;
     int duc = 0;
 
+    if (!rfDCCfg.initDone) {
+        return -1;
+    }
+
     unsigned int ucurrent;
     i = XRFdc_GetOutputCurr(&rfDCCfg.rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
             &ucurrent);
@@ -877,6 +889,10 @@ rfDACSetVOP(int channel, unsigned int ucurrent)
     int i, duc;
     int tile = channel / CFG_ADC_PER_TILE;
     int dac = channel % CFG_ADC_PER_TILE;
+
+    if (!rfDCCfg.initDone) {
+        return;
+    }
 
     for (duc = 0; duc < CFG_DAC_DUC_PER_DAC; duc++) {
         i = XRFdc_SetDACVOP(&rfDCCfg.rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
@@ -922,4 +938,111 @@ rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent)
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDACSetVOP(ch, ucurrent);
+}
+
+static int
+rfDCGetPowerMode(rfDCType type, int channel)
+{
+    int i = XST_SUCCESS;
+    XRFdc_Pwr_Mode_Settings pwr = {0};
+    int tile = 0;
+    int block = 0;
+    uint32_t rfdcType = (type & RFDC_ADC) ? XRFDC_ADC_TILE :
+                        (type & RFDC_DAC) ? XRFDC_DAC_TILE : XRFDC_ADC_TILE;
+
+    if (!rfDCCfg.initDone) {
+        return -1;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+        block = channel % CFG_ADC_PER_TILE;
+    }
+
+    if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+        block = channel % CFG_DAC_PER_TILE;
+    }
+
+    i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_GetPwrMode tile %d, block %d: %d", tile, block, i);
+        return -1;
+    }
+
+    return (pwr.PwrMode != 0);
+}
+
+static void
+rfDCSetPowerMode(rfDCType type, int channel, int on)
+{
+    int i = XST_SUCCESS;
+    XRFdc_Pwr_Mode_Settings pwr = {0};
+    int tile = 0;
+    int block = 0;
+    uint32_t rfdcType = (type & RFDC_ADC) ? XRFDC_ADC_TILE :
+                        (type & RFDC_DAC) ? XRFDC_DAC_TILE : XRFDC_ADC_TILE;
+
+    if (!rfDCCfg.initDone) {
+        return;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+        block = channel % CFG_ADC_PER_TILE;
+    }
+
+    if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+        block = channel % CFG_DAC_PER_TILE;
+    }
+
+    i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_GetPwrMode tile %d, block %d: %d", tile, block, i);
+        return;
+    }
+
+    pwr.PwrMode = (on != 0);
+    i = XRFdc_SetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
+    if (i != XST_SUCCESS) {
+        printf("XRFdc_SetPwrMode tile %d, block %d: %d", tile, block, i);
+        return;
+    }
+}
+
+int
+rfDACGetPowerModeBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    return rfDCGetPowerMode(RFDC_DAC, ch);
+}
+
+void
+rfDACSetPowerModeBPM(unsigned int bpm, int channel, int on)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    rfDCSetPowerMode(RFDC_DAC, ch, on);
 }
