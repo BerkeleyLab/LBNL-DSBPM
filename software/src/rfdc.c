@@ -863,8 +863,8 @@ rfDACGetVOP(int channel)
 {
     int i;
 
-    int tile = channel / CFG_ADC_PER_TILE;
-    int dac = channel % CFG_ADC_PER_TILE;
+    int tile = channel / CFG_DAC_PER_TILE;
+    int dac = channel % CFG_DAC_PER_TILE;
     int duc = 0;
 
     if (!rfDCCfg.initDone) {
@@ -887,8 +887,8 @@ void
 rfDACSetVOP(int channel, unsigned int ucurrent)
 {
     int i, duc;
-    int tile = channel / CFG_ADC_PER_TILE;
-    int dac = channel % CFG_ADC_PER_TILE;
+    int tile = channel / CFG_DAC_PER_TILE;
+    int dac = channel % CFG_DAC_PER_TILE;
 
     if (!rfDCCfg.initDone) {
         return;
