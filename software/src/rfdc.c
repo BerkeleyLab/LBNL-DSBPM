@@ -783,7 +783,7 @@ rfADCGetDSA(int channel)
 
     i = XRFdc_GetDSA(&rfDCCfg.rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_GetDSA tile %d, adc %d: %d", tile, adc, i);
+        printf("XRFdc_GetDSA tile %d, adc %d: %d\n", tile, adc, i);
         return -1.0;
     }
 
@@ -804,14 +804,14 @@ rfADCSetDSA(int channel, float att)
 
     i = XRFdc_GetDSA(&rfDCCfg.rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_GetDSA tile %d, adc %d: %d", tile, adc, i);
+        printf("XRFdc_GetDSA tile %d, adc %d: %d\n", tile, adc, i);
         return;
     }
 
     dsa.Attenuation = att;
     i = XRFdc_SetDSA(&rfDCCfg.rfDC, tile, adc, &dsa);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_SetDSA tile %d, adc %d: %d", tile, adc, i);
+        printf("XRFdc_SetDSA tile %d, adc %d: %d\n", tile, adc, i);
         return;
     }
 }
@@ -875,7 +875,7 @@ rfDACGetVOP(int channel)
     i = XRFdc_GetOutputCurr(&rfDCCfg.rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
             &ucurrent);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_GetOutputCurr tile %d, dac %d, duc %d: %d", tile, dac,
+        printf("XRFdc_GetOutputCurr tile %d, dac %d, duc %d: %d\n", tile, dac,
                 duc, i);
         return -1;
     }
@@ -898,7 +898,7 @@ rfDACSetVOP(int channel, unsigned int ucurrent)
         i = XRFdc_SetDACVOP(&rfDCCfg.rfDC, tile, dac*CFG_DAC_DUC_OFFSET + duc,
                 ucurrent);
         if (i != XST_SUCCESS) {
-            printf("XRFdc_SetDACVOP tile %d, dac %d, duc %d: %d", tile, dac,
+            printf("XRFdc_SetDACVOP tile %d, dac %d, duc %d: %d\n", tile, dac,
                     duc, i);
         }
     }
@@ -966,7 +966,7 @@ rfDCGetPowerMode(rfDCType type, int channel)
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_GetPwrMode tile %d, block %d: %d", tile, block, i);
+        printf("XRFdc_GetPwrMode tile %d, block %d: %d\n", tile, block, i);
         return -1;
     }
 
@@ -978,8 +978,7 @@ rfDCSetPowerMode(rfDCType type, int channel, int on)
 {
     int i = XST_SUCCESS;
     XRFdc_Pwr_Mode_Settings pwr = {0};
-    int tile = 0;
-    int block = 0;
+    int tile = 0, block = 0;
     uint32_t rfdcType = (type & RFDC_ADC) ? XRFDC_ADC_TILE :
                         (type & RFDC_DAC) ? XRFDC_DAC_TILE : XRFDC_ADC_TILE;
 
@@ -999,14 +998,15 @@ rfDCSetPowerMode(rfDCType type, int channel, int on)
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_GetPwrMode tile %d, block %d: %d", tile, block, i);
+        printf("XRFdc_GetPwrMode tile %d, block %d: %d\n", tile, block, i);
         return;
     }
 
     pwr.PwrMode = (on != 0);
+
     i = XRFdc_SetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
     if (i != XST_SUCCESS) {
-        printf("XRFdc_SetPwrMode tile %d, block %d: %d", tile, block, i);
+        printf("XRFdc_SetPwrMode tile %d, block %d: %d\n", tile, block, i);
         return;
     }
 }
