@@ -16,8 +16,6 @@
 #define CELL_COMM_LINK_CCW_IDX                      1
 #define CELL_COMM_LINKS_COUNT                       2
 
-static int _fofbIndex;
-
 struct cellCommInfo {
     const char *name;
     enum auState
@@ -159,7 +157,7 @@ cellCommCrank(void)
 static int
 cellCommInitSingle(struct cellCommInfo *cellp)
 {
-    uint32_t then, now, start;
+    uint32_t then, start;
     uint32_t csr;
 
     GPIO_WRITE(cellp->gpioIdx, cellp->auroraReset |
@@ -300,16 +298,4 @@ cellCommStatusFetch(uint32_t *args)
     *args = v;
 
     return count + 1;
-}
-
-void
-cellCommSetFOFB(int fofbIndex)
-{
-    _fofbIndex = fofbIndex;
-}
-
-int
-cellCommGetFOFB(void)
-{
-    return _fofbIndex;
 }

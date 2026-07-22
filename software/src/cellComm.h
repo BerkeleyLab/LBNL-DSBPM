@@ -56,7 +56,5 @@ void cellCommCrank();
 void cellCommStatusShow();
 uint32_t cellCommStatus(int index);
 int cellCommStatusFetch(uint32_t *args);
-void cellCommSetFOFB(int fofbIndex);
-int cellCommGetFOFB();
 
 #endif
