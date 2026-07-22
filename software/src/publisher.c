@@ -196,7 +196,7 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
      * Initialize static with negative values
      */
     if (!beenHere) {
-        for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+        for (i = 0; i < ARRAY_SIZE(fofbIndex); ++i) {
             fofbIndex[i] = -1000;
         }
         beenHere = 1;
@@ -218,9 +218,9 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                                                 (int)((addr      ) & 0xFF),
                                                 fromPort);
     }
-    if (p->len == sizeof fofbIndex) {
+    if (p->len == sizeof(fofbIndex)) {
         epicsInt16 newIndex[CFG_DSBPM_COUNT];
-        memcpy(&newIndex, p->payload, sizeof newIndex);
+        memcpy(&newIndex, p->payload, sizeof(newIndex));
 
         for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
             if (newIndex[i] != fofbIndex[i]) {
