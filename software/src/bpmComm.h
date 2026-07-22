@@ -30,5 +30,6 @@
 
 void bpmCommSetFOFB(unsigned int bpm, int fofbIndex);
 int bpmCommGetFOFB(unsigned int bpm);
+int bpmCommFOFBFetch(uint32_t *args);
 
 #endif
