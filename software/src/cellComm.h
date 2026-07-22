@@ -5,6 +5,8 @@
 #ifndef _CELLCOMM_H_
 #define _CELLCOMM_H_
 
+#include "reg_macros.h"
+
 /*
  * MGT CSR W bits
  */
@@ -31,6 +33,13 @@
 #define CELLCOMM_MGT_CSR_SOFT_ERR            0x400
 #define CELLCOMM_MGT_CSR_HARD_ERR            0x800
 
+#define CELLCOMM_MGT_CSR_STATUS_SIZE         12
+#define CELLCOMM_MGT_CSR_STATUS_SHIFT        0
+#define CELLCOMM_MGT_CSR_STATUS_MASK         REG_GEN_MASK(CELLCOMM_MGT_CSR_STATUS_SHIFT, \
+                                                    CELLCOMM_MGT_CSR_STATUS_SIZE)
+#define CELLCOMM_MGT_CSR_STATUS_R(reg)       REG_GEN_READ(reg, CELLCOMM_MGT_CSR_STATUS_SHIFT, \
+                                                    CELLCOMM_MGT_CSR_STATUS_SIZE)
+
 #define CELLCOMM_MGT_CSR_LOCKS_MASK         (CELLCOMM_MGT_CSR_CPLL_LOCK | \
                                              CELLCOMM_MGT_CSR_TX_PLL_LOCK | \
                                              CELLCOMM_MGT_CSR_MMCM_NOT_LOCK)
@@ -44,7 +53,9 @@
 
 int cellCommInit();
 void cellCommCrank();
-int cellCommStatus();
+void cellCommStatusShow();
+uint32_t cellCommStatus(int index);
+int cellCommStatusFetch(uint32_t *args);
 void cellCommSetFOFB(int fofbIndex);
 int cellCommGetFOFB();
 

@@ -2,6 +2,7 @@
  * BPM/cell controller communication
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <xparameters.h>
@@ -207,59 +208,98 @@ cellCommInit(void)
     return ret;
 }
 
-static int
-cellCommStatusSingle(struct cellCommInfo *cellp)
+static uint32_t
+cellCommStatusSingle(struct cellCommInfo *cellp, int verbose)
 {
-    uint32_t r;
+    uint32_t reg = GPIO_READ(cellp->gpioIdx);
+    uint32_t status = CELLCOMM_MGT_CSR_STATUS_R(reg);
 
-    r = GPIO_READ(cellp->gpioIdx);
-
-    if ((r & CELLCOMM_MGT_CSR_CHANNEL_UP) != CELLCOMM_MGT_CSR_CHANNEL_UP) {
+    if (verbose) {
         printf("%s", cellp->name);
 
-        if (r & CELLCOMM_MGT_CSR_HARD_ERR) {
-            printf("  hard error");
+        if ((status & CELLCOMM_MGT_CSR_CHANNEL_UP) != CELLCOMM_MGT_CSR_CHANNEL_UP) {
+            if (status & CELLCOMM_MGT_CSR_HARD_ERR) {
+                printf("  hard error");
+            }
+            if (status & CELLCOMM_MGT_CSR_SOFT_ERR) {
+                printf("  soft error");
+            }
+            if ((status & CELLCOMM_MGT_CSR_LANE_UP) != CELLCOMM_MGT_CSR_LANE_UP) {
+                printf("  lane NOT up");
+            }
+            if ((status & CELLCOMM_MGT_CSR_TX_RESET_DONE) != CELLCOMM_MGT_CSR_TX_RESET_DONE) {
+                printf("  TX reset NOT done");
+            }
+            if ((status & CELLCOMM_MGT_CSR_RX_RESET_DONE) != CELLCOMM_MGT_CSR_RX_RESET_DONE) {
+                printf("  RX reset NOT done");
+            }
+            if ((status & CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) != CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) {
+                printf("  MMCM NOT locked");
+            }
+            if ((status & CELLCOMM_MGT_CSR_TX_PLL_LOCK) != CELLCOMM_MGT_CSR_TX_PLL_LOCK) {
+                printf("  TX PLL NOT locked");
+            }
+            if ((status & CELLCOMM_MGT_CSR_CPLL_LOCK) != CELLCOMM_MGT_CSR_CPLL_LOCK) {
+                printf("  CPLL NOT locked");
+            }
         }
-        if (r & CELLCOMM_MGT_CSR_SOFT_ERR) {
-            printf("  soft error");
-        }
-        if ((r & CELLCOMM_MGT_CSR_LANE_UP) != CELLCOMM_MGT_CSR_LANE_UP) {
-            printf("  lane NOT up");
-        }
-        if ((r & CELLCOMM_MGT_CSR_TX_RESET_DONE) != CELLCOMM_MGT_CSR_TX_RESET_DONE) {
-            printf("  TX reset NOT done");
-        }
-        if ((r & CELLCOMM_MGT_CSR_RX_RESET_DONE) != CELLCOMM_MGT_CSR_RX_RESET_DONE) {
-            printf("  RX reset NOT done");
-        }
-        if ((r & CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) != CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) {
-            printf("  MMCM NOT locked");
-        }
-        if ((r & CELLCOMM_MGT_CSR_TX_PLL_LOCK) != CELLCOMM_MGT_CSR_TX_PLL_LOCK) {
-            printf("  TX PLL NOT locked");
-        }
-        if ((r & CELLCOMM_MGT_CSR_CPLL_LOCK) != CELLCOMM_MGT_CSR_CPLL_LOCK) {
-            printf("  CPLL NOT locked");
+        else {
+            printf("  channel up");
         }
 
         printf("\n");
     }
 
-    return (r & CELLCOMM_MGT_CSR_CHANNEL_UP) != 0;
+    return status;
+}
+
+void
+cellCommStatusShow()
+{
+    struct cellCommInfo *cellp;
+
+    for (cellp = cellCommInfos; cellp < &cellCommInfos[CELL_COMM_LINKS_COUNT];
+        ++cellp) {
+        cellCommStatusSingle(cellp, 1);
+    }
+}
+
+uint32_t
+cellCommStatus(int index)
+{
+    struct cellCommInfo *cellp = NULL;
+
+    if (index >= CELL_COMM_LINKS_COUNT) {
+        return 0xFFFFFFFF;
+    }
+
+    cellp = &cellCommInfos[index];
+    return cellCommStatusSingle(cellp, 0);
 }
 
 int
-cellCommStatus(void)
+cellCommStatusFetch(uint32_t *args)
 {
     struct cellCommInfo *cellp;
-    int i = 0;
-    int ret = 0;
+    int shift = 0, count = 0;
+    uint32_t v = 0;
 
-    for (i = 0, cellp = cellCommInfos; cellp < &cellCommInfos[CELL_COMM_LINKS_COUNT]; ++cellp, ++i) {
-        ret |= (cellCommStatusSingle(cellp) << i);
+    for (cellp = cellCommInfos; cellp < &cellCommInfos[CELL_COMM_LINKS_COUNT];
+        ++cellp) {
+        if (shift > 16) {
+            *args++ = v;
+            v = 0;
+            count++;
+            shift = 0;
+        }
+
+        v |= cellCommStatusSingle(cellp, 0) << shift;
+        shift += 16;
     }
 
-    return ret;
+    *args = v;
+
+    return count + 1;
 }
 
 void
