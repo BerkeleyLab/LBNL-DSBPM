@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <xsysmonpsu.h>
-#include "cellComm.h"
 #include "display.h"
 #include "evr.h"
 #include "epics.h"
 #include "frequencyMonitor.h"
 #include "gpio.h"
+#include "bpmComm.h"
 #include "iic.h"
 #include "rfdc.h"
 #include "st7789v.h"
