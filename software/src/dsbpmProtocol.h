@@ -51,6 +51,9 @@ struct dsbpmPacket {
     epicsUInt32    args[DSBPM_PROTOCOL_ARG_CAPACITY];
 };
 
+static_assert(sizeof(struct dsbpmPacket) == 1412,
+    "dsbpmPacket size is incorrect, potential padding or member count issue");
+
 /*
  * Slow acquisition (typically 10 Hz) monitoring
  */
