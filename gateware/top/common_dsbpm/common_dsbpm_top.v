@@ -2558,6 +2558,13 @@ genericDACStreamer #(
     .axis_TREADY(dacsTREADY[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP])
 );
 
+// Copy DAC stream to the other BPM DACs as an option
+for (channel = 1 ; channel < CFG_DAC_PER_BPM_COUNT; channel = channel + 1) begin : dac_fanout
+    assign dacsTDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP + channel)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH] =
+        dacsTDATA[(dsbpm*DAC_SIGNAL_OFFSET_PER_DSP)*AXIS_DAC_SAMPLE_WIDTH+:AXIS_DAC_SAMPLE_WIDTH];
+    assign dacsTVALID[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP + channel] = dacsTVALID[dsbpm*DAC_SIGNAL_OFFSET_PER_DSP];
+end
+
 //////////////////////////////////////////////////////////////////////////////
 // Analog front end SPI components
 

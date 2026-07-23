@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <xsysmonpsu.h>
-#include "cellComm.h"
 #include "display.h"
 #include "evr.h"
 #include "epics.h"
 #include "frequencyMonitor.h"
 #include "gpio.h"
+#include "bpmComm.h"
 #include "iic.h"
 #include "rfdc.h"
 #include "st7789v.h"
@@ -186,7 +186,7 @@ sysmonFetch(uint32_t *args)
     args[aIndex++] = GPIO_READ(GPIO_IDX_SYSREF_DAC_CSR);
     args[aIndex++] = rfADCstatus();
     args[aIndex++] = duplicateIOCcheck(0, 0);
-    args[aIndex++] = cellCommGetFOFB();
+    aIndex += bpmCommFOFBFetch(args+aIndex);
     return aIndex;
 }
 

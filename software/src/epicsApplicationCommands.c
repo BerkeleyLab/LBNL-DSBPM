@@ -100,6 +100,13 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             ptGenRun(bpm, cmdp->args[0]);
             break;
 
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_PWR:
+            bpm = idx / CFG_DAC_PER_BPM_COUNT;
+            dac = idx % CFG_DAC_PER_BPM_COUNT;
+
+            rfDACSetPowerModeBPM(bpm, dac, cmdp->args[0]);
+            break;
+
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_RF_GAINS:
             cgSetStaticRFGains(idx / CFG_ADC_PER_BPM_COUNT,
                     idx % CFG_ADC_PER_BPM_COUNT, cmdp->args[0]);

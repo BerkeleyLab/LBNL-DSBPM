@@ -13,6 +13,8 @@
 # include <epicsTypes.h>
 #endif
 
+#include <assert.h>
+
 #define DSBPM_PROTOCOL_UDP_PORT                 50005
 #define DSBPM_PROTOCOL_PUBLISHER_UDP_PORT       50006
 
@@ -20,11 +22,11 @@
 #define DSBPM_PROTOCOL_RECORDER_COUNT             7
 
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
-#define DSBPM_PROTOCOL_MAGIC                    0xD06F9B91
-#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x919B6FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9C92
+#define DSBPM_PROTOCOL_MAGIC                    0xD06F9C91
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x919C6FD0
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9E92
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x929C6FD0
+                                                0x929E6FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9993
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
                                                 0x93996FD0
@@ -40,6 +42,7 @@
 #define DSBPM_PROTOCOL_ADC_COUNT       8
 #define DSBPM_PROTOCOL_DAC_COUNT       8
 #define DSBPM_PROTOCOL_DSP_COUNT       2
+#define DSBPM_PROTOCOL_CELL_COMM_COUNT 2
 
 struct dsbpmPacket {
     epicsUInt32    magic;
@@ -56,12 +59,14 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 packetNumber;
     epicsUInt32 seconds;
     epicsUInt32 fraction;
-    epicsUInt8  clipStatus;
-    epicsUInt8  cellCommStatus[DSBPM_PROTOCOL_DSP_COUNT];
+    epicsUInt32 cellCommStatus[DSBPM_PROTOCOL_CELL_COMM_COUNT];
     epicsUInt8  autotrimStatus[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt8  sdSyncStatus[DSBPM_PROTOCOL_DSP_COUNT];
+    epicsUInt8  clipStatus;
     epicsUInt8  pad1;
-    epicsUInt16 adcPeak[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt8  pad2;
+    epicsUInt8  pad3; // 8 uint32
+    epicsUInt16 adcPeak[DSBPM_PROTOCOL_ADC_COUNT]; // 12 uint32
     epicsUInt32 rfMag[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 ptLoMag[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 ptHiMag[DSBPM_PROTOCOL_ADC_COUNT];
@@ -69,7 +74,7 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 calibRFFactor[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 calibPLFactor[DSBPM_PROTOCOL_ADC_COUNT];
     epicsUInt32 calibPHFactor[DSBPM_PROTOCOL_ADC_COUNT];
-    epicsUInt32 rfADCDSA[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt32 rfADCDSA[DSBPM_PROTOCOL_ADC_COUNT]; // 12 + 8*8 = 76
     epicsInt32  xPos[DSBPM_PROTOCOL_DSP_COUNT];
     epicsInt32  yPos[DSBPM_PROTOCOL_DSP_COUNT];
     epicsInt32  skew[DSBPM_PROTOCOL_DSP_COUNT];
@@ -80,13 +85,17 @@ struct dsbpmSlowAcquisition {
     epicsInt32  yRMSnarrow[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt32 lossOfBeamStatus[DSBPM_PROTOCOL_DSP_COUNT];
     epicsUInt32 prelimProcStatus[DSBPM_PROTOCOL_DSP_COUNT];
-    epicsUInt32 recorderStatus[DSBPM_PROTOCOL_DSP_COUNT];
-    epicsUInt32 afeAtt[DSBPM_PROTOCOL_ADC_COUNT];
+    epicsUInt32 recorderStatus[DSBPM_PROTOCOL_DSP_COUNT]; // 76 + 11*2 = 98
+    epicsUInt32 afeAtt[DSBPM_PROTOCOL_ADC_COUNT]; // 98 + 8 = 106
     epicsUInt32 dacCurrent[DSBPM_PROTOCOL_DAC_COUNT];
-    epicsUInt32 dacCtl[DSBPM_PROTOCOL_DAC_COUNT];
-    epicsUInt32 clockStatus[DSBPM_PROTOCOL_DSP_COUNT];
+    epicsUInt32 dacCtl[DSBPM_PROTOCOL_DAC_COUNT]; // 106 + 16 = 122
+    epicsUInt32 clockStatus[DSBPM_PROTOCOL_DSP_COUNT]; // 122 + 2 = 124
     epicsUInt32 ptmAtt[DSBPM_PROTOCOL_DAC_COUNT];
+    epicsUInt32 dacPwr[DSBPM_PROTOCOL_DAC_COUNT]; // 124 + 2*8 = 140 uint32 = 560
 };
+
+static_assert(sizeof(struct dsbpmSlowAcquisition) == 560,
+    "dsbpmSlowAcquisition size is incorrect, potential padding or member count issue");
 
 /*
  * Waveform transfer
@@ -100,12 +109,17 @@ struct dsbpmWaveformHeader {
     epicsUInt32 dsbpmNumber;
     epicsUInt32 waveformNumber;
     epicsUInt16 recorderNumber;
+    epicsUInt16 pad;
     epicsUInt32 seconds;
     epicsUInt32 fraction;
     epicsUInt32 byteCount;
     epicsUInt32 bytesPerSample;
     epicsUInt32 bytesPerAtom;
 };
+
+static_assert(sizeof(struct dsbpmWaveformHeader) == 36,
+    "dsbpmWaveformHeader size is incorrect, potential padding or member count issue");
+
 struct dsbpmWaveformData {
     epicsUInt32 magic;
     epicsUInt32 dsbpmNumber;
@@ -114,6 +128,10 @@ struct dsbpmWaveformData {
     epicsUInt32 blockNumber;
     unsigned char payload[DSBPM_PROTOCOL_WAVEFORM_PAYLOAD_CAPACITY];
 };
+
+static_assert(sizeof(struct dsbpmWaveformData) == 1460,
+    "dsbpmWaveformHeader size is incorrect, potential padding or member count issue");
+
 struct dsbpmWaveformAck {
     epicsUInt32 magic;
     epicsUInt32 dsbpmNumber;
@@ -121,6 +139,9 @@ struct dsbpmWaveformAck {
     epicsUInt32 recorderNumber;
     epicsUInt32 blockNumber;
 };
+
+static_assert(sizeof(struct dsbpmWaveformAck) == 20,
+    "dsbpmWaveformHeader size is incorrect, potential padding or member count issue");
 
 #define DSBPM_PROTOCOL_SIZE_TO_ARG_COUNT(s) (DSBPM_PROTOCOL_ARG_CAPACITY - \
                     ((sizeof(struct dsbpmPacket)-(s))/sizeof(epicsUInt32)))
@@ -165,6 +186,7 @@ struct dsbpmWaveformAck {
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_PH_GAINS               0x0800
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_PTM_ATT                0x0880
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_EVENT_ACTION       0x0900
+# define DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_PWR                0x0980
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_TRIGGER_DELAY      0x0A00
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC                0x0F00
 #  define DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_IDX_REBOOT           0x00

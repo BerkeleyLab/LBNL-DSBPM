@@ -42,16 +42,19 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
     struct dsbpmSlowAcquisition *pk;
     static epicsUInt32 packetNumber = 1;
     uint32_t r;
+
     p = pbuf_alloc(PBUF_TRANSPORT, sizeof *pk, PBUF_RAM);
     if (p == NULL) {
         printf("Can't allocate pbuf for slow data\n");
         return;
     }
+
     pk = (struct dsbpmSlowAcquisition *)p->payload;
     pk->packetNumber = packetNumber++;
     pk->seconds = saSeconds;
     pk->fraction = saFraction;
     pk->magic = DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION;
+
     for (i = 0 ; i < DSBPM_PROTOCOL_DSP_COUNT ; i++) {
         chainNumber = i;
         pk->xPos[i] = GPIO_READ(REG(GPIO_IDX_POSITION_CALC_SA_X, chainNumber));
@@ -67,10 +70,15 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->recorderStatus[i] = wfrStatus(i);
         pk->autotrimStatus[i] = autotrimStatus(i);
         pk->sdSyncStatus[i] = localOscGetSdSyncStatus(i);
-        pk->cellCommStatus[i] = 0;
         pk->clockStatus[i] = GPIO_READ(REG(GPIO_IDX_CLOCK_STATUS, chainNumber));
     }
+
+    for (i = 0 ; i < DSBPM_PROTOCOL_CELL_COMM_COUNT ; i++) {
+        pk->cellCommStatus[i] = cellCommStatus(i);
+    }
+
     pk->clipStatus = rfADCstatus();
+
     for (i = 0 ; i < DSBPM_PROTOCOL_ADC_COUNT ; i++) {
         adcChannel = i % MAX_ADC_CHANNELS_PER_CHAIN;
         chainNumber = i / MAX_ADC_CHANNELS_PER_CHAIN;
@@ -98,6 +106,7 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->dacCurrent[i] = rfDACGetVOPDSBPM(chainNumber, dacChannel);
         pk->dacCtl[i] = isPtGenRun(chainNumber);
         pk->ptmAtt[i] = amiPtmAttenGet(chainNumber);
+        pk->dacPwr[i] = rfDACGetPowerModeBPM(chainNumber, dacChannel);
     }
 
 
@@ -187,7 +196,7 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
      * Initialize static with negative values
      */
     if (!beenHere) {
-        for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
+        for (i = 0; i < ARRAY_SIZE(fofbIndex); ++i) {
             fofbIndex[i] = -1000;
         }
         beenHere = 1;
@@ -209,9 +218,9 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                                                 (int)((addr      ) & 0xFF),
                                                 fromPort);
     }
-    if (p->len == sizeof fofbIndex) {
+    if (p->len == sizeof(fofbIndex)) {
         epicsInt16 newIndex[CFG_DSBPM_COUNT];
-        memcpy(&newIndex, p->payload, sizeof newIndex);
+        memcpy(newIndex, p->payload, sizeof(newIndex));
 
         for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
             if (newIndex[i] != fofbIndex[i]) {
