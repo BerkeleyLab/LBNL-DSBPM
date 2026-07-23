@@ -27,6 +27,11 @@ bpmCommSetFOFB(unsigned int bpm, int fofbIndex)
             BPMCOMM_CSR_FOFB_INDEX_W(fofbIndex);
     }
 
+    if(debugFlags & DEBUGFLAG_CELL_COMM) {
+        printf("bpmCommSetFOFB: bpm %u, fofbIndex %d, reg 0x%08X\n",
+               bpm, fofbIndex, reg);
+    }
+
     GPIO_WRITE(REG(GPIO_IDX_CELL_COMM_BPM_CSR, bpm), reg);
 }
 
@@ -36,6 +41,11 @@ bpmCommGetFOFB(unsigned int bpm)
     if (bpm >= CFG_DSBPM_COUNT) return -1;
 
     uint32_t reg = GPIO_READ(REG(GPIO_IDX_CELL_COMM_BPM_CSR, bpm));
+
+    if(debugFlags & DEBUGFLAG_CELL_COMM) {
+        printf("bpmComGetFOFB: bpm %u, reg 0x%08X, fofbIndex %u\n",
+               bpm, reg, BPMCOMM_CSR_FOFB_INDEX_R(reg));
+    }
 
     return BPMCOMM_CSR_FOFB_INDEX_R(reg);
 }
