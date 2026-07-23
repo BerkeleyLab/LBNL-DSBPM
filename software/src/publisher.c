@@ -220,7 +220,7 @@ publisher_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     }
     if (p->len == sizeof(fofbIndex)) {
         epicsInt16 newIndex[CFG_DSBPM_COUNT];
-        memcpy(&newIndex, p->payload, sizeof(newIndex));
+        memcpy(newIndex, p->payload, sizeof(newIndex));
 
         for (i = 0; i < CFG_DSBPM_COUNT; ++i) {
             if (newIndex[i] != fofbIndex[i]) {
