@@ -29,6 +29,7 @@ static struct rfDCCfg {
     double dacRefClk;
     double dacSampRate;
     double dacNCOFreq;
+    uint8_t tileStatus[CFG_TILES_COUNT];
     int initDone;
     char logMessageBuffer[200];
 } rfDCCfg = {
@@ -493,11 +494,21 @@ rfDCinit(void)
     metal_set_log_level(METAL_LOG_INFO);
 
     configp = XRFdc_LookupConfig(XPAR_XRFDC_0_DEVICE_ID);
-    if (!configp) warn("XRFdc_LookupConfig");
+    if (!configp) {
+        warn("XRFdc_LookupConfig");
+    }
+
     i = XRFdc_CfgInitialize(&rfDCCfg.rfDC, configp);
-    if (i != XST_SUCCESS) warn("XRFdc_CfgInitialize=%d", i);
+    if (i != XST_SUCCESS) {
+        warn("XRFdc_CfgInitialize=%d", i);
+    }
+
+    for (int tile = 0; tile < CFG_TILES_COUNT; ++tile) {
+        rfDCCfg.tileStatus[tile] = 1;
+    }
 
     rfDCCfg.initDone = 1;
+
 
     rfADCCfgStatic();
     rfADCCfg();
@@ -540,7 +551,7 @@ void
 rfDCsyncType(rfDCType type)
 {
     int i;
-    int tile, latency, status;
+    int tile, status;
     XRFdc_IPStatus IPStatus;
     XRFdc_MultiConverter_Sync_Config adcConfig, dacConfig;
 
@@ -627,7 +638,7 @@ rfDCsyncType(rfDCType type)
      * "Zynq UltraScale+ RFSoC RF Data Converter", "Advanced Multi-Converter
      * Sync API Use".
      */
-    latency = -1;
+    int latency = -1;
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (adcConfig.Latency[tile] > latency) {
             latency = adcConfig.Latency[tile];
@@ -652,13 +663,23 @@ rfDCsyncType(rfDCType type)
 }
 
 void
-rfDCsync(){
+rfDCADCsync(){
     rfADCCfgStatic();
     rfADCCfg();
+    rfDCsyncType(RFDC_ADC);
+}
+
+void
+rfDCDACsync(){
     rfDACCfgStatic();
     rfDACCfg();
-    rfDCsyncType(RFDC_ADC);
     rfDCsyncType(RFDC_DAC);
+}
+
+void
+rfDCsync(){
+    rfDCADCsync();
+    rfDCDACsync();
 }
 
 void
@@ -1045,4 +1066,131 @@ rfDACSetPowerModeBPM(unsigned int bpm, int channel, int on)
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDCSetPowerMode(RFDC_DAC, ch, on);
+}
+
+static int
+rfDCGetShutdownMode(rfDCType type, int channel)
+{
+    int tile = 0;
+    int block = 0;
+
+    if (!rfDCCfg.initDone) {
+        return -1;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+        block = channel % CFG_ADC_PER_TILE;
+    }
+
+    if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+        block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
+    }
+
+    (void) block;
+
+    return rfDCCfg.tileStatus[tile];
+}
+
+static void
+rfDCSetShutdownMode(rfDCType type, int channel, int on)
+{
+    int i = XST_SUCCESS;
+    int tile = 0, block = 0;
+    uint32_t rfdcType = (type & RFDC_ADC) ? XRFDC_ADC_TILE :
+                        (type & RFDC_DAC) ? XRFDC_DAC_TILE : XRFDC_ADC_TILE;
+
+    if (!rfDCCfg.initDone) {
+        return;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+        block = channel % CFG_ADC_PER_TILE;
+    }
+
+    if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+        block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
+    }
+
+    (void) block;
+
+    int oldStatus = rfDCCfg.tileStatus[tile];
+    int status = (on != 0);
+
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        printf("rfDCSetShutdownMode: channel %d, tile %d, status %d, oldStatus %d\n",
+               channel, tile, status, oldStatus);
+    }
+
+    if (status == oldStatus) {
+        return;
+    }
+
+    if (status) {
+        i = XRFdc_StartUp(&rfDCCfg.rfDC, rfdcType, tile);
+        if (i != XST_SUCCESS) {
+            printf("XRFdc_StartUp tile %d: %d\n", tile, i);
+            return;
+        }
+
+        // Re-sync ADCs are possibly needed after starting them up
+        rfDCDACsync();
+        if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+            printf("rfDCSetShutdownMode: channel %d, tile %d, re-sync done\n",
+                   channel, tile);
+        }
+    }
+    else {
+        i = XRFdc_Shutdown(&rfDCCfg.rfDC, rfdcType, tile);
+        if (i != XST_SUCCESS) {
+            printf("XRFdc_Shutdown tile %d: %d\n", tile, i);
+            return;
+        }
+    }
+
+    rfDCCfg.tileStatus[tile] = status;
+
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        printf("rfDCSetShutdownMode: channel %d, tile %d, status %d\n",
+               channel, tile, status);
+    }
+}
+
+int
+rfDACGetShutdownModeBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    return rfDCGetShutdownMode(RFDC_DAC, ch);
+}
+
+void
+rfDACSetShutdownModeBPM(unsigned int bpm, int channel, int on)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    rfDCSetShutdownMode(RFDC_DAC, ch, on);
 }

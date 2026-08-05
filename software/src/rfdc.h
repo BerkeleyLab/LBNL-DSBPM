@@ -10,6 +10,8 @@ typedef enum rfDCType {
 } rfDCType;
 
 void rfDCinit(void);
+void rfDCADCsync(void);
+void rfDCDACsync(void);
 void rfDCsync(void);
 void rfDCsyncType(rfDCType type);
 void rfADCrestart(void);
@@ -38,6 +40,9 @@ void rfDACSetVOPDSBPM(unsigned int bpm, int channel, unsigned int ucurrent);
 
 int rfDACGetPowerModeBPM(unsigned int bpm, int channel);
 void rfDACSetPowerModeBPM(unsigned int bpm, int channel, int on);
+
+int rfDACGetShutdownModeBPM(unsigned int bpm, int channel);
+void rfDACSetShutdownModeBPM(unsigned int bpm, int channel, int on);
 
 void rfDACrestart(void);
 void rfDACshow(void);
