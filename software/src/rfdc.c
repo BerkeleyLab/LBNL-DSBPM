@@ -1,6 +1,7 @@
 /*
  * RF Analog to Digital Data Conversion
  */
+#include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 typedef uint8_t __u8;
@@ -10,16 +11,26 @@ typedef uint64_t __u64;
 typedef int32_t __s32;
 typedef int64_t __s64;
 #include <xrfdc.h>
+#include <assert.h>
+#include <stdbool.h>
 #include "gpio.h"
 #include "config.h"
 #include "rfdc.h"
 #include "util.h"
+
+static_assert(CFG_ADC_TILES_COUNT == CFG_DAC_TILES_COUNT,
+    "CFG_ADC_TILES_COUNT != CFG_DAC_TILES_COUNT");
 
 #define XRFDC_ADC_OVR_VOLTAGE_MASK  0x04000000U
 #define XRFDC_ADC_OVR_RANGE_MASK    0x08000000U
 
 #define REG_W_MASTER_RESET   0x0004
 #define REG_R_POWER_ON_STATE 0x0004
+
+static int rfDCCopyTileState(rfDCType type, uint32_t *tilePwr, size_t capacity);
+static int rfDCChangeTileState(rfDCType type, int tile, uint32_t requestState);
+static int rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus);
+static int rfDCChangeTilePwr(rfDCType type, int tile, int on);
 
 static struct rfDCCfg {
     XRFdc rfDC;
@@ -29,6 +40,8 @@ static struct rfDCCfg {
     double dacRefClk;
     double dacSampRate;
     double dacNCOFreq;
+    int adcTileRefClk;
+    int dacTileRefClk;
     int initDone;
     char logMessageBuffer[200];
 } rfDCCfg = {
@@ -38,6 +51,9 @@ static struct rfDCCfg {
     .dacRefClk = DAC_REF_CLK_FREQ,
     .dacSampRate = DAC_SAMPLING_CLK_FREQ,
     .dacNCOFreq = DAC_NCO_FREQ,
+    // Check BD design for this
+    .adcTileRefClk = 1,
+    .dacTileRefClk = 2,
 };
 
 void
@@ -262,29 +278,45 @@ rfADClinkCouplingIsAC(void)
     return isAC;
 }
 
-static void
-rfADCCfgStatic(void)
+static int
+rfADCCfgStaticSingle(int tile)
 {
-    int i, tile, adc;
+    int status = XRFdc_DynamicPLLConfig(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile,
+                                   XRFDC_EXTERNAL_CLK,
+                                   rfDCCfg.adcRefClk,
+                                   rfDCCfg.adcSampRate);
 
-    if (!rfDCCfg.initDone) {
-        return;
+    if (status != XST_SUCCESS) {
+        warn("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, status);
     }
 
-    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        i = XRFdc_DynamicPLLConfig(&rfDCCfg.rfDC, XRFDC_ADC_TILE, tile,
-                                          XRFDC_EXTERNAL_CLK,
-                                          rfDCCfg.adcRefClk,
-                                          rfDCCfg.adcSampRate);
-        if (i != XST_SUCCESS)
-            warn("ADC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
-
-        for (adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
-            i = XRFdc_SetDither(&rfDCCfg.rfDC, tile, adc, 1);
-            if (i != XST_SUCCESS)
-                warn("ADC Tile:Block %d:%d XRFdc_SetDither() = %d", tile, adc, i);
+    int status2 = 0;
+    int status2Latch = 0;
+    for (int adc = 0 ; adc < CFG_ADC_PER_TILE ; adc++) {
+        status2 = XRFdc_SetDither(&rfDCCfg.rfDC, tile, adc, 1);
+        if (status2 != XST_SUCCESS) {
+            status2Latch |= status2;
+            warn("ADC Tile:Block %d:%d XRFdc_SetDither() = %d", tile, adc, status2);
         }
     }
+
+    return (status | status2Latch);
+}
+
+static int
+rfADCCfgStatic(void)
+{
+
+    if (!rfDCCfg.initDone) {
+        return -1;
+    }
+
+    int status = 0;
+    for (int tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        status |= rfADCCfgStaticSingle(tile);
+    }
+
+    return status;
 }
 
 static void
@@ -303,14 +335,17 @@ rfADCCfg(void)
         printf("Can't get IP status.\n");
         return;
     }
-    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
-    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, rfDCCfg.dacTileRefClk);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, rfDCCfg.adcTileRefClk);
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        if (IPStatus.ADCTileStatus[tile].IsEnabled) {
+        if (IPStatus.ADCTileStatus[tile].IsEnabled &&
+            (IPStatus.ADCTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
             adcConfig.Tiles |= 1 << tile;
         }
-        if (IPStatus.DACTileStatus[tile].IsEnabled) {
+        if (IPStatus.DACTileStatus[tile].IsEnabled &&
+            (IPStatus.DACTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
             dacConfig.Tiles |= 1 << tile;
         }
     }
@@ -371,22 +406,34 @@ rfADCCfg(void)
     }
 }
 
-static void
+static int
+rfDACCfgStaticSingle(int tile)
+{
+    int status = XRFdc_DynamicPLLConfig(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile,
+                                        XRFDC_EXTERNAL_CLK,
+                                        rfDCCfg.dacRefClk,
+                                        rfDCCfg.dacSampRate);
+
+    if (status != XST_SUCCESS) {
+        warn("DAC Tile %d rfDACCfgStaticSingle() = %d", tile, status);
+    }
+
+    return status;
+}
+
+static int
 rfDACCfgStatic(void)
 {
-    int i, tile;
-
     if (!rfDCCfg.initDone) {
-        return;
+        return -1;
     }
 
-    for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        i = XRFdc_DynamicPLLConfig(&rfDCCfg.rfDC, XRFDC_DAC_TILE, tile,
-                                          XRFDC_EXTERNAL_CLK,
-                                          rfDCCfg.dacRefClk,
-                                          rfDCCfg.dacSampRate);
-        if (i != XST_SUCCESS) warn("DAC Tile %d XRFdc_DynamicPLLConfig() = %d", tile, i);
+    int status = 0;
+    for (int tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
+        status |= rfDACCfgStaticSingle(tile);
     }
+
+    return status;
 }
 
 static void
@@ -405,14 +452,17 @@ rfDACCfg(void)
         printf("Can't get IP status.\n");
         return;
     }
-    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
-    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, rfDCCfg.dacTileRefClk);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, rfDCCfg.adcTileRefClk);
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
-        if (IPStatus.ADCTileStatus[tile].IsEnabled) {
+        if (IPStatus.ADCTileStatus[tile].IsEnabled &&
+            (IPStatus.ADCTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
             adcConfig.Tiles |= 1 << tile;
         }
-        if (IPStatus.DACTileStatus[tile].IsEnabled) {
+        if (IPStatus.DACTileStatus[tile].IsEnabled &&
+            (IPStatus.DACTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
             dacConfig.Tiles |= 1 << tile;
         }
     }
@@ -493,9 +543,14 @@ rfDCinit(void)
     metal_set_log_level(METAL_LOG_INFO);
 
     configp = XRFdc_LookupConfig(XPAR_XRFDC_0_DEVICE_ID);
-    if (!configp) warn("XRFdc_LookupConfig");
+    if (!configp) {
+        warn("XRFdc_LookupConfig");
+    }
+
     i = XRFdc_CfgInitialize(&rfDCCfg.rfDC, configp);
-    if (i != XST_SUCCESS) warn("XRFdc_CfgInitialize=%d", i);
+    if (i != XST_SUCCESS) {
+        warn("XRFdc_CfgInitialize=%d", i);
+    }
 
     rfDCCfg.initDone = 1;
 
@@ -540,7 +595,7 @@ void
 rfDCsyncType(rfDCType type)
 {
     int i;
-    int tile, latency, status;
+    int tile, status;
     XRFdc_IPStatus IPStatus;
     XRFdc_MultiConverter_Sync_Config adcConfig, dacConfig;
 
@@ -548,24 +603,46 @@ rfDCsyncType(rfDCType type)
         return;
     }
 
-    if (XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus) != 0) {
+    status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != 0) {
         printf("Can't get IP status.\n");
         return;
     }
-    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, 0);
-    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, 0);
+
+    // For MTS to work we need ADC 0 or DAC 0 tile to be fully enabled.
+    // According to PG269, "RF-DAC Tile Configuration": When enabled the
+    // tile is included in a multi-tile synchronization group. RF-DAC Tile
+    // 0 must be enabled and present in the group along with converter 0
+    // of the tile being configured to enable this option. See Multi-Tile
+    // Synchronization for details.
+    uint32_t oldTilePwr[CFG_TILES_COUNT];
+    status = rfDCCopyTileState(type, oldTilePwr, ARRAY_SIZE(oldTilePwr));
+    if (status != XST_SUCCESS) {
+        printf("Can't copy tile state.\n");
+        return;
+    }
+
+    status = rfDCChangeTilePwr(type, 0, 1);
+    if (status != XST_SUCCESS) {
+        return;
+    }
+
+    XRFdc_MultiConverter_Init(&dacConfig, NULL, NULL, rfDCCfg.dacTileRefClk);
+    XRFdc_MultiConverter_Init(&adcConfig, NULL, NULL, rfDCCfg.adcTileRefClk);
     /* Unknown latency */
     adcConfig.Target_Latency = -1;
     dacConfig.Target_Latency = -1;
 
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (type & RFDC_ADC) {
-            if (IPStatus.ADCTileStatus[tile].IsEnabled) {
+            if (IPStatus.ADCTileStatus[tile].IsEnabled &&
+                (IPStatus.ADCTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
                 adcConfig.Tiles |= 1 << tile;
             }
         }
         if (type & RFDC_DAC) {
-            if (IPStatus.DACTileStatus[tile].IsEnabled) {
+            if (IPStatus.DACTileStatus[tile].IsEnabled &&
+                (IPStatus.DACTileStatus[tile].TileState == XRFDC_STATE_FULL)) {
                 dacConfig.Tiles |= 1 << tile;
             }
         }
@@ -627,7 +704,7 @@ rfDCsyncType(rfDCType type)
      * "Zynq UltraScale+ RFSoC RF Data Converter", "Advanced Multi-Converter
      * Sync API Use".
      */
-    latency = -1;
+    int latency = -1;
     for (tile = 0 ; tile < CFG_TILES_COUNT ; tile++) {
         if (adcConfig.Latency[tile] > latency) {
             latency = adcConfig.Latency[tile];
@@ -649,16 +726,32 @@ rfDCsyncType(rfDCType type)
         warn("XRFdc_MTS_Sysref_Config(1) failed: %d", status);
         return;
     }
+
+    // Revert old tiles states
+    status = rfDCChangeTilePwrRaw(type, oldTilePwr);
+    if (status != XST_SUCCESS) {
+        return;
+    }
+}
+
+void
+rfDCADCsync(){
+    rfADCCfgStatic();
+    rfADCCfg();
+    rfDCsyncType(RFDC_ADC);
+}
+
+void
+rfDCDACsync(){
+    rfDACCfgStatic();
+    rfDACCfg();
+    rfDCsyncType(RFDC_DAC);
 }
 
 void
 rfDCsync(){
-    rfADCCfgStatic();
-    rfADCCfg();
-    rfDACCfgStatic();
-    rfDACCfg();
-    rfDCsyncType(RFDC_ADC);
-    rfDCsyncType(RFDC_DAC);
+    rfDCADCsync();
+    rfDCDACsync();
 }
 
 void
@@ -958,10 +1051,12 @@ rfDCGetPowerMode(rfDCType type, int channel)
         tile = channel / CFG_ADC_PER_TILE;
         block = channel % CFG_ADC_PER_TILE;
     }
-
-    if (type & RFDC_DAC) {
+    else if (type & RFDC_DAC) {
         tile = channel / CFG_DAC_PER_TILE;
         block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
+    }
+    else {
+        return -1;
     }
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
@@ -990,10 +1085,12 @@ rfDCSetPowerMode(rfDCType type, int channel, int on)
         tile = channel / CFG_ADC_PER_TILE;
         block = channel % CFG_ADC_PER_TILE;
     }
-
-    if (type & RFDC_DAC) {
+    else if (type & RFDC_DAC) {
         tile = channel / CFG_DAC_PER_TILE;
         block = (channel % CFG_DAC_PER_TILE)*CFG_DAC_DUC_OFFSET;
+    }
+    else {
+        return;
     }
 
     i = XRFdc_GetPwrMode(&rfDCCfg.rfDC, rfdcType, tile, block, &pwr);
@@ -1045,4 +1142,508 @@ rfDACSetPowerModeBPM(unsigned int bpm, int channel, int on)
 
     ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
     rfDCSetPowerMode(RFDC_DAC, ch, on);
+}
+
+static int
+rfDCGetShutdownMode(rfDCType type, int channel)
+{
+    int tile = 0;
+
+    if (!rfDCCfg.initDone) {
+        return -1;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+    }
+    else if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+    }
+    else {
+        return -1;
+    }
+
+    if (tile >= CFG_TILES_COUNT) {
+        return -1;
+    }
+
+    XRFdc_IPStatus IPStatus;
+    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    int tileState = (type & RFDC_ADC) ? IPStatus.ADCTileStatus[tile].TileState :
+        IPStatus.DACTileStatus[tile].TileState;
+
+    return tileState;
+}
+
+// Helper function to determine which tiles should be in which
+// state (on, pass-through, off). This is needed because
+// the clock is distributed in daisy-chain via the source tile
+static void
+rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetState)
+{
+    bool clockNeedBelow = false;
+    bool clockNeedAbove = false;
+    bool *clockNeededp = &clockNeedBelow;
+    int inc = 1;
+
+    for (int i = 0, tile = 0; i < CFG_TILES_COUNT; i++, tile += inc) {
+        if (tile == tileRefClk) {
+            tile = CFG_TILES_COUNT;
+            inc = -1;
+            clockNeededp = &clockNeedAbove;
+            continue;
+        }
+
+        if (requestStatus[tile]) {
+            *clockNeededp = true;
+            targetState[tile] = XRFDC_STATE_FULL;
+        }
+        else if (*clockNeededp) {
+            targetState[tile] = XRFDC_STATE_CLK_DET;
+        }
+        else {
+            targetState[tile] = XRFDC_STATE_SHUTDOWN;
+        }
+    }
+
+    if (requestStatus[tileRefClk]) {
+        targetState[tileRefClk] = XRFDC_STATE_FULL;
+    }
+    else if (clockNeedBelow || clockNeedAbove) {
+        /*
+         * This is the clock SOURCE tile, not merely a pass-through
+         * tile. The source must remain operational while other
+         * tiles consume its distributed clock.
+         *
+         * The RFdc driver requires the clock-distribution source
+         * to reach IPSM state 7. Since state 7 is not an exposed
+         * CustomStartUp endpoint, leave the source FULL.
+         */
+        targetState[tileRefClk] = XRFDC_STATE_FULL;
+
+    }
+    else {
+        targetState[tileRefClk] = XRFDC_STATE_SHUTDOWN;
+    }
+}
+
+static int
+rfDCChangeTileState(rfDCType type, int tile, uint32_t requestState)
+{
+    uint32_t rfdcType = (type & RFDC_ADC) ? XRFDC_ADC_TILE :
+                        (type & RFDC_DAC) ? XRFDC_DAC_TILE : XRFDC_ADC_TILE;
+    XRFdc_IPStatus IPStatus;
+    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+        IPStatus.DACTileStatus;
+    int currentState = tileStatus[tile].TileState;
+    int currentEnabled = tileStatus[tile].IsEnabled;
+
+    if (!currentEnabled) {
+        return XST_SUCCESS;
+    }
+
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        printf("rfDCChangeTileState: tile %d, type %d, state %u -> %u\n",
+               tile, type, currentState, requestState);
+    }
+
+    int newState = 0;
+    if (requestState == XRFDC_STATE_SHUTDOWN) {
+        // Don't try to shutdown a tile that is already shut down
+        if (currentState != XRFDC_STATE_SHUTDOWN ) {
+            status = XRFdc_Shutdown(&rfDCCfg.rfDC, rfdcType, tile);
+            if (status != XST_SUCCESS) {
+                printf("Couldn't shutdown %s tile %d\n",
+                     (type & RFDC_ADC)? "ADC" : "DAC", tile);
+                return status;
+            }
+        }
+    }
+    else if (requestState == XRFDC_STATE_CLK_DET) {
+        // We have to shutdown a tile to reduce its status
+        if (currentState > XRFDC_STATE_CLK_DET) {
+            status = XRFdc_Shutdown(&rfDCCfg.rfDC, rfdcType, tile);
+            if (status != XST_SUCCESS) {
+                printf("Couldn't shutdown %s tile %d\n",
+                     (type & RFDC_ADC)? "ADC" : "DAC", tile);
+                return status;
+            }
+        }
+
+        status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+        if (status != XST_SUCCESS) {
+            printf("Can't get IP status.\n");
+            return status;
+        }
+
+        newState = (type & RFDC_ADC) ? IPStatus.ADCTileStatus[tile].TileState :
+            IPStatus.DACTileStatus[tile].TileState;
+
+        // Re-apply the PLL configuration if it was off or was turned off just now.
+        // Without this, the reference tile will not forward the clock.
+        int cfgStatus = -1;
+        if (newState == XRFDC_STATE_SHUTDOWN) {
+            if (type & RFDC_ADC) {
+                cfgStatus = rfADCCfgStaticSingle(tile);
+            }
+            else if (type & RFDC_DAC) {
+                cfgStatus = rfDACCfgStaticSingle(tile);
+            }
+
+            if (cfgStatus != XST_SUCCESS) {
+                return cfgStatus;
+            }
+        }
+
+        status = XRFdc_CustomStartUp(&rfDCCfg.rfDC, rfdcType, tile,
+                                     newState, requestState);
+        if (status != XST_SUCCESS) {
+            printf("Couldn't startup %s tile %d\n",
+                 (type & RFDC_ADC)? "ADC" : "DAC", tile);
+            return status;
+        }
+    }
+    else if (requestState == XRFDC_STATE_FULL) {
+        // If this tile was previously XRFDC_STATE_SHUTDOWN, its PLL was
+        // erased. Re-apply it before starting it.
+        int cfgStatus = -1;
+        if (currentState < XRFDC_STATE_PWRUP) {
+            if (type & RFDC_ADC) {
+                cfgStatus = rfADCCfgStaticSingle(tile);
+            }
+            else if (type & RFDC_DAC) {
+                cfgStatus = rfDACCfgStaticSingle(tile);
+            }
+
+            if (cfgStatus != XST_SUCCESS) {
+                return cfgStatus;
+            }
+        }
+
+        status = XRFdc_StartUp(&rfDCCfg.rfDC, rfdcType, tile);
+        if (status != XST_SUCCESS) {
+            printf("Couldn't startup %s tile %d\n",
+                 (type & RFDC_ADC)? "ADC" : "DAC", tile);
+            return status;
+        }
+    }
+
+    // Check if the status change was successful
+
+    status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    newState = (type & RFDC_ADC) ? IPStatus.ADCTileStatus[tile].TileState :
+        IPStatus.DACTileStatus[tile].TileState;
+    if (newState != requestState) {
+        warn("Couldn't change %s tile %d state from %d to %d(%d)",
+             (type & RFDC_ADC)? "ADC" : "DAC", tile, currentState,
+             requestState, newState);
+    }
+
+    return status;
+}
+
+static int
+rfDCApplyTileStates(rfDCType type, uint32_t *targetState)
+{
+    int tileRefClk = 0;
+
+    if (type & RFDC_ADC) {
+        tileRefClk = rfDCCfg.adcTileRefClk;
+    }
+    else if (type & RFDC_DAC) {
+        tileRefClk = rfDCCfg.dacTileRefClk;
+    }
+    else {
+        return -1;
+    }
+
+    XRFdc_IPStatus IPStatus;
+    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+        IPStatus.DACTileStatus;
+
+    // If this is a power-down operation we need to start
+    // from the leaves to the reference clock tile
+    int inc = 1;
+    for (int i = 0, tile = 0; i < CFG_TILES_COUNT; i++, tile += inc) {
+        if (tile == tileRefClk) {
+            tile = CFG_TILES_COUNT;
+            inc = -1;
+            continue;
+        }
+
+        if (targetState[tile] < tileStatus[tile].TileState) {
+            status = rfDCChangeTileState(type, tile, targetState[tile]);
+            if (status != XST_SUCCESS) {
+                return status;
+            }
+        }
+    }
+
+    // Do reference tile separately. This is the time to power down
+    // the reference tile if requested.
+    if (targetState[tileRefClk] < tileStatus[tileRefClk].TileState) {
+        status = rfDCChangeTileState(type, tileRefClk, targetState[tileRefClk]);
+        if (status != XST_SUCCESS) {
+            return status;
+        }
+
+        // Update Tile status as tiles might have gone down
+        int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+        if (status != XST_SUCCESS) {
+            printf("Can't get IP status.\n");
+            return status;
+        }
+    }
+
+    // For a power-up operation, regardless of the tile, DAC0 needs
+    // to be at least in state 6 bacause according to PG269
+    // "DAC_Tile0 and ADC_Tile0 control the bandgap trim for the device.
+    // If these tiles are enabled they should be powered up to at least
+    // stage 4 in order that the bandgap trim settings are propagated
+    // to the other enabled tiles."
+
+    // Check if there is at least one power-up operation
+    int powerUpOp = 0;
+    for (int i = 0; i < CFG_TILES_COUNT; i++) {
+        if (targetState[i] > tileStatus[i].TileState) {
+            powerUpOp = 1;
+        }
+    }
+
+    if (powerUpOp &&
+        (tileStatus[0].TileState < XRFDC_STATE_CLK_DET)) {
+        status = rfDCChangeTileState(type, 0, XRFDC_STATE_CLK_DET);
+        if (status != XST_SUCCESS) {
+            return status;
+        }
+
+        int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+        if (status != XST_SUCCESS) {
+            printf("Can't get IP status.\n");
+            return status;
+        }
+    }
+
+    // If this is a power-up operation we need to start
+    // from the reference clock tile to the leaves. This
+    // includes the reference tile. That's why the +1 on the
+    // for guard condition
+    inc = -1;
+    for (int i = 0, tile = tileRefClk; i < CFG_TILES_COUNT + 1; i++, tile += inc) {
+        if (tile < 0) {
+            tile = tileRefClk;
+            inc = 1;
+            continue;
+        }
+
+        if (targetState[tile] > tileStatus[tile].TileState) {
+            status = rfDCChangeTileState(type, tile, targetState[tile]);
+            if (status != XST_SUCCESS) {
+                return status;
+            }
+        }
+    }
+
+    return XST_SUCCESS;
+}
+
+static int
+rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus)
+{
+    int status = 0;
+    uint32_t tileRefClk;
+
+    if (type & RFDC_ADC) {
+        tileRefClk = rfDCCfg.adcTileRefClk;
+    }
+    else if (type & RFDC_DAC) {
+        tileRefClk = rfDCCfg.dacTileRefClk;
+    }
+    else {
+        return -1;
+    }
+
+    // Calculate the new tile states
+    uint32_t targetState[CFG_TILES_COUNT];
+    rfDCTileTargetState(tileRefClk, requestStatus, targetState);
+
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        XRFdc_IPStatus IPStatus;
+        status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+        if (status != XST_SUCCESS) {
+            printf("Can't get IP status.\n");
+            return status;
+        }
+
+        XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+            IPStatus.DACTileStatus;
+
+        printf("rfDCChangeTilePwrRaw: current/target state: ");
+
+        for(int i = 0; i < CFG_TILES_COUNT; ++i) {
+            printf("(%u/%u) ", tileStatus[i].TileState, targetState[i]);
+        }
+        printf("\n");
+    }
+
+    status = rfDCApplyTileStates(type, targetState);
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    return status;
+}
+
+static int
+rfDCCopyTileState(rfDCType type, uint32_t *tilePwr, size_t capacity)
+{
+    XRFdc_IPStatus IPStatus;
+    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+        IPStatus.DACTileStatus;
+
+    // Get current tile status
+    for (int i = 0; i < CFG_TILES_COUNT && i < capacity; ++i) {
+        tilePwr[i] = (tileStatus[i].TileState == XRFDC_STATE_FULL);
+    }
+
+    return XST_SUCCESS;
+}
+
+static int
+rfDCChangeTilePwr(rfDCType type, int tile, int on)
+{
+    if (tile >= CFG_TILES_COUNT) {
+        return -1;
+    }
+
+    // Get current tile status
+    uint32_t requestStatus[CFG_TILES_COUNT];
+    int status = rfDCCopyTileState(type, requestStatus, ARRAY_SIZE(requestStatus));
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    // Add new tile state request
+    requestStatus[tile] = (on != 0);
+
+    status = rfDCChangeTilePwrRaw(type, requestStatus);
+
+    return status;
+}
+
+static void
+rfDCSetShutdownMode(rfDCType type, int channel, int on)
+{
+    int tile = 0;
+
+    if (!rfDCCfg.initDone) {
+        return;
+    }
+
+    if (type & RFDC_ADC) {
+        tile = channel / CFG_ADC_PER_TILE;
+    }
+    else if (type & RFDC_DAC) {
+        tile = channel / CFG_DAC_PER_TILE;
+    }
+    else {
+        return;
+    }
+
+    int status = rfDCChangeTilePwr(type, tile, on);
+    if (status != XST_SUCCESS) {
+        return;
+    }
+
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        XRFdc_IPStatus IPStatus;
+        int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+        if (status != XST_SUCCESS) {
+            printf("Can't get IP status.\n");
+            return;
+        }
+
+        XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+            IPStatus.DACTileStatus;
+
+        printf("rfDCSetShutdownMode: new state: ");
+
+        for(int i = 0; i < CFG_TILES_COUNT; ++i) {
+            printf("%u ", tileStatus[i].TileState);
+        }
+        printf("\n");
+    }
+
+    // When starting the DAC tiles we need to re-sync them.
+    // Be conservative and do for all cases
+    if (type & RFDC_ADC) {
+        rfDCsyncType(RFDC_ADC);
+    }
+    else if (type & RFDC_DAC) {
+        rfDCsyncType(RFDC_DAC);
+    }
+}
+
+int
+rfDACGetShutdownModeBPM(unsigned int bpm, int channel)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return -1;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    return rfDCGetShutdownMode(RFDC_DAC, ch);
+}
+
+void
+rfDACSetShutdownModeBPM(unsigned int bpm, int channel, int on)
+{
+    int ch;
+    if (bpm >= CFG_DSBPM_COUNT) return;
+
+    if (CFG_SWAP_DAC_SETS) {
+        bpm = (bpm + CFG_DSBPM_COUNT-1) % CFG_DSBPM_COUNT;
+    }
+
+    if (CFG_REVERSE_DAC_SET_ORDER) {
+        channel = CFG_DAC_PER_BPM_COUNT-1 - channel;
+    }
+
+    ch = bpm * CFG_DAC_PER_BPM_COUNT + channel;
+    rfDCSetShutdownMode(RFDC_DAC, ch, on);
 }

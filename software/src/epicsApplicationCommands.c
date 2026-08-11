@@ -104,7 +104,11 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
             bpm = idx / CFG_DAC_PER_BPM_COUNT;
             dac = idx % CFG_DAC_PER_BPM_COUNT;
 
-            rfDACSetPowerModeBPM(bpm, dac, cmdp->args[0]);
+            // Invalid tile
+            if ((dac % 2) != 0)
+                return -1;
+
+            rfDACSetShutdownModeBPM(bpm, dac, cmdp->args[0]);
             break;
 
         case DSBPM_PROTOCOL_CMD_LONGOUT_LO_RF_GAINS:
