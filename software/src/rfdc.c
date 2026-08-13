@@ -28,8 +28,13 @@ static_assert(CFG_ADC_TILES_COUNT == CFG_DAC_TILES_COUNT,
 #define REG_R_POWER_ON_STATE 0x0004
 
 static int rfDCCopyTileState(rfDCType type, uint32_t *tileState, size_t capacity);
+static int rfDCGetTileState(rfDCType type, int tile, uint32_t *tileState);
+static int rfDCCopyTileRequestRaw(rfDCType type, int *tileRequest, size_t capacity);
+static int rfDCGetTileRequestRaw(rfDCType type, int tile, int *tileRequest);
+static int rfDCCopyTileRequest(rfDCType type, int *tileRequest, int capacity);
+static int rfDCGetTileRequest(rfDCType type, int tile, int *tileRequest);
 static int rfDCChangeTileState(rfDCType type, int tile, uint32_t requestState);
-static int rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus);
+static int rfDCChangeTilePwrRaw(rfDCType type, int *requestStatus);
 static int rfDCChangeTilePwr(rfDCType type, int tile, int on);
 
 static struct rfDCCfg {
@@ -41,7 +46,9 @@ static struct rfDCCfg {
     double dacSampRate;
     double dacNCOFreq;
     int adcTileRefClk;
+    int adcTileRequest[CFG_TILES_COUNT];
     int dacTileRefClk;
+    int dacTileRequest[CFG_TILES_COUNT];
     int initDone;
     char logMessageBuffer[200];
 } rfDCCfg = {
@@ -552,6 +559,11 @@ rfDCinit(void)
         warn("XRFdc_CfgInitialize=%d", i);
     }
 
+    for (int i = 0; i < CFG_TILES_COUNT; i++) {
+        rfDCCfg.adcTileRequest[i] = -1;
+        rfDCCfg.dacTileRequest[i] = -1;
+    }
+
     rfDCCfg.initDone = 1;
 
     rfADCCfgStatic();
@@ -615,8 +627,8 @@ rfDCsyncType(rfDCType type)
     // 0 must be enabled and present in the group along with converter 0
     // of the tile being configured to enable this option. See Multi-Tile
     // Synchronization for details.
-    uint32_t oldTileStatus[CFG_TILES_COUNT];
-    status = rfDCCopyTileState(type, oldTileStatus, ARRAY_SIZE(oldTileStatus));
+    int oldTileRequest[CFG_TILES_COUNT];
+    status = rfDCCopyTileRequest(type, oldTileRequest, ARRAY_SIZE(oldTileRequest));
     if (status != XST_SUCCESS) {
         printf("Can't copy tile state.\n");
         return;
@@ -727,12 +739,8 @@ rfDCsyncType(rfDCType type)
         return;
     }
 
-    for (int i = 0; i < ARRAY_SIZE(oldTileStatus); ++i) {
-        oldTileStatus[i] = (oldTileStatus[i] == XRFDC_STATE_FULL);
-    }
-
     // Revert old tiles states
-    status = rfDCChangeTilePwrRaw(type, oldTileStatus);
+    status = rfDCChangeTilePwrRaw(type, oldTileRequest);
     if (status != XST_SUCCESS) {
         return;
     }
@@ -1188,12 +1196,33 @@ rfDCGetShutdownMode(rfDCType type, int channel)
 // state (on, pass-through, off). This is needed because
 // the clock is distributed in daisy-chain via the source tile
 static void
-rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetState)
+rfDCTileTargetState(int tileRefClk, int *requestStatus, uint32_t *targetState)
 {
     bool clockNeedBelow = false;
     bool clockNeedAbove = false;
     bool *clockNeededp = &clockNeedBelow;
     int inc = 1;
+
+    // If we have at least 1 tile on, we need tile 0 in at least CLK_DET
+    bool anyOn = false;
+    for (int i = 0; i < CFG_TILES_COUNT; i++) {
+        if (requestStatus[i]) {
+            anyOn = true;
+        }
+    }
+
+    // If at least one tile is on, Tile0 needs to be at least in state
+    // 6 bacause according to PG269 "DAC_Tile0 and ADC_Tile0 control
+    // the bandgap trim for the device.
+    // If these tiles are enabled they should be powered up to at least
+    // stage 4 in order that the bandgap trim settings are propagated
+    // to the other enabled tiles."
+    //
+    // Force Tile 0 to be on and adjust final target state after
+    uint32_t oldTile0RequestStatus = requestStatus[0];
+    if (anyOn && !oldTile0RequestStatus) {
+        requestStatus[0] = 1;
+    }
 
     for (int i = 0, tile = 0; i < CFG_TILES_COUNT; i++, tile += inc) {
         if (tile == tileRefClk) {
@@ -1215,7 +1244,6 @@ rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetSta
         }
     }
 
-    bool anyOn = false;
     if (requestStatus[tileRefClk]) {
         targetState[tileRefClk] = XRFDC_STATE_FULL;
         anyOn = 1;
@@ -1237,13 +1265,7 @@ rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetSta
         targetState[tileRefClk] = XRFDC_STATE_SHUTDOWN;
     }
 
-    // If at least one tile is on, Tile0 needs to be at least in state
-    // 6 bacause according to PG269 "DAC_Tile0 and ADC_Tile0 control
-    // the bandgap trim for the device.
-    // If these tiles are enabled they should be powered up to at least
-    // stage 4 in order that the bandgap trim settings are propagated
-    // to the other enabled tiles."
-    if (anyOn && targetState[0] < XRFDC_STATE_CLK_DET) {
+    if (requestStatus[0] && !oldTile0RequestStatus) {
         targetState[0] = XRFDC_STATE_CLK_DET;
     }
 }
@@ -1473,19 +1495,27 @@ rfDCApplyTileStates(rfDCType type, uint32_t *targetState)
 }
 
 static int
-rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus)
+rfDCChangeTilePwrRaw(rfDCType type, int *requestStatus)
 {
     int status = 0;
+    int *rfDCtileRequest = NULL;
     uint32_t tileRefClk;
 
     if (type & RFDC_ADC) {
+        rfDCtileRequest = rfDCCfg.adcTileRequest;
         tileRefClk = rfDCCfg.adcTileRefClk;
     }
     else if (type & RFDC_DAC) {
+        rfDCtileRequest = rfDCCfg.dacTileRequest;
         tileRefClk = rfDCCfg.dacTileRefClk;
     }
     else {
         return -1;
+    }
+
+    // Update pending status
+    for (int i = 0; i < CFG_TILES_COUNT; i++) {
+        rfDCtileRequest[i] = requestStatus[i];
     }
 
     // Calculate the new tile states
@@ -1541,6 +1571,99 @@ rfDCCopyTileState(rfDCType type, uint32_t *tileState, size_t capacity)
 }
 
 static int
+rfDCGetTileState(rfDCType type, int tile, uint32_t *tileState)
+{
+    XRFdc_IPStatus IPStatus;
+    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
+    }
+
+    XRFdc_TileStatus *tileStatus = (type & RFDC_ADC) ? IPStatus.ADCTileStatus :
+        IPStatus.DACTileStatus;
+
+    *tileState = tileStatus[tile].TileState;
+
+    return XST_SUCCESS;
+}
+
+static int
+rfDCCopyTileRequestRaw(rfDCType type, int *tileRequest, size_t capacity)
+{
+    int *rfDCtileRequest = (type & RFDC_ADC) ? rfDCCfg.adcTileRequest :
+        rfDCCfg.dacTileRequest;
+
+    // Get current tile status
+    for (int i = 0; i < CFG_TILES_COUNT && i < capacity; ++i) {
+        tileRequest[i] = rfDCtileRequest[i];
+    }
+
+    return XST_SUCCESS;
+}
+
+static int
+rfDCGetTileRequestRaw(rfDCType type, int tile, int *tileRequest)
+{
+    int *rfDCtileRequest = (type & RFDC_ADC) ? rfDCCfg.adcTileRequest :
+        rfDCCfg.dacTileRequest;
+
+    *tileRequest = rfDCtileRequest[tile];
+
+    return XST_SUCCESS;
+}
+
+static int
+rfDCGetTileRequest(rfDCType type, int tile, int *tileRequest)
+{
+    int status = rfDCGetTileRequestRaw(type, tile, tileRequest);
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    if (*tileRequest > 0) {
+       return XST_SUCCESS;
+    }
+
+    // Fallback to tile state
+    uint32_t tileState = 0;
+    status = rfDCGetTileState(type, tile, &tileState);
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    *tileRequest = (tileState == XRFDC_STATE_FULL);
+    return XST_SUCCESS;
+}
+
+static int
+rfDCCopyTileRequest(rfDCType type, int *tileRequest, int capacity)
+{
+    int status = rfDCCopyTileRequestRaw(type, tileRequest, capacity);
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    // Fallback to tile state
+    uint32_t tileState[CFG_TILES_COUNT] = {0};
+    status = rfDCCopyTileState(type, tileState, ARRAY_SIZE(tileState));
+    if (status != XST_SUCCESS) {
+        return status;
+    }
+
+    for (int i = 0; i < CFG_TILES_COUNT && i < capacity; ++i) {
+        if (tileRequest[i] < 0) {
+            tileRequest[i] = (tileState[i] == XRFDC_STATE_FULL);
+        }
+        else {
+            tileRequest[i] = tileRequest[i];
+        }
+    }
+
+    return XST_SUCCESS;
+}
+
+static int
 rfDCChangeTilePwr(rfDCType type, int tile, int on)
 {
     if (tile >= CFG_TILES_COUNT) {
@@ -1548,20 +1671,16 @@ rfDCChangeTilePwr(rfDCType type, int tile, int on)
     }
 
     // Get current tile status
-    uint32_t requestStatus[CFG_TILES_COUNT];
-    int status = rfDCCopyTileState(type, requestStatus, ARRAY_SIZE(requestStatus));
+    int tileRequest[CFG_TILES_COUNT] = {0};
+    int status = rfDCCopyTileRequest(type, tileRequest, ARRAY_SIZE(tileRequest));
     if (status != XST_SUCCESS) {
         return status;
     }
 
-    for (int i = 0; i < ARRAY_SIZE(requestStatus); ++i) {
-        requestStatus[i] = (requestStatus[i] == XRFDC_STATE_FULL);
-    }
+    // Add new tile state tileRequest
+    tileRequest[tile] = (on != 0);
 
-    // Add new tile state request
-    requestStatus[tile] = (on != 0);
-
-    status = rfDCChangeTilePwrRaw(type, requestStatus);
+    status = rfDCChangeTilePwrRaw(type, tileRequest);
 
     return status;
 }
