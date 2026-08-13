@@ -27,7 +27,7 @@ static_assert(CFG_ADC_TILES_COUNT == CFG_DAC_TILES_COUNT,
 #define REG_W_MASTER_RESET   0x0004
 #define REG_R_POWER_ON_STATE 0x0004
 
-static int rfDCCopyTileState(rfDCType type, uint32_t *tilePwr, size_t capacity);
+static int rfDCCopyTileState(rfDCType type, uint32_t *tileState, size_t capacity);
 static int rfDCChangeTileState(rfDCType type, int tile, uint32_t requestState);
 static int rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus);
 static int rfDCChangeTilePwr(rfDCType type, int tile, int on);
@@ -615,8 +615,8 @@ rfDCsyncType(rfDCType type)
     // 0 must be enabled and present in the group along with converter 0
     // of the tile being configured to enable this option. See Multi-Tile
     // Synchronization for details.
-    uint32_t oldTilePwr[CFG_TILES_COUNT];
-    status = rfDCCopyTileState(type, oldTilePwr, ARRAY_SIZE(oldTilePwr));
+    uint32_t oldTileStatus[CFG_TILES_COUNT];
+    status = rfDCCopyTileState(type, oldTileStatus, ARRAY_SIZE(oldTileStatus));
     if (status != XST_SUCCESS) {
         printf("Can't copy tile state.\n");
         return;
@@ -727,8 +727,12 @@ rfDCsyncType(rfDCType type)
         return;
     }
 
+    for (int i = 0; i < ARRAY_SIZE(oldTileStatus); ++i) {
+        oldTileStatus[i] = (oldTileStatus[i] == XRFDC_STATE_FULL);
+    }
+
     // Revert old tiles states
-    status = rfDCChangeTilePwrRaw(type, oldTilePwr);
+    status = rfDCChangeTilePwrRaw(type, oldTileStatus);
     if (status != XST_SUCCESS) {
         return;
     }
@@ -1517,7 +1521,7 @@ rfDCChangeTilePwrRaw(rfDCType type, uint32_t *requestStatus)
 }
 
 static int
-rfDCCopyTileState(rfDCType type, uint32_t *tilePwr, size_t capacity)
+rfDCCopyTileState(rfDCType type, uint32_t *tileState, size_t capacity)
 {
     XRFdc_IPStatus IPStatus;
     int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
@@ -1531,7 +1535,7 @@ rfDCCopyTileState(rfDCType type, uint32_t *tilePwr, size_t capacity)
 
     // Get current tile status
     for (int i = 0; i < CFG_TILES_COUNT && i < capacity; ++i) {
-        tilePwr[i] = (tileStatus[i].TileState == XRFDC_STATE_FULL);
+        tileState[i] = tileStatus[i].TileState;
     }
 
     return XST_SUCCESS;
@@ -1549,6 +1553,10 @@ rfDCChangeTilePwr(rfDCType type, int tile, int on)
     int status = rfDCCopyTileState(type, requestStatus, ARRAY_SIZE(requestStatus));
     if (status != XST_SUCCESS) {
         return status;
+    }
+
+    for (int i = 0; i < ARRAY_SIZE(requestStatus); ++i) {
+        requestStatus[i] = (requestStatus[i] == XRFDC_STATE_FULL);
     }
 
     // Add new tile state request
@@ -1578,7 +1586,15 @@ rfDCSetShutdownMode(rfDCType type, int channel, int on)
         return;
     }
 
-    int status = rfDCChangeTilePwr(type, tile, on);
+    // Save state so we can determine if we need MTS at the end
+    uint32_t oldTileStatus[CFG_TILES_COUNT];
+    int status = rfDCCopyTileState(type, oldTileStatus, ARRAY_SIZE(oldTileStatus));
+    if (status != XST_SUCCESS) {
+        printf("Can't copy tile state.\n");
+        return;
+    }
+
+    status = rfDCChangeTilePwr(type, tile, on);
     if (status != XST_SUCCESS) {
         return;
     }
@@ -1602,13 +1618,31 @@ rfDCSetShutdownMode(rfDCType type, int channel, int on)
         printf("\n");
     }
 
-    // When starting the DAC tiles we need to re-sync them.
-    // Be conservative and do for all cases
-    if (type & RFDC_ADC) {
-        rfDCsyncType(RFDC_ADC);
+    // Determine if MTS is necessary
+
+    uint32_t newTileStatus[CFG_TILES_COUNT];
+    status = rfDCCopyTileState(type, newTileStatus, ARRAY_SIZE(newTileStatus));
+    if (status != XST_SUCCESS) {
+        printf("Can't copy tile state.\n");
+        return;
     }
-    else if (type & RFDC_DAC) {
-        rfDCsyncType(RFDC_DAC);
+
+    int stateChanged = 0;
+    for (int i = 0; i < ARRAY_SIZE(newTileStatus) &&
+            i < ARRAY_SIZE(oldTileStatus); ++i) {
+        if (oldTileStatus[i] != newTileStatus[i]) {
+            stateChanged = 1;
+            break;
+        }
+    }
+
+    if (on != 0 && stateChanged) {
+        if (type & RFDC_ADC) {
+            rfDCsyncType(RFDC_ADC);
+        }
+        else if (type & RFDC_DAC) {
+            rfDCsyncType(RFDC_DAC);
+        }
     }
 }
 
