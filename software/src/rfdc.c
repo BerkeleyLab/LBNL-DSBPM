@@ -1215,8 +1215,10 @@ rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetSta
         }
     }
 
+    bool anyOn = false;
     if (requestStatus[tileRefClk]) {
         targetState[tileRefClk] = XRFDC_STATE_FULL;
+        anyOn = 1;
     }
     else if (clockNeedBelow || clockNeedAbove) {
         /*
@@ -1229,10 +1231,20 @@ rfDCTileTargetState(int tileRefClk, uint32_t *requestStatus, uint32_t *targetSta
          * CustomStartUp endpoint, leave the source FULL.
          */
         targetState[tileRefClk] = XRFDC_STATE_FULL;
-
+        anyOn = 1;
     }
     else {
         targetState[tileRefClk] = XRFDC_STATE_SHUTDOWN;
+    }
+
+    // If at least one tile is on, Tile0 needs to be at least in state
+    // 6 bacause according to PG269 "DAC_Tile0 and ADC_Tile0 control
+    // the bandgap trim for the device.
+    // If these tiles are enabled they should be powered up to at least
+    // stage 4 in order that the bandgap trim settings are propagated
+    // to the other enabled tiles."
+    if (anyOn && targetState[0] < XRFDC_STATE_CLK_DET) {
+        targetState[0] = XRFDC_STATE_CLK_DET;
     }
 }
 
@@ -1412,32 +1424,19 @@ rfDCApplyTileStates(rfDCType type, uint32_t *targetState)
         if (status != XST_SUCCESS) {
             return status;
         }
-
-        // Update Tile status as tiles might have gone down
-        int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
-        if (status != XST_SUCCESS) {
-            printf("Can't get IP status.\n");
-            return status;
-        }
     }
 
-    // For a power-up operation, regardless of the tile, DAC0 needs
-    // to be at least in state 6 bacause according to PG269
-    // "DAC_Tile0 and ADC_Tile0 control the bandgap trim for the device.
-    // If these tiles are enabled they should be powered up to at least
-    // stage 4 in order that the bandgap trim settings are propagated
-    // to the other enabled tiles."
-
-    // Check if there is at least one power-up operation
-    int powerUpOp = 0;
-    for (int i = 0; i < CFG_TILES_COUNT; i++) {
-        if (targetState[i] > tileStatus[i].TileState) {
-            powerUpOp = 1;
-        }
+    // Update Tile status as tiles might have gone down
+    status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    if (status != XST_SUCCESS) {
+        printf("Can't get IP status.\n");
+        return status;
     }
 
-    if (powerUpOp &&
-        (tileStatus[0].TileState < XRFDC_STATE_CLK_DET)) {
+    // Move tile 0 to at least CLK DET, if it's needed and defer moving it
+    // to FULL after the reference clock has been fully on.
+    if (targetState[0] > XRFDC_STATE_SHUTDOWN &&
+        tileStatus[0].TileState < XRFDC_STATE_CLK_DET) {
         status = rfDCChangeTileState(type, 0, XRFDC_STATE_CLK_DET);
         if (status != XST_SUCCESS) {
             return status;
