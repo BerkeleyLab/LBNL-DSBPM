@@ -1156,6 +1156,10 @@ rfDACSetPowerModeBPM(unsigned int bpm, int channel, int on)
     rfDCSetPowerMode(RFDC_DAC, ch, on);
 }
 
+// Try not to conflict with Xilinx pre-defined states
+#define XRFDC_STATE_REQUEST_ON_OFFSET       0x100
+#define XRFDC_STATE_REQUEST_OFF_OFFSET      0x200
+
 static int
 rfDCGetShutdownMode(rfDCType type, int channel)
 {
@@ -1179,15 +1183,31 @@ rfDCGetShutdownMode(rfDCType type, int channel)
         return -1;
     }
 
-    XRFdc_IPStatus IPStatus;
-    int status = XRFdc_GetIPStatus(&rfDCCfg.rfDC, &IPStatus);
+    uint32_t tileState = 0;
+    int status = rfDCGetTileState(type, tile, &tileState);
     if (status != XST_SUCCESS) {
-        printf("Can't get IP status.\n");
-        return status;
+        return -1;
     }
 
-    int tileState = (type & RFDC_ADC) ? IPStatus.ADCTileStatus[tile].TileState :
-        IPStatus.DACTileStatus[tile].TileState;
+    int tileRequest = 0;
+    status = rfDCGetTileRequest(type, tile, &tileRequest);
+    if (status != XST_SUCCESS) {
+        return -1;
+    }
+
+    // If the tile was requested to be on but it's not, it's
+    // because we are forcing it to be low because of some other
+    // dependency
+    if (tileRequest && tileState < XRFDC_STATE_CLK_DET) {
+        tileState |= XRFDC_STATE_REQUEST_ON_OFFSET;
+    }
+
+    // If the tile was requested to be off but it's not, it's
+    // because we are forcing it to be high because of some other
+    // dependency
+    if (!tileRequest && tileState > XRFDC_STATE_SHUTDOWN) {
+        tileState |= XRFDC_STATE_REQUEST_OFF_OFFSET;
+    }
 
     return tileState;
 }
@@ -1246,7 +1266,6 @@ rfDCTileTargetState(int tileRefClk, int *requestStatus, uint32_t *targetState)
 
     if (requestStatus[tileRefClk]) {
         targetState[tileRefClk] = XRFDC_STATE_FULL;
-        anyOn = 1;
     }
     else if (clockNeedBelow || clockNeedAbove) {
         /*
@@ -1259,7 +1278,6 @@ rfDCTileTargetState(int tileRefClk, int *requestStatus, uint32_t *targetState)
          * CustomStartUp endpoint, leave the source FULL.
          */
         targetState[tileRefClk] = XRFDC_STATE_FULL;
-        anyOn = 1;
     }
     else {
         targetState[tileRefClk] = XRFDC_STATE_SHUTDOWN;
@@ -1518,6 +1536,15 @@ rfDCChangeTilePwrRaw(rfDCType type, int *requestStatus)
         rfDCtileRequest[i] = requestStatus[i];
     }
 
+    if (debugFlags & DEBUGFLAG_RF_DAC_SHOW) {
+        printf("rfDCChangeTilePwrRaw: tile request: ");
+
+        for(int i = 0; i < CFG_TILES_COUNT; ++i) {
+            printf("%d ", rfDCtileRequest[i]);
+        }
+        printf("\n");
+    }
+
     // Calculate the new tile states
     uint32_t targetState[CFG_TILES_COUNT];
     rfDCTileTargetState(tileRefClk, requestStatus, targetState);
@@ -1621,7 +1648,7 @@ rfDCGetTileRequest(rfDCType type, int tile, int *tileRequest)
         return status;
     }
 
-    if (*tileRequest > 0) {
+    if (*tileRequest >= 0) {
        return XST_SUCCESS;
     }
 
