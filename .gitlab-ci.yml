@@ -1,5 +1,5 @@
 stages:
-  - prepare
+  - tests
   - gateware
   - software
 
@@ -10,10 +10,38 @@ default:
 variables:
   XILINX_VIVADO: /non-free/Xilinx/Vivado_and_Vitis/2022.1/Vivado/2022.1
   XILINX_VITIS: /non-free/Xilinx/Vivado_and_Vitis/2022.1/Vitis/2022.1
+  CI_REGISTRY: mohs2.dhcp.lbl.gov
+  IMAGE_BASE: xilinx_env_bookworm
+  DEFAULT_IMAGE: ${CI_REGISTRY}/${IMAGE_BASE}
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
   GIT_SUBMODULE_STRATEGY: normal
   FF_SCRIPT_SECTIONS: "true"
+
+# default image if no other specified
+image: $DEFAULT_IMAGE
+
+tests:
+  before_script: |
+    apt-get update && \
+    apt-get install -y \
+      autoconf \
+      help2man && \
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m pip install -r requirements.txt && \
+    git clone --branch=v5.046 https://github.com/verilator/verilator && \
+    cd verilator && \
+    autoconf && \
+    ./configure && \
+    make -j4 && \
+    make install &&
+    verilator --version
+  stage: tests
+  script: |
+    cd ${CI_PROJECT_DIR}/gateware/modules && \
+    make checks && \
+    cd ${CI_PROJECT_DIR}/gateware/modules/genericWaveformRecorder_test && \
+    python3 genericWaveformRecorder_runner.py
 
 # Gateware jobs
 gw_dsbpm:
