@@ -42,6 +42,8 @@ work/
 ######################
 
 *#*
+__pycache__/
+sim_build/
 
 ######################
 # Repo-specific files
