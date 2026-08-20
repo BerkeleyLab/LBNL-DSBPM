@@ -7,7 +7,6 @@ VERILOG += -g2012
 
 TEST_BENCH = \
 	csrTestMaster_tb \
-	genericWaveformRecorder_tb \
 	adcProcessing_tb \
 	genericDPRAM_tb \
 	genericDACStreamer_tb \
