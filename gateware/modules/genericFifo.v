@@ -7,6 +7,7 @@ module genericFifo #(
     parameter fwft = 1
 ) (
     input clk,
+    input rst,
 
     input [dw - 1: 0] din,
     input we,
@@ -28,6 +29,7 @@ fifo #(
     .dw(dw)
 ) fifo (
     .clk(clk),
+    .rst(rst),
     .din(din),
     .we(we),
 
