@@ -23,7 +23,12 @@ module genericWaveformRecorder #(
     input                        sysClk,
     input        [BUS_WIDTH-1:0] writeData,
     input                  [4:0] regStrobes,
-    output wire       [BUS_WIDTH-1:0] csr, pretrigCount, acqCount, acqAddressMSB, acqAddressLSB,
+    output wire       [BUS_WIDTH-1:0] csr,
+    output wire       [BUS_WIDTH-1:0] csr2,
+    output wire       [BUS_WIDTH-1:0] pretrigCount,
+    output wire       [BUS_WIDTH-1:0] acqCount,
+    output wire       [BUS_WIDTH-1:0] acqAddressMSB,
+    output wire       [BUS_WIDTH-1:0] acqAddressLSB,
     output wire  [TIMESTAMP_WIDTH-1:0] whenTriggered,
 
     // clk synchronous signals
@@ -127,6 +132,9 @@ assign csr = { sysCsrTriggerEnables,
                7'b0, sysAcqPretrigLeftDone,
                6'b0, sysCsrTestMode, sysCsrDiagMode,
               sysFull, sysCsrBRESP, sysOverrun, sysState, sysAcqArmed };
+assign csr2 = { 16'b0,
+               {16-(FIFO_ADDR_WIDTH+1){1'b0}},
+              sysFifoCount };
 reg [2*BUS_WIDTH-1:0] sysAcqBase;
 
 //
@@ -459,7 +467,7 @@ end
 
 generate
 if (CHIPSCOPE_DBG != "TRUE" && CHIPSCOPE_DBG != "FALSE") begin
-    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED err();
 end
 endgenerate
 
@@ -519,5 +527,13 @@ forwardData #(.DATA_WIDTH(AXI_ADDR_WIDTH+TIMESTAMP_WIDTH+1+1+2+3+1+1))
     .outClk(sysClk),
     .outData({  sysAxi_AWADDR, sysWhenTriggered, sysOverrun, sysFull,
                 sysCsrBRESP, sysState, sysAcqArmed, sysAcqPretrigLeftDone}));
+
+wire signed [FIFO_ADDR_WIDTH:0] sysFifoCount;
+forwardData #(.DATA_WIDTH(FIFO_ADDR_WIDTH+1))
+  forwardAcqtoCSR2 (
+    .inClk(clk),
+    .inData(fifoCount),
+    .outClk(sysClk),
+    .outData(sysFifoCount));
 
 endmodule
