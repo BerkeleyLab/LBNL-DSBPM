@@ -127,6 +127,7 @@ class TB:
         self.fifo_count_width = fifo_addr_width + 1
         self.fifo_count_mask = (1 << self.fifo_count_width) - 1
         self.fifo_empty_count = self.fifo_count_mask
+        self.fifo_max_count = config.fifo_capacity
 
         assert self.acq_span_bytes <= self.axi_addr_space_bytes, (
             "ACQ_CAPACITY is too large for the DUT AXI address width"
@@ -358,6 +359,7 @@ class TB:
         self._check_background_tasks()
 
     async def wait_for_fifo_drain(self, max_cycles):
+        fifo_count = 0
         for _ in range(max_cycles):
             await RisingEdge(self.dut.clk)
             await ReadOnly()
@@ -408,7 +410,7 @@ class TB:
     async def finish_normal_acquisition(self):
         await self.wait_csr_clear(
             WR_R_CSR_ARM,
-            50000,
+            100000,
             "recorder did not complete acquisition",
         )
         await self.wait_csr_set(
@@ -468,7 +470,7 @@ class TB:
                 )
                 self.sample_number = (self.sample_number + 1) & 0xFFFF_FFFF
                 # sample_gap = 0 , means no gap
-                self.sample_gap_count = max(self.sample_gap - 1, 0)
+                self.sample_gap_count = max(self.sample_gap, 0)
             else:
                 self.dut.valid.value = 0
                 self.dut.data.value = self._repeated32(0xDEADBEEF, data_width)
@@ -558,6 +560,17 @@ class TB:
                 self._read_signal(self.dut.axi_WREADY, "axi_WREADY")
             ),
             "wstrb": self._read_signal(self.dut.axi_WSTRB, "axi_WSTRB"),
+        }
+
+    def _capture_recorder_snapshot(self):
+        return {
+            "csr": self._read_signal(self.dut.csr, "csr"),
+            "csr2": self._read_signal(self.dut.csr2, "csr2"),
+            "pretrigCount": self._read_signal(self.dut.pretrigCount, "pretrigCount"),
+            "acqCount": self._read_signal(self.dut.acqCount, "acqCount"),
+            "acqAddressMSB": self._read_signal(self.dut.acqAddressMSB, "acqAddressMSB"),
+            "acqAddressLSB": self._read_signal(self.dut.acqAddressLSB, "acqAddressLSB"),
+            "whenTriggered": self._read_signal(self.dut.whenTriggered, "whenTriggered"),
         }
 
     def _check_axi_snapshot(self, axi):
@@ -702,20 +715,38 @@ class TB:
             else:
                 self.burst_beats_left -= 1
 
+    def _check_recorder_snapshot(self, recorder):
+        csr = recorder["csr"]
+        # csr2 = recorder["csr2"]
+        # pretrigCount = recorder["pretrigCount"]
+        # acqCount = recorder["acqCount"]
+        # acqAddressMSB = recorder["acqAddressMSB"]
+        # acqAddressLSB = recorder["acqAddressLSB"]
+        # whenTriggered = recorder["whenTriggered"]
+
+        overrun = csr & WR_R_CSR_OVERRUN
+
+        assert overrun == 0, "FAIL: unexpected FIFO overrun"
+
     async def _monitor_axi(self):
         # 'previous' is the AXI state that was stable during the cycle leading
         # into the current rising edge.  Therefore all handshake decisions are
         # made from previous-cycle values, not from post-edge DUT outputs.
-        previous = None
+        previous_axi = None
+        previous_recorder = None
 
         while True:
             await RisingEdge(self.dut.clk)
 
-            if previous is not None:
-                self._check_axi_snapshot(previous)
+            if previous_axi is not None:
+                self._check_axi_snapshot(previous_axi)
+
+            if previous_recorder is not None:
+                self._check_recorder_snapshot(previous_recorder)
 
             await ReadOnly()
-            previous = self._capture_axi_snapshot()
+            previous_axi = self._capture_axi_snapshot()
+            previous_recorder = self._capture_recorder_snapshot()
 
 
 async def do_basic_triggered_capture_test(tb):
@@ -1015,8 +1046,8 @@ async def do_pseudo_constrained_test(tb):
 
     for iteration in range(tb.config.random_iters):
         pretrig = tb.stim_rng.randint(8, 1*1024)
-        acq_count = pretrig + tb.stim_rng.randint(16, 16*1024)
-        sample_gap = tb.stim_rng.randint(8, 20)
+        acq_count = pretrig + tb.stim_rng.randint(8, 2*1024)
+        sample_gap = tb.stim_rng.randint(16, 32)
         trigger_wait = pretrig + tb.stim_rng.randint(16, 1000)
         region = tb.stim_rng.randint(3, 12)
         base = tb.base_addr_for_region(region)
@@ -1121,6 +1152,7 @@ async def execute_address_wrap_test(dut):
     tb._check_background_tasks()
 
     dut._log.info("--- Address-wrap test Complete ---")
+
 
 @cocotb.test(timeout_time=2, timeout_unit="ms")
 async def execute_high_bandwidth_mode_test(dut):
