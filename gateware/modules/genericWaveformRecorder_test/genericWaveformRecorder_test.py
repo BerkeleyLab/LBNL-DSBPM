@@ -72,16 +72,18 @@ class RegressionConfig:
     axi_wready_percent: int
     acq_capacity: int
     fifo_capacity: int
+    high_bandwidth_mode: str
 
     @classmethod
     def from_environment(cls):
         config = cls(
             seed=int(os.getenv("SEED", "0x51A72026"), 0),
-            random_iters=int(os.getenv("RANDOM_ITERS", "5"), 0),
+            random_iters=int(os.getenv("RANDOM_ITERS", "20"), 0),
             axi_awready_percent=int(os.getenv("AXI_AWREADY_PERCENT", "75"), 0),
             axi_wready_percent=int(os.getenv("AXI_WREADY_PERCENT", "75"), 0),
             acq_capacity=int(os.getenv("ACQ_CAPACITY", str(1 << 23)), 0),
             fifo_capacity=int(os.getenv("FIFO_CAPACITY", "256"), 0),
+            high_bandwidth_mode=str(os.getenv("HIGH_BANDWIDTH_MODE", "FALSE")),
         )
 
         assert 0 <= config.axi_awready_percent <= 100, (
@@ -98,6 +100,9 @@ class RegressionConfig:
         assert config.fifo_capacity > 0, "FIFO_CAPACITY must be greater than zero"
         assert (config.fifo_capacity & (config.fifo_capacity - 1)) == 0, (
             "FIFO_CAPACITY must be a power of two for this regression"
+        )
+        assert config.high_bandwidth_mode == "TRUE" or config.high_bandwidth_mode == "FALSE", (
+            "HIGH_BANDWIDTH_MODE must be TRUE or FALSE"
         )
 
         return config
@@ -201,12 +206,12 @@ class TB:
                 raise AssertionError(f"FAIL: {name} stopped unexpectedly")
 
     @staticmethod
-    def _repeated16(value, width):
-        value &= 0xFFFF
+    def _repeated32(value, width):
+        value &= 0xFFFF_FFFF
         result = 0
 
-        for lane in range(width // 16):
-            result |= value << (16 * lane)
+        for lane in range(width // 32):
+            result |= value << (32 * lane)
 
         return result
 
@@ -224,7 +229,7 @@ class TB:
         )
 
         await RisingEdge(self.dut.sysClk)
-        self.dut.writeData.value = value & 0xFFFFFFFF
+        self.dut.writeData.value = value & 0xFFFF_FFFF
         self.dut.regStrobes.value = 1 << offset
 
         await RisingEdge(self.dut.sysClk)
@@ -253,10 +258,10 @@ class TB:
             value = self._read_signal(self.dut.csr2, "csr2")
         elif offset == WR_REG_OFFSET_TIMESTAMP_SECONDS:
             when_triggered = self._read_signal(self.dut.whenTriggered, "whenTriggered")
-            value = (when_triggered >> 32) & 0xFFFFFFFF
+            value = (when_triggered >> 32) & 0xFFFF_FFFF
         elif offset == WR_REG_OFFSET_TIMESTAMP_TICKS:
             when_triggered = self._read_signal(self.dut.whenTriggered, "whenTriggered")
-            value = when_triggered & 0xFFFFFFFF
+            value = when_triggered & 0xFFFF_FFFF
         else:
             raise AssertionError(f"Invalid CSR offset: {offset}")
 
@@ -296,7 +301,7 @@ class TB:
     async def program_acquisition(self, pretrig, acq_count, base_addr, csr_value):
         await self.write32(WR_REG_OFFSET_PRETRIGGER_COUNT, pretrig)
         await self.write32(WR_REG_OFFSET_ACQUISITION_COUNT, acq_count)
-        await self.write32(WR_REG_OFFSET_ADDRESS_LSB, base_addr & 0xFFFFFFFF)
+        await self.write32(WR_REG_OFFSET_ADDRESS_LSB, base_addr & 0xFFFF_FFFF)
         await self.write32(WR_REG_OFFSET_ADDRESS_MSB, base_addr >> 32)
 
         readback = await self.read32(WR_REG_OFFSET_PRETRIGGER_COUNT)
@@ -426,6 +431,7 @@ class TB:
         self.score_test_mode = False
         self.sample_drive_enable = True
         self.sample_gap = 16
+        self.sample_gap_count = 0
 
         self.dut.diagExtMode.value = 0
         self.dut.diagExtData.value = 0
@@ -433,6 +439,11 @@ class TB:
 
         await ClockCycles(self.dut.clk, 2)
         self._check_background_tasks()
+
+    def set_sample_gap(self, sample_gap):
+        assert sample_gap >= 0, "sample_gap must be non-negative"
+        self.sample_gap = sample_gap
+        self.sample_gap_count = 0
 
     async def _drive_samples(self):
         data_width = len(self.dut.data)
@@ -447,20 +458,21 @@ class TB:
 
             if self.sample_gap_count == 0:
                 self.dut.valid.value = 1
-                self.dut.data.value = self._repeated16(
-                    0x1000 + self.sample_number,
+                self.dut.data.value = self._repeated32(
+                    0x1000_0000 + self.sample_number,
                     data_width,
                 )
-                self.dut.testData.value = self._repeated16(
-                    0xA000 ^ self.sample_number,
+                self.dut.testData.value = self._repeated32(
+                    0xA000_0000 ^ self.sample_number,
                     data_width,
                 )
-                self.sample_number = (self.sample_number + 1) & 0xFFFF
-                self.sample_gap_count = self.sample_gap - 1
+                self.sample_number = (self.sample_number + 1) & 0xFFFF_FFFF
+                # sample_gap = 0 , means no gap
+                self.sample_gap_count = max(self.sample_gap - 1, 0)
             else:
                 self.dut.valid.value = 0
-                self.dut.data.value = self._repeated16(0xDEAD, data_width)
-                self.dut.testData.value = self._repeated16(0xBEEF, data_width)
+                self.dut.data.value = self._repeated32(0xDEADBEEF, data_width)
+                self.dut.testData.value = self._repeated32(0xCAFECAFE, data_width)
                 self.sample_gap_count -= 1
 
     async def _drive_timestamp(self):
@@ -647,8 +659,8 @@ class TB:
                 "FAIL: WLAST did not match AWLEN burst framing"
             )
 
-            lane_value = wdata & 0xFFFF
-            repeated_lane = self._repeated16(
+            lane_value = wdata & 0xFFFF_FFFF
+            repeated_lane = self._repeated32(
                 lane_value, len(self.dut.axi_WDATA)
             )
             assert wdata == repeated_lane, (
@@ -659,28 +671,28 @@ class TB:
                 self.payload_sequence_started = True
 
                 if self.score_test_mode:
-                    sample_number = lane_value ^ 0xA000
+                    sample_number = lane_value ^ 0xA000_0000
                 else:
-                    sample_number = (lane_value - 0x1000) & 0xFFFF
+                    sample_number = (lane_value - 0x1000_0000) & 0xFFFF_FFFF
 
-                self.expected_sample_number = (sample_number + 1) & 0xFFFF
+                self.expected_sample_number = (sample_number + 1) & 0xFFFF_FFFF
             else:
                 if self.score_test_mode:
-                    expected_lane = 0xA000 ^ self.expected_sample_number
+                    expected_lane = 0xA000_0000 ^ self.expected_sample_number
                 else:
-                    expected_lane = (0x1000 + self.expected_sample_number) & 0xFFFF
+                    expected_lane = (0x1000_0000 + self.expected_sample_number) & 0xFFFF_FFFF
 
-                expected_data = self._repeated16(
+                expected_data = self._repeated32(
                     expected_lane,
                     len(self.dut.axi_WDATA),
                 )
                 assert wdata == expected_data, (
                     "FAIL: AXI WDATA sample sequence is discontinuous or corrupted: "
-                    f"expected 0x{expected_data:x}, got 0x{wdata:x}"
+                    f"expected 0x{expected_data:x}, got 0x{wdata:x}, expected_sample_number {self.expected_sample_number}"
                 )
                 self.expected_sample_number = (
                     self.expected_sample_number + 1
-                ) & 0xFFFF
+                ) & 0xFFFF_FFFF
 
             self.test_axi_beats += 1
 
@@ -848,6 +860,60 @@ async def do_axi_backpressure_test(tb):
     tb.dut._log.info("--- AXI AW/W Backpressure Test Complete ---\n")
 
 
+async def do_one_sample_gap_test(tb):
+    await tb.start_test("One Sample Gap Test")
+
+    tb.set_sample_gap(1)
+    base = tb.base_addr_for_region(13)
+
+    await tb.program_acquisition(
+        pretrig=1024,
+        acq_count=16384,
+        base_addr=base,
+        csr_value=WR_W_CSR_SOFT_TRIGGER_ENABLE,
+    )
+    await tb.wait_csr_set(
+        WR_R_CSR_PRE_TRIG_DONE,
+        50000,
+        "zero-gap case did not finish pretrigger",
+    )
+    await tb.pulse_trigger(0x01)
+    await tb.finish_normal_acquisition()
+
+    assert tb.test_axi_beats > 0, "FAIL: zero-gap case produced no AXI data"
+    tb.dut._log.info("--- Zero Sample Gap Test Complete ---\n")
+
+
+async def do_one_sample_gap_backpressure_test(tb):
+    await tb.start_test("One Sample Gap With AXI Backpressure Test")
+
+    tb.set_sample_gap(1)
+    tb.random_backpressure = True
+    base = tb.base_addr_for_region(14)
+
+    await tb.program_acquisition(
+        pretrig=300,
+        acq_count=10000,
+        base_addr=base,
+        csr_value=WR_W_CSR_SOFT_TRIGGER_ENABLE,
+    )
+    await tb.wait_csr_set(
+        WR_R_CSR_PRE_TRIG_DONE,
+        50000,
+        "zero-gap backpressure case did not finish pretrigger",
+    )
+    await tb.pulse_trigger(0x01)
+    await tb.finish_normal_acquisition()
+
+    assert tb.test_axi_beats > 0, (
+        "FAIL: zero-gap backpressure case produced no AXI data"
+    )
+    tb.random_backpressure = False
+    tb.dut._log.info(
+        "--- Zero Sample Gap With AXI Backpressure Test Complete ---\n"
+    )
+
+
 async def do_zero_pretrigger_test(tb):
     await tb.start_test("Zero Pretrigger Acquisition Test")
 
@@ -855,7 +921,7 @@ async def do_zero_pretrigger_test(tb):
     base = tb.base_addr_for_region(10)
     await tb.program_acquisition(
         pretrig=0,
-        acq_count=16,
+        acq_count=1024,
         base_addr=base,
         csr_value=WR_W_CSR_SOFT_TRIGGER_ENABLE,
     )
@@ -948,10 +1014,10 @@ async def do_pseudo_constrained_test(tb):
     tb.random_backpressure = True
 
     for iteration in range(tb.config.random_iters):
-        pretrig = tb.stim_rng.randint(8, 24)
-        acq_count = pretrig + tb.stim_rng.randint(16, 48)
-        sample_gap = tb.stim_rng.randint(10, 20)
-        trigger_wait = tb.stim_rng.randint(16, 120)
+        pretrig = tb.stim_rng.randint(8, 1*1024)
+        acq_count = pretrig + tb.stim_rng.randint(16, 16*1024)
+        sample_gap = tb.stim_rng.randint(8, 20)
+        trigger_wait = pretrig + tb.stim_rng.randint(16, 1000)
         region = tb.stim_rng.randint(3, 12)
         base = tb.base_addr_for_region(region)
 
@@ -978,7 +1044,7 @@ async def do_pseudo_constrained_test(tb):
         )
         await tb.wait_csr_set(
             WR_R_CSR_PRE_TRIG_DONE,
-            30000,
+            100000,
             "pseudo-constrained case did not finish pretrigger",
         )
         await ClockCycles(tb.dut.clk, trigger_wait)
@@ -1002,6 +1068,7 @@ async def execute_normal_tests(dut):
     )
     dut._log.info(f"Pseudo-constrained iterations: {config.random_iters}")
     dut._log.info(f"Test FIFO_CAPACITY: {config.fifo_capacity}")
+    dut._log.info(f"Test HIGH_BANDWIDTH_MODE: {config.high_bandwidth_mode}")
     dut._log.info(
         f"Test ACQ_CAPACITY: {config.acq_capacity} "
         "(must match the DUT compile-time ACQ_CAPACITY parameter)"
@@ -1009,6 +1076,10 @@ async def execute_normal_tests(dut):
     dut._log.info(
         f"Test FIFO_CAPACITY: {config.fifo_capacity} "
         "(must match the DUT compile-time FIFO_CAPACITY parameter)"
+    )
+    dut._log.info(
+        f"Test HIGH_BANDWIDTH_MODE: {config.high_bandwidth_mode} "
+        "(must match the DUT compile-time HIGH_BANDWIDTH_MODE parameter)"
     )
 
     await ClockCycles(dut.sysClk, 8)
@@ -1050,3 +1121,21 @@ async def execute_address_wrap_test(dut):
     tb._check_background_tasks()
 
     dut._log.info("--- Address-wrap test Complete ---")
+
+@cocotb.test(timeout_time=2, timeout_unit="ms")
+async def execute_high_bandwidth_mode_test(dut):
+    config = RegressionConfig.from_environment()
+    tb = TB(dut, config)
+
+    dut._log.info(f"Test HIGH_BANDWIDTH_MODE: {config.high_bandwidth_mode}")
+
+    await ClockCycles(dut.sysClk, 8)
+
+    await do_one_sample_gap_test(tb)
+    await do_one_sample_gap_backpressure_test(tb)
+
+    tb.sample_drive_enable = False
+    await ClockCycles(dut.sysClk, 20)
+    tb._check_background_tasks()
+
+    dut._log.info("--- High Performance test Complete ---")

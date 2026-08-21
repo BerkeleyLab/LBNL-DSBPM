@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Thu Aug 20 19:15:08 2026
+[*] Fri Aug 21 00:41:17 2026
 [*]
-[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericWaveformRecorder_test/sim_build/production_capacity/dump.fst"
-[dumpfile_mtime] "Thu Aug 20 18:44:40 2026"
-[dumpfile_size] 86961
+[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/genericWaveformRecorder_test/sim_build/high_bandwidth_mode/dump.fst"
+[dumpfile_mtime] "Fri Aug 21 00:33:42 2026"
+[dumpfile_size] 383689
 [savefile] "/home/lrusso/repos/dsbpm/gateware/modules/genericWaveformRecorder_test/genericWaveformRecorder_test.gtkw"
-[timestart] 43731900
-[size] 1481 1340
-[pos] -3 19
-*-17.100000 43968000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 787000
+[size] 2162 1340
+[pos] -3 34
+*-17.100000 30432000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 249
 [signals_width] 367
 [sst_expanded] 1
@@ -71,7 +71,9 @@ genericWaveformRecorder.DATA_WIDTH
 genericWaveformRecorder.FIFO_ADDR_WIDTH
 genericWaveformRecorder.FIFO_CAPACITY
 genericWaveformRecorder.FIFO_PROG_EMPTY_THRESHOLD
+@820
 genericWaveformRecorder.HIGH_BANDWIDTH_MODE
+@24
 genericWaveformRecorder.MULTI_BEAT_LENGTH
 genericWaveformRecorder.S_ACK
 genericWaveformRecorder.S_ADDR
@@ -87,6 +89,9 @@ genericWaveformRecorder.acqAddressLSB[31:0]
 genericWaveformRecorder.acqAddressMSB[31:0]
 @28
 genericWaveformRecorder.acqArmed
+genericWaveformRecorder.acqPreArmed
+genericWaveformRecorder.acqPreArmed_d
+genericWaveformRecorder.fifoRst
 @22
 genericWaveformRecorder.acqBase[63:0]
 @24
@@ -114,17 +119,18 @@ genericWaveformRecorder.axi_WLAST
 genericWaveformRecorder.axi_WREADY
 @22
 genericWaveformRecorder.axi_WSTRB[15:0]
+@28
+genericWaveformRecorder.acqPreArmed
+genericWaveformRecorder.acqPreArmed_d
 @24
 genericWaveformRecorder.state[2:0]
 @28
-genericWaveformRecorder.beatCount[2:0]
 genericWaveformRecorder.clk
 @22
 genericWaveformRecorder.csrAcqCount[23:0]
 @28
 genericWaveformRecorder.csrArmed
 genericWaveformRecorder.csrBRESP[1:0]
-@29
 genericWaveformRecorder.csrDiagMode
 @22
 genericWaveformRecorder.csrPretrigCount[23:0]
@@ -148,7 +154,7 @@ genericWaveformRecorder.diagData[31:0]
 genericWaveformRecorder.diagExtData[31:0]
 @28
 genericWaveformRecorder.diagExtMode
-@22
+@25
 genericWaveformRecorder.fifoCount[8:0]
 @28
 genericWaveformRecorder.fifoEmpty

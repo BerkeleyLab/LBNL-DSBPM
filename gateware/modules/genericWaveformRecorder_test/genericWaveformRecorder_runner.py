@@ -33,6 +33,7 @@ def run_test(
     *,
     acq_capacity,
     fifo_capacity,
+    high_bandwidth_mode,
     testcase,
     build_name,
 ):
@@ -55,6 +56,7 @@ def run_test(
         parameters={
             "ACQ_CAPACITY": acq_capacity,
             "FIFO_CAPACITY": fifo_capacity,
+            "HIGH_BANDWIDTH_MODE": f'"{high_bandwidth_mode}"',
         },
         build_dir=build_dir,
         build_args=VERILATOR_COMPILE_ARGS,
@@ -73,6 +75,7 @@ def run_test(
             # Keep Python scoreboard geometry identical to HDL.
             "ACQ_CAPACITY": str(acq_capacity),
             "FIFO_CAPACITY": str(fifo_capacity),
+            "HIGH_BANDWIDTH_MODE": str(high_bandwidth_mode),
             "SEED": os.getenv("SEED", "0x51A72026"),
             "RANDOM_ITERS": os.getenv("RANDOM_ITERS", "5"),
             "AXI_AWREADY_PERCENT": os.getenv(
@@ -89,6 +92,7 @@ def test_generic_waveform_recorder():
     run_test(
         acq_capacity=PRODUCTION_ACQ_CAPACITY,
         fifo_capacity=FIFO_CAPACITY,
+        high_bandwidth_mode="FALSE",
         testcase="execute_normal_tests",
         build_name="production_capacity",
     )
@@ -96,10 +100,18 @@ def test_generic_waveform_recorder():
     run_test(
         acq_capacity=WRAP_TEST_ACQ_CAPACITY,
         fifo_capacity=FIFO_CAPACITY,
+        high_bandwidth_mode="FALSE",
         testcase="execute_address_wrap_test",
         build_name="wrap_capacity",
     )
 
+    run_test(
+        acq_capacity=PRODUCTION_ACQ_CAPACITY,
+        fifo_capacity=FIFO_CAPACITY,
+        high_bandwidth_mode="TRUE",
+        testcase="execute_high_bandwidth_mode_test",
+        build_name="high_bandwidth_mode",
+    )
 
 if __name__ == "__main__":
     test_generic_waveform_recorder()
