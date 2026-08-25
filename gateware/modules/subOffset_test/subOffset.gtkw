@@ -1,0 +1,75 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Tue Aug 25 23:29:23 2026
+[*]
+[dumpfile] "/home/lrusso/repos/dsbpm/gateware/modules/subOffset_test/sim_build/sub_offset/dump.fst"
+[dumpfile_mtime] "Tue Aug 25 23:26:32 2026"
+[dumpfile_size] 2028
+[savefile] "/home/lrusso/repos/dsbpm/gateware/modules/subOffset_test/subOffset.gtkw"
+[timestart] 0
+[size] 1798 1340
+[pos] -3 19
+*-15.600000 108000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] subOffset.
+[sst_width] 249
+[signals_width] 482
+[sst_expanded] 1
+[sst_vpaned_height] 419
+@200
+-TB
+@28
+$rootio.clk
+@22
+$rootio.signalIn[127:0]
+$rootio.offsetIn[127:0]
+$rootio.signalOut[127:0]
+@28
+$rootio.validIn
+$rootio.validOut
+@200
+-DUT
+@420
+subOffset.NUM_SIGNALS
+subOffset.OFFSET_WIDTH
+subOffset.SIGNAL_WIDTH
+@29
+subOffset.clk
+@22
+subOffset.signalIn[127:0]
+subOffset.offsetIn[127:0]
+subOffset.signalOut[127:0]
+@28
+subOffset.validIn
+subOffset.validFull
+subOffset.validOut
+subOffset.validSat
+@200
+-DUT.0
+@420
+subOffset.g_offs[0].signal[31:0]
+subOffset.g_offs[0].offset[31:0]
+subOffset.g_offs[0].signalFull[32:0]
+subOffset.g_offs[0].signalSat[31:0]
+@600
+-DUT.1
+@420
+subOffset.g_offs[1].signal[31:0]
+subOffset.g_offs[1].offset[31:0]
+subOffset.g_offs[1].signalFull[32:0]
+subOffset.g_offs[1].signalSat[31:0]
+@600
+-DUT.2
+@420
+subOffset.g_offs[2].signal[31:0]
+subOffset.g_offs[2].offset[31:0]
+subOffset.g_offs[2].signalFull[32:0]
+subOffset.g_offs[2].signalSat[31:0]
+@600
+-DUT.3
+@420
+subOffset.g_offs[3].signal[31:0]
+subOffset.g_offs[3].offset[31:0]
+subOffset.g_offs[3].signalFull[32:0]
+subOffset.g_offs[3].signalSat[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
