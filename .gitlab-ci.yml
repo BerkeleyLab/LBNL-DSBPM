@@ -41,7 +41,9 @@ tests:
     cd ${CI_PROJECT_DIR}/gateware/modules && \
     make checks && \
     cd ${CI_PROJECT_DIR}/gateware/modules/genericWaveformRecorder_test && \
-    python3 genericWaveformRecorder_runner.py
+    python3 genericWaveformRecorder_runner.py && \
+    cd ${CI_PROJECT_DIR}/gateware/modules/subOffset_test && \
+    python3 subOffset_runner.py
 
 # Gateware jobs
 gw_dsbpm:
