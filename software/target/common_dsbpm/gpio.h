@@ -96,8 +96,11 @@
 #define GPIO_IDX_CLOCK_STATUS            87 // BPM Sync/Clock status
 #define GPIO_IDX_CELL_COMM_TEST          88 // Cell Comm test
 #define GPIO_IDX_AMI_SPI_CSR             89 // AMI SPI devices (R/W)
+#define GPIO_IDX_X_OFFSET_CSR            90 // X Position offset (R/W)
+#define GPIO_IDX_Y_OFFSET_CSR            91 // Y Position offset (R/W)
+#define GPIO_IDX_Q_OFFSET_CSR            92 // Q Position offset (R/W)
 
-#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_AMI_SPI_CSR-GPIO_IDX_LOTABLE_ADDRESS+1)
+#define GPIO_IDX_PER_DSBPM               (GPIO_IDX_Q_OFFSET_CSR-GPIO_IDX_LOTABLE_ADDRESS+1)
 
 #define CFG_AXI_SAMPLES_PER_CLOCK        1 // 1 sample per clock
 // For compatibility
