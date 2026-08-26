@@ -14,9 +14,14 @@ THIS_DIR := $(__THIS_DIR:/=)
 include ../../../dir_list.mk
 
 # Top level design name
-TARGET ?= dsbpm_zcu208
+TARGET ?= $(FPGA_APPLICATION)_$(HARDWARE)
 
-PLATFORM_TARGET = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)/$(FPGA_APPLICATION)
+VENDOR_PLATFORM_DIR = $(PLATFORM_DIR)/$(FPGA_VENDOR)
+FPGA_FAMILY_PLATFORM_DIR = $(VENDOR_PLATFORM_DIR)/$(FPGA_PLATFORM)
+TARGET_PLATFORM_DIR = $(FPGA_FAMILY_PLATFORM_DIR)/$(FPGA_APPLICATION)
+
+GW_CCTRL_TGT_DIR = $(GW_SYN_DIR)/$(TARGET)
+XPR              = $(GW_CCTRL_TGT_DIR)/_xilinx/$(TARGET)_top/$(TARGET)_top.xpr
 
 # Top level bitstream name
 all: $(TARGET)_top.bit
@@ -25,6 +30,8 @@ all: $(TARGET)_top.bit
 vpath %.v $(DSP_DIR)
 vpath %.v $(CORDIC_DIR)
 vpath %.v $(MODULES_DIR)
+vpath %.v $(VENDOR_PLATFORM_DIR)
+vpath %.v $(FPGA_FAMILY_PLATFORM_DIR)
 vpath %.v $(GW_TOP_COMMON_DIR)
 
 # Search for .sv files here
@@ -47,8 +54,25 @@ vpath %.tcl $(THIS_DIR)
 
 VIVADO_SYNTH_EXTRA_TCL = prop.tcl ipcores_repos.tcl prio_xci_files.tcl
 
+# platform top_rules.mk uses dsbpm_BD_CORE
+
+BD_SYSTEM_NAME ?= system
+
+ifeq ($(BD_SYSTEM_NAME),system)
+	dsbpm_BD_CORE = system
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
+else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
+	dsbpm_BD_CORE = system_without_ddr
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+else
+$(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
+endif
+
 include $(BUILD_DIR)/top_rules.mk
 include $(CORDIC_DIR)/rules.mk
+include $(CELL_COMM_DIR)/top_rules.mk
+include $(PLATFORM_DIR)/top_rules.mk
 
 # ignore xilinx primitives
 UNISIM_CRAP += -e 'GTYE4_CHANNEL|MMCME4_ADV'
@@ -61,74 +85,11 @@ SYSTEM_TOP_PINS_XDC = $(TARGET)_top_pins.xdc
 SYSTEM_TOP_TIM_XDC = $(TARGET)_top_tim.xdc $(TARGET)_top_aurora_tim.xdc
 
 # ip_cores generation scripts/names
-include $(CELL_COMM_DIR)/top_rules.mk
 include $(MODULES_DIR)/bpm_comm_rules.mk
 
 # custom ip_cores that requires packaging
 include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
-
-IP_CORES += \
-	evrGTY \
-	rmsBandSelect \
-	positionCalcDivider \
-	positionCalcMultiplier \
-	adcCordic \
-	adcToSysFIFO \
-	ila_td256_s4096_cap
-evrGTY_DIR = $(PLATFORM_TARGET)/evrGTY
-rmsBandSelect_DIR = $(PLATFORM_TARGET)/rmsBandSelect
-positionCalcDivider_DIR = $(PLATFORM_TARGET)/positionCalcDivider
-positionCalcMultiplier_DIR = $(PLATFORM_TARGET)/positionCalcMultiplier
-adcCordic_DIR = $(PLATFORM_TARGET)/adcCordic
-adcToSysFIFO_DIR = $(PLATFORM_TARGET)/adcToSysFIFO
-ila_td256_s4096_cap_DIR = $(PLATFORM_TARGET)/ila_td256_s4096_cap
-
-IP_CORES_DIRS += \
-	$(evrGTY_DIR) \
-	$(rmsBandSelect_DIR) \
-	$(positionCalcDivider_DIR) \
-	$(positionCalcMultiplier_DIR) \
-	$(adcCordic_DIR) \
-	$(adcToSysFIFO_DIR) \
-	$(ila_td256_s4096_cap_DIR)
-
-IP_CORES_XCIS += \
-	evrGTY.xci \
-	rmsBandSelect.xci \
-	positionCalcDivider.xci \
-	positionCalcMultiplier.xci \
-	adcCordic.xci \
-	adcToSysFIFO.xci \
-	ila_td256_s4096_cap.xci
-
-IP_CORES_SRCS_DIRS = $(IP_CORES_DIRS)
-IP_CORES_SRCS_DIRS += $(addsuffix /synth, $(IP_CORES_DIRS))
-IP_CORES_SRCS_DIRS += $(addsuffix /hdl, $(IP_CORES_DIRS))
-
-BD_SYSTEM_NAME ?= system
-
-ifeq ($(BD_SYSTEM_NAME),system)
-	system_DIR = $(PLATFORM_TARGET)/system
-	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
-	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
-else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
-	system_DIR = $(PLATFORM_TARGET)/system_without_ddr
-	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
-else
-$(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
-endif
-
-BD = system
-system_TOP = $(system_DIR)/synth/system.v
-BD_TOP_LVL_SRCS += $(system_TOP)
-BD_DIRS = $(system_DIR)
-
-BD_SRCS_DIRS = $(BD_DIRS)
-BD_SRCS_DIRS += $(addsuffix /synth, $(BD_DIRS))
-BD_SRCS_DIRS += $(addsuffix /hdl, $(BD_DIRS))
-
-BD_bds = $(addsuffix .bd, $(BD))
 
 # For iverilog to search for dependencies
 
@@ -147,41 +108,31 @@ VFLAGS_DEP += -y$(HOMELESS_DIR)
 # Local directories for searching
 VFLAGS_DEP += -y.
 VFLAGS_DEP += -y$(MODULES_DIR)
-VFLAGS_DEP += -y$(GW_TOP_COMMON_DIR)
 VFLAGS_DEP += -y$(TOP_LVL_DIR)
-VFLAGS_DEP += $(addprefix -y, $(IP_CORES_SRCS_DIRS))
-VFLAGS_DEP += $(addprefix -y, $(BD_SRCS_DIRS))
+VFLAGS_DEP += -y$(GW_TOP_COMMON_DIR)
+VFLAGS_DEP += -y$(VENDOR_PLATFORM_DIR)
+VFLAGS_DEP += -y$(FPGA_FAMILY_PLATFORM_DIR)
+VFLAGS_DEP += -y$(BWUDP_DIR)
 
 # Local directories for include searching
 VFLAGS_DEP += -I.
 VFLAGS_DEP += -I$(MODULES_DIR)
-VFLAGS_DEP += -I$(GW_TOP_COMMON_DIR)
 VFLAGS_DEP += -I$(TOP_LVL_DIR)
-VFLAGS_DEP += $(addprefix -I, $(IP_CORES_SRCS_DIRS))
-VFLAGS_DEP += $(addprefix -I, $(BD_SRCS_DIRS))
+VFLAGS_DEP += -I$(GW_TOP_COMMON_DIR)
+VFLAGS_DEP += -I$(BWUDP_DIR)
 
-# Also search for .sv files
-VFLAGS_DEP += -Y .sv
-
-# additional vflags, our files that have more than 1 top-level module
-EXTRA_VFLAGS_DEP += extra_iverilog_cfile.txt
-VFLAGS_DEP += $(addprefix -c, $(VFLAGS_COMMAND_FILE) $(EXTRA_VFLAGS_DEP))
-
-VFLAGS_DEP += -DSIMULATE
+VFLAGS_DEP += $(SYNTH_OPT)
+VFLAGS_DEP += -DSIMULATE -g2012 -Y .sv
 
 # Search prerequisites for generated .v/.vh/.vhd/.xdc here
-vpath %.v $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
-vpath %.vh $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
-vpath %.vhd $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
-vpath %.xdc $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
 vpath %.tcl $(GW_SCRIPTS_DIR)
 vpath %.sh $(GW_SCRIPTS_DIR)
 
 # List top level depedencies here. Eveything named .bit will be used as
 # a top-level target in top_rules.mk. .v and .sv files will be used as
 # prerequisites as well as a system_top.xdc file
-$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_bds) $(IP_CORES_XCIS)
-$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(EXTRA_VFLAGS_DEP) $(IP_CORES_CUSTOM) $(BD_TOP_LVL_SRCS) cordicg_b22.v
+$(TARGET)_top.bit: system_top.xdc $(VIVADO_SYNTH_EXTRA_TCL) $(IP_CORES_TCLS) $(IP_CORES_XCIS) $(TOP_LVL_DIR)/$(TARGET)_top.v $(BD_CORE_BDS)
+$(TOP_LVL_DIR)/$(TARGET)_top.v: $(TOP_LVL_DIR)/gitHash.vh $(TOP_LVL_DIR)/firmwareBuildDate.v $(TOP_LVL_DIR)/gpioIDX.v $(IP_CORES_CUSTOM) cordicg_b22.v
 
 $(EXTRA_VFLAGS_DEP): % : %.in
 	sed -e 's|$$BEDROCK_DIR|$(BEDROCK_DIR:/=)|g' \
@@ -210,36 +161,9 @@ prio_xci_files.tcl: prio_xci_files.tcl.in
 	sed -e 's|$$XCI_FILES|ila_td256_s4096_cap.xci|g' \
 		$< > $@
 
-# ip_cores commands. Keep track only of the top-level. If this changed or doesn't
-# exist regenerate eveything. Otherwise, consider this up to date
-vpath %.xci $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
-vpath %.bd $(IP_CORES_SRCS_DIRS) $(BD_SRCS_DIRS)
-
-# Use second expansion here so we can get the matched target name in the prerequisite
-# and use the defined variable to find the .xci one level below.
-# FIXME: Is there an easier way to do this?
-.SECONDEXPANSION:
-$(IP_CORES_TOP_LVL_SRCS): % : $$(basename $$(notdir %)).xci
-	$(VIVADO_CMD) -source $(GW_SCRIPTS_DIR)/ip_core_proc.tcl $(GW_SCRIPTS_DIR)/gen_ip_core.tcl -tclargs $< $(PROJECT_PART) $(PROJECT_BOARD)
-	# fix line-continuation between (* *) attribute that iverilog doesn't understand
-	# from: https://catonmat.net/sed-one-liners-explained-part-one,
-	# 39. Append a line to the next if it ends with a backslash "\".
-	TOP_LVL="$*"; if [ "$${TOP_LVL##*.}" = "v" ] || [ "$${TOP_LVL##*.}" = "sv" ]; then sed -i -e :a -e '/\\$$/N; s/\\\n//; ta' $${TOP_LVL}; fi
-	# generate iverilog switches
-	rm -f $($(basename $(notdir $@))_VFLAGS_COMMAND_FILE)
-	(find $($(basename $(notdir $@))_DIR)/hdl $($(basename $(notdir $@))_DIR)/synth -mindepth 1 -not \( -name \*rfs.v \) -name "*.v" -exec echo "-l"'{}' \; || true) >> $($(basename $(notdir $@))_VFLAGS_COMMAND_FILE)
-	(find $($(basename $(notdir $@))_DIR) -mindepth 1 -maxdepth 1 -not \( -name \*rfs.v \) -name "*.v" -exec echo "-l"'{}' \; || true) >> $($(basename $(notdir $@))_VFLAGS_COMMAND_FILE)
-
-$(BD_TOP_LVL_SRCS): % : $$(basename $$(notdir %)).bd
-	$(VIVADO_CMD) -source $(GW_SCRIPTS_DIR)/bd_proc.tcl $(GW_SCRIPTS_DIR)/gen_bd.tcl -tclargs $< $(PROJECT_PART) $(PROJECT_BOARD) $(IP_CORES_CUSTOM_TARGET_DIRS)
-
-# clean generate IP cores files, but the source ones (.xci or .bd)
-clean::
-	$(foreach ipcore, $(IP_CORES), test -f $($(ipcore)_DIR)/$(ipcore).xci && find $($(ipcore)_DIR) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
-	$(foreach bd, $(BD), test -f $($(bd)_DIR)/$(bd).bd && find $($(bd)_DIR) -mindepth 1 -not \( -name \*$(bd).xci -o -name \*$(bd).bd \) -delete $(CMD_SEP))
-
 # Cleaning rules
 include $(CELL_COMM_DIR)/bottom_rules.mk
+include $(PLATFORM_DIR)/bottom_rules.mk
 include $(BUILD_DIR)/bottom_rules.mk
 
 CLEAN += *.bit
@@ -249,13 +173,11 @@ CLEAN += $(TOP_LVL_DIR)/gpioIDX.v
 CLEAN += $(TOP_LVL_DIR)/gitHash.vh
 CLEAN += cordicg_b22.v
 CLEAN += $(IP_CORES_CUSTOM)
-CLEAN += $(VFLAGS_COMMAND_FILE)
 CLEAN += *.log *.jou *.str
 CLEAN += *.xsa
 CLEAN += psu_init*
 CLEAN += ipcores_repos.tcl
 CLEAN += prio_xci_files.tcl
-CLEAN += $(EXTRA_VFLAGS_DEP)
 CLEAN_DIRS +=  _xilinx .Xil .ip_user_files .hbs $(IP_CORES_CUSTOM_TARGET_DIRS)
 CLEAN_DIRS += _gen
 
