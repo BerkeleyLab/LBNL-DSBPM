@@ -11,6 +11,8 @@ THIS_PATH = Path(__file__).resolve().parent
 MODULES_PATH = THIS_PATH / ".."
 BEDROCK_PATH = THIS_PATH / ".." / ".." / "submodules" / "bedrock"
 BEDORCK_DSP_PATH = BEDROCK_PATH / "dsp"
+CELL_COMM_PATH = THIS_PATH / ".." / ".." / "submodules" / "cell-comm"
+CELL_COMM_MODULES_PATH = CELL_COMM_PATH / "gateware" / "modules"
 
 VERILATOR_COMPILE_ARGS = [
     "--timing",
@@ -41,7 +43,7 @@ def run_test(
 
     sources = [
         BEDORCK_DSP_PATH / "fifo.v",
-        MODULES_PATH / "genericFifo.v",
+        CELL_COMM_MODULES_PATH / "genericFifo.v",
         MODULES_PATH / "forwardData.v",
         MODULES_PATH / "genericWaveformRecorder.v",
     ]
