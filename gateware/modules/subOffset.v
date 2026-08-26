@@ -3,13 +3,16 @@
 //
 module subOffset #(
     parameter integer NUM_SIGNALS   = 4,
+    parameter integer USER_WIDTH    = 1,
     parameter integer SIGNAL_WIDTH  = 32,
     parameter integer OFFSET_WIDTH  = 32
     ) (
     input                                           clk,
     input                                           validIn,
+    input                          [USER_WIDTH-1:0] userIn,
     input signed   [(SIGNAL_WIDTH*NUM_SIGNALS)-1:0] signalIn,
     input signed   [(OFFSET_WIDTH*NUM_SIGNALS)-1:0] offsetIn,
+    output                         [USER_WIDTH-1:0] userOut,
     output                                          validOut,
     output signed  [(SIGNAL_WIDTH*NUM_SIGNALS)-1:0] signalOut
 );
@@ -35,12 +38,18 @@ endgenerate
 
 reg validFull = 0;
 reg validSat = 0;
+reg [USER_WIDTH-1:0] userFull = 0;
+reg [USER_WIDTH-1:0] userSat = 0;
 
 always @(posedge clk) begin
+    userFull <= userIn;
     validFull <= validIn;
+
+    userSat <= userFull;
     validSat <= validFull;
 end
 
+assign userOut = userSat;
 assign validOut = validSat;
 
 endmodule

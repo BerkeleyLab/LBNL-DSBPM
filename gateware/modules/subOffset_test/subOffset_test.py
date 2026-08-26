@@ -22,6 +22,7 @@ class Config:
     seed: int
     random_iters: int
     num_signals: int
+    user_width: int
     signal_width: int
     offset_width: int
 
@@ -31,12 +32,14 @@ class Config:
             seed=int(os.getenv("SEED", "0x51A72026"), 0),
             random_iters=int(os.getenv("RANDOM_ITERS", "20"), 0),
             num_signals=int(os.getenv("NUM_SIGNALS", "4"), 0),
+            user_width=int(os.getenv("USER_WIDTH", "1"), 0),
             signal_width=int(os.getenv("SIGNAL_WIDTH", "32"), 0),
             offset_width=int(os.getenv("OFFSET_WIDTH", "32"), 0),
         )
 
         assert config.random_iters > 0, "RANDOM_ITERS must be greater than zero"
         assert config.num_signals > 0, "NUM_SIGNALS must be greater than zero"
+        assert config.user_width >= 0, "USER_WIDTH must be greater or equal than zero"
         assert config.signal_width > 0, "SIGNAL_WIDTH must be greater than zero"
         assert config.offset_width > 0, "OFFSET_WIDTH must be greater than zero"
 
@@ -148,6 +151,7 @@ class TB:
         self.scoreboard = SubOffsetScoreboard(dut, config)
 
         self.dut.validIn.value = 0
+        self.dut.userIn.value = 0
         self.dut.signalIn.value = 0
         self.dut.offsetIn.value = 0
 

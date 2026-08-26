@@ -7,6 +7,7 @@ THIS_PATH = Path(__file__).resolve().parent
 MODULES_PATH = THIS_PATH / ".."
 
 NUM_SIGNALS   = 4
+USER_WIDTH    = 1
 SIGNAL_WIDTH  = 32
 OFFSET_WIDTH  = 32
 
@@ -30,6 +31,7 @@ VERILATOR_SIM_ARGS = [
 def run_test(
     *,
     num_signals,
+    user_width,
     signal_width,
     offset_width,
     testcase,
@@ -50,6 +52,7 @@ def run_test(
         hdl_toplevel="subOffset",
         parameters={
             "NUM_SIGNALS": num_signals,
+            "USER_WIDTH": user_width,
             "SIGNAL_WIDTH": signal_width,
             "OFFSET_WIDTH": offset_width,
         },
@@ -69,6 +72,7 @@ def run_test(
         extra_env={
             # Keep Python scoreboard geometry identical to HDL.
             "NUM_SIGNALS": str(num_signals),
+            "USER_WIDTH": str(user_width),
             "SIGNAL_WIDTH": str(signal_width),
             "OFFSET_WIDTH": str(offset_width),
             "SEED": os.getenv("SEED", "0x51A72026"),
@@ -81,6 +85,7 @@ def test_sub_offset():
     run_test(
         num_signals=NUM_SIGNALS,
         signal_width=SIGNAL_WIDTH,
+        user_width=USER_WIDTH,
         offset_width=OFFSET_WIDTH,
         testcase="execute_normal_tests",
         build_name="sub_offset",
