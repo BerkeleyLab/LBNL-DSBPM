@@ -60,7 +60,7 @@ sim_build/
 /gateware/platform/xilinx/*/*/system/*
 !/gateware/platform/xilinx/*/*/system/system.tcl
 /gateware/platform/xilinx/*/*/system_without_ddr/*
-!/gateware/platform/xilinx/*/*/system_without_ddr/system_without_ddr.tcl
+!/gateware/platform/xilinx/*/*/system_without_ddr/system.tcl
 /gateware/platform/xilinx/*/*/ila_td256_s4096_cap/*
 !/gateware/platform/xilinx/*/*/ila_td256_s4096_cap/ila_td256_s4096_cap.tcl
 /gateware/platform/xilinx/*/*/PacketMem/*
