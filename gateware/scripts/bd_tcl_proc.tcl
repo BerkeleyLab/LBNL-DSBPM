@@ -35,14 +35,23 @@ proc gen_bd_tcl {bd_tcl_file project_part project_board ipcore_dirs} {
         return 1
     }
 
-    make_wrapper -files [get_files $str_bd_filepath] -top
+    # make top level wrapper
+    set wrapper_file [make_wrapper -files [get_files $str_bd_filepath] -top]
+
+    # add generated file to project
+    add_files -norecurse $wrapper_file
+
+    # get BD basename
+    set bd_basename [file rootname [file tail $str_bd_filepath]]
+    # set wrapper to top-level
+    set_property TOP ${bd_basename}_wrapper [current_fileset]
+    set_property TOP_FILE ${wrapper_file} [current_fileset]
 
     # Generate all the output products
     generate_target all [get_files $str_bd_filepath] -force
 
     # export and validate hardware platform for use with
     # Vitis
-    set bd_basename [file rootname [file tail $str_bd_filepath]]
     write_hw_platform -fixed -force $bd_basename.xsa
     validate_hw_platform ./$bd_basename.xsa
 }
