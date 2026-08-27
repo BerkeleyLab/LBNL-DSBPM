@@ -58,7 +58,7 @@ set run_remote_bd_flow 1
 if { $run_remote_bd_flow == 1 } {
   # Set the reference directory for source file relative paths (by default 
   # the value is script directory path)
-  set origin_dir ./gateware/platform/xilinx/zu47/system_without_ddr
+  set origin_dir ./gateware/platform/xilinx/zu47/dsbpm/system_without_ddr
 
   # Use origin directory path location variable, if specified in the tcl shell
   if { [info exists ::origin_dir_loc] } {
