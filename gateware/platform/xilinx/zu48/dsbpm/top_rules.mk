@@ -31,5 +31,5 @@ BD_CORE_DIRS += \
 vpath %.tcl $(IP_CORES_DIRS) $(BD_CORE_DIRS)
 vpath %.bd $(BD_CORE_DIRS)
 
-%.bd: %.tcl axi_lite_generic_reg evr_axi drp_bridge
+%.bd: %.tcl axi_lite_generic_reg evr_axi
 	$(VIVADO_CMD) -source $(GW_SCRIPTS_DIR)/bd_tcl_proc.tcl $(GW_SCRIPTS_DIR)/gen_bd_tcl.tcl  -tclargs $< $(PROJECT_PART) $(PROJECT_BOARD) $(IP_CORES_CUSTOM_TARGET_DIRS)
