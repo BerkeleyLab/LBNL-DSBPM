@@ -6,6 +6,7 @@ XILINX_TOOL := VIVADO
 FPGA_VENDOR := xilinx
 FPGA_PLATFORM ?= zu48
 FPGA_APPLICATION ?= dsbpm
+BD_SYSTEM_NAME ?= system
 
 CMD_SEP = ;
 __THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -54,24 +55,12 @@ vpath %.tcl $(THIS_DIR)
 
 VIVADO_SYNTH_EXTRA_TCL = prop.tcl ipcores_repos.tcl prio_xci_files.tcl
 
-# platform top_rules.mk uses dsbpm_BD_CORE
-
-BD_SYSTEM_NAME ?= system
-
-ifeq ($(BD_SYSTEM_NAME),system)
-	dsbpm_BD_CORE = system
-	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
-	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
-else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
-	dsbpm_BD_CORE = system_without_ddr
-	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
-else
-$(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
-endif
-
 include $(BUILD_DIR)/top_rules.mk
 include $(CORDIC_DIR)/rules.mk
 include $(CELL_COMM_DIR)/top_rules.mk
+
+# Used by platform rules
+dsbpm_BD_CORE    = $(BD_SYSTEM_NAME)
 include $(PLATFORM_DIR)/top_rules.mk
 
 # ignore xilinx primitives
@@ -90,6 +79,17 @@ include $(MODULES_DIR)/bpm_comm_rules.mk
 # custom ip_cores that requires packaging
 include $(MODULES_DIR)/evr_axi_rules.mk
 include $(MODULES_DIR)/axi_lite_generic_reg_rules.mk
+
+# block diagram selection
+
+ifeq ($(BD_SYSTEM_NAME),system)
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+	SYSTEM_TOP_TIM_XDC += $(TARGET)_top_ddr_tim.xdc
+else ifeq ($(BD_SYSTEM_NAME),system_without_ddr)
+	SYSTEM_TOP_PINS_XDC += $(TARGET)_top_ddr_pins.xdc
+else
+$(error BD_SYSTEM_NAME = $(BD_SYSTEM_NAME) unsupported)
+endif
 
 # For iverilog to search for dependencies
 
