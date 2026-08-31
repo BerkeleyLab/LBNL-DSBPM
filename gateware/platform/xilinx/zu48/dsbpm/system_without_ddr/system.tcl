@@ -44,6 +44,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xczu48dr-fsvg1517-2-e
+   set_property BOARD_PART xilinx.com:zcu208:part0:2.0 [current_project]
 }
 
 
@@ -58,7 +59,7 @@ set run_remote_bd_flow 1
 if { $run_remote_bd_flow == 1 } {
   # Set the reference directory for source file relative paths (by default 
   # the value is script directory path)
-  set origin_dir ./gateware/platform/xilinx/zu48/system_without_ddr
+  set origin_dir ./gateware/platform/xilinx/zu48/dsbpm/system_without_ddr
 
   # Use origin directory path location variable, if specified in the tcl shell
   if { [info exists ::origin_dir_loc] } {
@@ -487,6 +488,7 @@ proc create_root_design { parentCell } {
   set ps8_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 ps8_0_axi_periph ]
   set_property -dict [ list \
    CONFIG.NUM_MI {4} \
+   CONFIG.NUM_SI {1} \
  ] $ps8_0_axi_periph
 
   # Create instance: rfadc_mmcm, and set properties
@@ -853,7 +855,6 @@ proc create_root_design { parentCell } {
    CONFIG.PSU_MIO_30_DIRECTION {in} \
    CONFIG.PSU_MIO_30_DRIVE_STRENGTH {12} \
    CONFIG.PSU_MIO_30_INPUT_TYPE {schmitt} \
-   CONFIG.PSU_MIO_30_POLARITY {Default} \
    CONFIG.PSU_MIO_30_PULLUPDOWN {pullup} \
    CONFIG.PSU_MIO_30_SLEW {slow} \
    CONFIG.PSU_MIO_31_DIRECTION {inout} \
@@ -2169,12 +2170,7 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
  ] $zynq_ultra_ps_e_0
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins ps8_0_axi_periph/S00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD]
   connect_bd_intf_net -intf_net adc23_2 [get_bd_intf_ports adc23] [get_bd_intf_pins usp_rf_data_converter_0/adc1_clk]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins ps8_0_axi_periph/M00_AXI] [get_bd_intf_pins usp_rf_data_converter_0/s_axi]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_lite_generic_reg_0/s00_axi] [get_bd_intf_pins ps8_0_axi_periph/M01_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins evr_axi_0/s00_axi] [get_bd_intf_pins ps8_0_axi_periph/M02_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M03_AXI [get_bd_intf_pins ps8_0_axi_periph/M03_AXI] [get_bd_intf_pins rfadc_mmcm/s_axi_lite]
   connect_bd_intf_net -intf_net dac0stream_1 [get_bd_intf_ports dac0stream] [get_bd_intf_pins usp_rf_data_converter_0/s00_axis]
   connect_bd_intf_net -intf_net dac1stream_1 [get_bd_intf_ports dac1stream] [get_bd_intf_pins usp_rf_data_converter_0/s02_axis]
   connect_bd_intf_net -intf_net dac2stream_1 [get_bd_intf_ports dac2stream] [get_bd_intf_pins usp_rf_data_converter_0/s10_axis]
@@ -2184,6 +2180,10 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_intf_net -intf_net dac5stream_1 [get_bd_intf_ports dac5stream] [get_bd_intf_pins usp_rf_data_converter_0/s22_axis]
   connect_bd_intf_net -intf_net dac6stream_1 [get_bd_intf_ports dac6stream] [get_bd_intf_pins usp_rf_data_converter_0/s30_axis]
   connect_bd_intf_net -intf_net dac7stream_1 [get_bd_intf_ports dac7stream] [get_bd_intf_pins usp_rf_data_converter_0/s32_axis]
+  connect_bd_intf_net -intf_net ps8_0_axi_periph_M00_AXI [get_bd_intf_pins ps8_0_axi_periph/M00_AXI] [get_bd_intf_pins usp_rf_data_converter_0/s_axi]
+  connect_bd_intf_net -intf_net ps8_0_axi_periph_M01_AXI [get_bd_intf_pins axi_lite_generic_reg_0/s00_axi] [get_bd_intf_pins ps8_0_axi_periph/M01_AXI]
+  connect_bd_intf_net -intf_net ps8_0_axi_periph_M02_AXI [get_bd_intf_pins evr_axi_0/s00_axi] [get_bd_intf_pins ps8_0_axi_periph/M02_AXI]
+  connect_bd_intf_net -intf_net ps8_0_axi_periph_M03_AXI [get_bd_intf_pins ps8_0_axi_periph/M03_AXI] [get_bd_intf_pins rfadc_mmcm/s_axi_lite]
   connect_bd_intf_net -intf_net sysref_in_1 [get_bd_intf_ports sysref_in] [get_bd_intf_pins usp_rf_data_converter_0/sysref_in]
   connect_bd_intf_net -intf_net usp_rf_data_converter_0_m00_axis [get_bd_intf_ports adc0stream] [get_bd_intf_pins usp_rf_data_converter_0/m00_axis]
   connect_bd_intf_net -intf_net usp_rf_data_converter_0_m01_axis [get_bd_intf_ports adc0Qstream] [get_bd_intf_pins usp_rf_data_converter_0/m01_axis]
@@ -2217,6 +2217,7 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_intf_net -intf_net vin2_23_0_1 [get_bd_intf_ports vin5] [get_bd_intf_pins usp_rf_data_converter_0/vin2_23]
   connect_bd_intf_net -intf_net vin3_01_0_1 [get_bd_intf_ports vin6] [get_bd_intf_pins usp_rf_data_converter_0/vin3_01]
   connect_bd_intf_net -intf_net vin3_23_0_1 [get_bd_intf_ports vin7] [get_bd_intf_pins usp_rf_data_converter_0/vin3_23]
+  connect_bd_intf_net -intf_net zynq_ultra_ps_e_0_M_AXI_HPM0_FPD [get_bd_intf_pins ps8_0_axi_periph/S00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD]
 
   # Create port connections
   connect_bd_net -net FPGA_REFCLK_OUT_C_1 [get_bd_ports FPGA_REFCLK_OUT_C] [get_bd_pins rfadc_mmcm/clk_in1]
@@ -2233,8 +2234,8 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_net -net mgt_par_data_0_1 [get_bd_ports evrChars] [get_bd_pins evr_axi_0/mgt_par_data]
   connect_bd_net -net mgt_rec_clk_0_1 [get_bd_ports evrClk] [get_bd_pins evr_axi_0/mgt_rec_clk]
   connect_bd_net -net mgt_reset_done_0_1 [get_bd_ports evrMgtResetDone] [get_bd_pins evr_axi_0/mgt_reset_done]
-  connect_bd_net -net rst_ps8_0_96M_interconnect_aresetn [get_bd_pins ps8_0_axi_periph/ARESETN] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins ps8_0_axi_periph/M03_ARESETN] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins rst_ps8_0_96M/interconnect_aresetn]
-  connect_bd_net -net rst_ps8_0_96M_peripheral_aresetn [get_bd_ports sysReset_n] [get_bd_pins axi_lite_generic_reg_0/s00_axi_aresetn] [get_bd_pins evr_axi_0/s00_axi_aresetn] [get_bd_pins rfadc_mmcm/s_axi_aresetn] [get_bd_pins rst_ps8_0_96M/peripheral_aresetn] [get_bd_pins usp_rf_data_converter_0/s_axi_aresetn]
+  connect_bd_net -net rst_ps8_0_96M_interconnect_aresetn [get_bd_pins ps8_0_axi_periph/ARESETN] [get_bd_pins rst_ps8_0_96M/interconnect_aresetn]
+  connect_bd_net -net rst_ps8_0_96M_peripheral_aresetn [get_bd_ports sysReset_n] [get_bd_pins axi_lite_generic_reg_0/s00_axi_aresetn] [get_bd_pins evr_axi_0/s00_axi_aresetn] [get_bd_pins ps8_0_axi_periph/M00_ARESETN] [get_bd_pins ps8_0_axi_periph/M01_ARESETN] [get_bd_pins ps8_0_axi_periph/M02_ARESETN] [get_bd_pins ps8_0_axi_periph/M03_ARESETN] [get_bd_pins ps8_0_axi_periph/S00_ARESETN] [get_bd_pins rfadc_mmcm/s_axi_aresetn] [get_bd_pins rst_ps8_0_96M/peripheral_aresetn] [get_bd_pins usp_rf_data_converter_0/s_axi_aresetn]
   connect_bd_net -net user_sysref_adc_1 [get_bd_ports user_sysref_adc] [get_bd_pins usp_rf_data_converter_0/user_sysref_adc]
   connect_bd_net -net user_sysref_dac_1 [get_bd_ports user_sysref_dac] [get_bd_pins usp_rf_data_converter_0/user_sysref_dac]
   connect_bd_net -net usp_rf_data_converter_0_clk_adc0 [get_bd_ports clk_adc0_0] [get_bd_pins usp_rf_data_converter_0/clk_adc0]
@@ -2243,7 +2244,7 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_net -net zynq_ultra_ps_e_0_pl_resetn0 [get_bd_pins rst_ps8_0_96M/ext_reset_in] [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0]
 
   # Create address segments
-  assign_bd_address -offset 0xA0050000 -range 0x00001000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs axi_lite_generic_reg_0/s00_axi/reg0] -force
+  assign_bd_address -offset 0xA0050000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs axi_lite_generic_reg_0/s00_axi/reg0] -force
   assign_bd_address -offset 0xA0048000 -range 0x00008000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs evr_axi_0/s00_axi/reg0] -force
   assign_bd_address -offset 0xA0000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs rfadc_mmcm/s_axi_lite/Reg] -force
   assign_bd_address -offset 0xA0080000 -range 0x00040000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs usp_rf_data_converter_0/s_axi/Reg] -force

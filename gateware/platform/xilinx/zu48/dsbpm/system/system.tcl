@@ -44,6 +44,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xczu48dr-fsvg1517-2-e
+   set_property BOARD_PART xilinx.com:zcu208:part0:2.0 [current_project]
 }
 
 
@@ -58,7 +59,7 @@ set run_remote_bd_flow 1
 if { $run_remote_bd_flow == 1 } {
   # Set the reference directory for source file relative paths (by default 
   # the value is script directory path)
-  set origin_dir ./gateware/platform/xilinx/zu48
+  set origin_dir ./gateware/platform/xilinx/zu48/dsbpm
 
   # Use origin directory path location variable, if specified in the tcl shell
   if { [info exists ::origin_dir_loc] } {
@@ -950,13 +951,10 @@ proc create_root_design { parentCell } {
    CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100} \
    CONFIG.C0.CS_WIDTH {2} \
    CONFIG.C0.DDR4_AxiAddressWidth {32} \
-   CONFIG.C0.DDR4_AxiDataWidth {256} \
-   CONFIG.C0.DDR4_CasLatency {18} \
-   CONFIG.C0.DDR4_CasWriteLatency {16} \
    CONFIG.C0.DDR4_Clamshell {true} \
-   CONFIG.C0.DDR4_DataWidth {32} \
-   CONFIG.C0.DDR4_InputClockPeriod {3332} \
-   CONFIG.C0.DDR4_MemoryPart {MT40A1G8WE-075E} \
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_sysclk_c0_300mhz} \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c0} \
+   CONFIG.RESET_BOARD_INTERFACE {Custom} \
  ] $ddr4_0
 
   # Create instance: ddr4_smc_0, and set properties
@@ -2760,7 +2758,7 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_0_M00_AXI] [get_bd_
   connect_bd_net -net zynq_ultra_ps_e_0_pl_resetn0 [get_bd_pins rst_ps8_0_96M/ext_reset_in] [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0]
 
   # Create address segments
-  assign_bd_address -offset 0xA0050000 -range 0x00001000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs axi_lite_generic_reg_0/s00_axi/reg0] -force
+  assign_bd_address -offset 0xA0050000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs axi_lite_generic_reg_0/s00_axi/reg0] -force
   assign_bd_address -offset 0x000500000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] -force
   assign_bd_address -offset 0xA0048000 -range 0x00008000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs evr_axi_0/s00_axi/reg0] -force
   assign_bd_address -offset 0xA0000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs rfadc_mmcm/s_axi_lite/Reg] -force
