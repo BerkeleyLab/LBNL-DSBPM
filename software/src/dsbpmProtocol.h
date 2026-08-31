@@ -22,11 +22,11 @@
 #define DSBPM_PROTOCOL_RECORDER_COUNT             7
 
 // echo "DSBPM_PROTOCOL_MAGIC" | md5sum | cut -b1-8 | tac -rs .. | echo $(tr -d '\n')
-#define DSBPM_PROTOCOL_MAGIC                    0xD06F9C91
-#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x919C6FD0
-#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9E92
+#define DSBPM_PROTOCOL_MAGIC                    0xD06F9D91
+#define DSBPM_PROTOCOL_MAGIC_SWAPPED            0x919D6FD0
+#define DSBPM_PROTOCOL_MAGIC_SLOW_ACQUISITION   0xD06F9F92
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_SLOW_ACQUISITION \
-                                                0x929E6FD0
+                                                0x929F6FD0
 #define DSBPM_PROTOCOL_MAGIC_WAVEFORM_HEADER    0xD06F9993
 #define DSBPM_PROTOCOL_MAGIC_SWAPPED_WAVEFORM_HEADER \
                                                 0x93996FD0
@@ -43,6 +43,7 @@
 #define DSBPM_PROTOCOL_DAC_COUNT       8
 #define DSBPM_PROTOCOL_DSP_COUNT       2
 #define DSBPM_PROTOCOL_CELL_COMM_COUNT 2
+#define DSBPM_PROTOCOL_POS_OFFSET_COUNT 6
 
 struct dsbpmPacket {
     epicsUInt32    magic;
@@ -94,10 +95,11 @@ struct dsbpmSlowAcquisition {
     epicsUInt32 dacCtl[DSBPM_PROTOCOL_DAC_COUNT]; // 106 + 16 = 122
     epicsUInt32 clockStatus[DSBPM_PROTOCOL_DSP_COUNT]; // 122 + 2 = 124
     epicsUInt32 ptmAtt[DSBPM_PROTOCOL_DAC_COUNT];
-    epicsUInt32 dacPwr[DSBPM_PROTOCOL_DAC_COUNT]; // 124 + 2*8 = 140 uint32 = 560
+    epicsUInt32 dacPwr[DSBPM_PROTOCOL_DAC_COUNT]; // 124 + 2*8 = 140
+    epicsInt32 posOffset[DSBPM_PROTOCOL_POS_OFFSET_COUNT]; // 140 + 6 = 146 uint32 = 584
 };
 
-static_assert(sizeof(struct dsbpmSlowAcquisition) == 560,
+static_assert(sizeof(struct dsbpmSlowAcquisition) == 584,
     "dsbpmSlowAcquisition size is incorrect, potential padding or member count issue");
 
 /*
@@ -191,6 +193,7 @@ static_assert(sizeof(struct dsbpmWaveformAck) == 20,
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_EVENT_ACTION       0x0900
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_DAC_PWR                0x0980
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_SET_TRIGGER_DELAY      0x0A00
+# define DSBPM_PROTOCOL_CMD_LONGOUT_LO_POS_OFFSET             0x0A80
 # define DSBPM_PROTOCOL_CMD_LONGOUT_LO_GENERIC                0x0F00
 #  define DSBPM_PROTOCOL_CMD_LONGOUT_GENERIC_IDX_REBOOT           0x00
 
