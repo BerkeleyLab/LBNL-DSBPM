@@ -2,8 +2,10 @@
  * Deal with position calculation firmware
  */
 
+#include "positionCalc.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <limits.h>
 #include "gpio.h"
 #include "systemParameters.h"
 #include "lossOfBeam.h"
@@ -86,4 +88,61 @@ positionCalcInit(unsigned int bpm)
     GPIO_WRITE(REG(GPIO_IDX_POSITION_CALC_QCAL, bpm), qFactor);
 
     lossOfBeamThreshold(bpm, 1000); /* all BPMs, Reasonable default */
+}
+
+void positionCalcSetOffset(unsigned int bpm, enum offsetChannel channel, int offset)
+{
+    uint32_t base;
+
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return;
+    }
+
+    switch(channel) {
+    case OFFSET_CHANNEL_X:
+        base = GPIO_IDX_X_OFFSET_CSR;
+        break;
+
+    case OFFSET_CHANNEL_Y:
+        base = GPIO_IDX_Y_OFFSET_CSR;
+        break;
+
+    case OFFSET_CHANNEL_Q:
+        base = GPIO_IDX_Q_OFFSET_CSR;
+        break;
+
+    default:
+        return;
+    }
+
+    GPIO_WRITE(REG(base, bpm), offset);
+}
+
+int positionCalcGetOffset(unsigned int bpm, enum offsetChannel channel)
+{
+    int offset = 0;
+    uint32_t base;
+
+    if (bpm >= CFG_DSBPM_COUNT) {
+        return INT_MIN;
+    }
+
+    switch(channel) {
+    case OFFSET_CHANNEL_X:
+        base = GPIO_IDX_X_OFFSET_CSR;
+        break;
+
+    case OFFSET_CHANNEL_Y:
+        base = GPIO_IDX_Y_OFFSET_CSR;
+        break;
+
+    case OFFSET_CHANNEL_Q:
+        base = GPIO_IDX_Q_OFFSET_CSR;
+        break;
+
+    default:
+        return INT_MIN;
+    }
+
+    GPIO_READ(REG(base, bpm));
 }
