@@ -20,6 +20,7 @@
 #include "calibrationGains.h"
 #include "rfdc.h"
 #include "waveformRecorder.h"
+#include "positionCalc.h"
 
 int
 epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
@@ -135,6 +136,11 @@ epicsApplicationCommand(int commandArgCount, struct dsbpmPacket *cmdp,
                 return -1;
 
             amiPtmAttenSet(bpm, cmdp->args[0]);
+            break;
+
+        case DSBPM_PROTOCOL_CMD_LONGOUT_LO_POS_OFFSET:
+            positionCalcSetOffset(idx / OFFSET_CHANNEL_COUNT,
+                    idx % OFFSET_CHANNEL_COUNT, cmdp->args[0]);
             break;
 
         default: return -1;
