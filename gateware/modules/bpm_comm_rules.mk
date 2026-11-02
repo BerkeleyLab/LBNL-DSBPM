@@ -20,17 +20,18 @@ bpm_comm_IP_CORES = \
 	cellCommFIFO \
 	cellCommMux \
 	cellCommSendFIFO
-bpm_comm_IP_CORES_DIRS = $(addprefix $(bpm_comm_TARGET_PLATFORM_DIR), $(bpm_comm_IP_CORES))
+
+bpm_comm_TCLS = $(foreach ip_core, $(bpm_comm_IP_CORES), $(addprefix $(TARGET_PLATFORM_DIR)/$(ip_core)/,$(addsuffix .tcl, $(ip_core))))
 
 # For top-level makefile
-IP_CORES_XCIS += $(addsuffix .xci, $(bpm_comm_IP_CORES))
-IP_CORES_DIRS += $(bpm_comm_IP_CORES_DIRS)
+IP_CORES_TCLS += $(bpm_comm_TCLS)
 
-vpath %.v $(BPM_COMM_DIR)
+vpath %.tcl $(bpm_comm_DIR)
+vpath %.v $(bpm_comm_DIR)
 
-VFLAGS_DEP += $(addprefix -y, $(BPM_COMM_DIR))
-VFLAGS_DEP += $(addprefix -I, $(BPM_COMM_DIR))
+VFLAGS_DEP += $(addprefix -y, $(bpm_comm_DIR))
+VFLAGS_DEP += $(addprefix -I, $(bpm_comm_DIR))
 
-# clean generate IP cores files, but the source ones (.xci or .bd)
+# clean generate IP cores files, but the source ones (.tcl)
 clean::
-	$(foreach ipcore, $(bpm_comm_IP_CORES), test -f $(bpm_comm_TARGET_PLATFORM_DIR)$(ipcore)/$(ipcore).xci && find $(bpm_comm_TARGET_PLATFORM_DIR)$(ipcore) -mindepth 1 -not \( -name \*$(ipcore).xci -o -name \*$(ipcore).bd -o -name \*$(ipcore).coe \) -delete $(CMD_SEP))
+	$(foreach ipcore, $(bpm_comm_IP_CORES), test -f $(bpm_comm_TARGET_PLATFORM_DIR)/$(ipcore)/$(ipcore).tcl && find $(bpm_comm_TARGET_PLATFORM_DIR)/$(ipcore) -mindepth 1 -not \( -name \*$(ipcore).tcl -o -name \*.coe \) -delete $(CMD_SEP))

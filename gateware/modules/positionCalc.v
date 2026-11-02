@@ -5,23 +5,33 @@ module positionCalc #(
     parameter  MAG_WIDTH = 24,
     parameter DATA_WIDTH = 32)(
     input                   clk,
-    input  [DATA_WIDTH-1:0] gpioData,
-    input                   csrStrobe, xCalStrobe, yCalStrobe, qCalStrobe,
+
     input   [MAG_WIDTH-1:0] tbt0, tbt1, tbt2, tbt3,
     input   [MAG_WIDTH-1:0] fa0,  fa1,  fa2,  fa3,
     input   [MAG_WIDTH-1:0] sa0,  sa1,  sa2,  sa3,
     input                   tbtInToggle, faInToggle, saInToggle,
+
+    input       [DATA_WIDTH-1:0] gpioData,
+    input                        csrStrobe, xCalStrobe, yCalStrobe, qCalStrobe,
     output wire [DATA_WIDTH-1:0] csr,
-    output reg  [DATA_WIDTH-1:0] xCalibration, yCalibration, qCalibration,
-    output reg  [DATA_WIDTH-1:0] tbtX, tbtY, tbtQ, tbtS,
-    output reg  [DATA_WIDTH-1:0] faX,  faY,  faQ,  faS,
-    output reg  [DATA_WIDTH-1:0] saX,  saY,  saQ,  saS,
-    output reg                   tbtToggle = 0,
-    output reg                   faToggle = 0,
-    output reg                   saToggle = 0,
-    output reg                   tbtValid = 0,
-    output reg                   faValid = 0,
-    output reg                   saValid = 0);
+    output reg signed [DATA_WIDTH-1:0] xCalibration, yCalibration, qCalibration,
+
+    input                        posXOffsetStrobe,
+    output wire [DATA_WIDTH-1:0] posXOffsetRBK,
+    input                        posYOffsetStrobe,
+    output wire [DATA_WIDTH-1:0] posYOffsetRBK,
+    input                        posQOffsetStrobe,
+    output wire [DATA_WIDTH-1:0] posQOffsetRBK,
+
+    output wire signed [DATA_WIDTH-1:0] tbtX, tbtY, tbtQ, tbtS,
+    output wire signed [DATA_WIDTH-1:0] faX,  faY,  faQ,  faS,
+    output wire signed [DATA_WIDTH-1:0] saX,  saY,  saQ,  saS,
+    output wire                  tbtToggle,
+    output wire                  faToggle,
+    output wire                  saToggle,
+    output wire                  tbtValid,
+    output wire                  faValid,
+    output wire                  saValid);
 
 // Pad divider I/O to 8-bit boundary
 // Divider actual widths:
@@ -48,6 +58,27 @@ always @(posedge clk) begin
     if (yCalStrobe) yCalibration <= gpioData;
     if (qCalStrobe) qCalibration <= gpioData;
 end
+
+reg signed [DATA_WIDTH-1:0] posXOffset = 0;
+reg signed [DATA_WIDTH-1:0] posYOffset = 0;
+reg signed [DATA_WIDTH-1:0] posQOffset = 0;
+always @(posedge clk) begin
+    if (posXOffsetStrobe)  begin
+        posXOffset <= gpioData[DATA_WIDTH-1:0];
+    end
+
+    if (posYOffsetStrobe)  begin
+        posYOffset <= gpioData[DATA_WIDTH-1:0];
+    end
+
+    if (posQOffsetStrobe)  begin
+        posQOffset <= gpioData[DATA_WIDTH-1:0];
+    end
+end
+
+assign posXOffsetRBK = posXOffset;
+assign posYOffsetRBK = posYOffset;
+assign posQOffsetRBK = posQOffset;
 
 //
 // Computation state machine
@@ -236,7 +267,7 @@ end
 wire                             dividerOutputsValid, dividerReady;
 wire signed [DIVIDEND_WIDTH-1:0] dividend = diff;
 wire         [DIVISOR_WIDTH-1:0] divisor = buttonSum;
-wire        [QUOTIENT_WIDTH-1:0] quotient;
+wire signed [QUOTIENT_WIDTH-1:0] quotient;
 wire       [TUSER_OUT_WIDTH-1:0] dividerTuserOut;
 `ifndef SIMULATE
 positionCalcDivider positionCalcDivider (
@@ -252,7 +283,7 @@ positionCalcDivider positionCalcDivider (
                               .m_axis_dout_tuser(dividerTuserOut),
                               .m_axis_dout_tdata(quotient));
 `endif
-reg       [DATA_WIDTH-1:0] rawPosition;
+reg signed [DATA_WIDTH-1:0] rawPosition;
 wire       [SUM_WIDTH-1:0] dividerTuserOutSum;
 wire                 [3:0] dividerTuserOutChannel;
 assign dividerTuserOutChannel = dividerTuserOut[TUSER_OUT_WIDTH-1:SUM_WIDTH];
@@ -264,8 +295,9 @@ reg                        calibrationValid, calibratedValid;
 // Apply calibration factor
 //
 parameter PRODUCT_WIDTH = 2*DATA_WIDTH;
-reg     [DATA_WIDTH-1:0] calibrationFactor;
-wire [PRODUCT_WIDTH-1:0] product;
+reg signed [DATA_WIDTH-1:0] calibrationFactor;
+wire signed [PRODUCT_WIDTH-1:0] product;
+// Multiplier is signed (both inputs)
 `ifndef SIMULATE
 positionCalcMultiplier
   positionCalcMultiplier(
@@ -274,9 +306,16 @@ positionCalcMultiplier
     .B(calibrationFactor),
     .P(product));
 `endif
-wire [DATA_WIDTH-1:0] calibrated;
+wire signed [DATA_WIDTH-1:0] calibrated;
 // Drop top four bits since divider fraction width is only 28 bits, not 32.
 assign calibrated = product[PRODUCT_WIDTH-4-1:PRODUCT_WIDTH-DATA_WIDTH-4];
+
+reg tbtToggleRaw = 0, faToggleRaw = 0, saToggleRaw = 0;
+reg tbtValidRaw = 0, faValidRaw = 0, saValidRaw = 0;
+
+reg signed [DATA_WIDTH-1:0] tbtXRaw = 0, tbtYRaw = 0, tbtQRaw = 0, tbtSRaw = 0;
+reg signed [DATA_WIDTH-1:0] faXRaw = 0, faYRaw = 0, faQRaw = 0, faSRaw = 0;
+reg signed [DATA_WIDTH-1:0] saXRaw = 0, saYRaw =0,  saQRaw = 0,  saSRaw = 0;
 
 always @(posedge clk) begin
     //
@@ -300,43 +339,147 @@ always @(posedge clk) begin
     //
     if (dividerOutputsValid) begin
         case (dividerTuserOutChannel[3:2])
-        4'h0: tbtS <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
-        4'h1: faS  <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
-        4'h2: saS  <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
+        4'h0: tbtSRaw <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
+        4'h1: faSRaw  <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
+        4'h2: saSRaw  <= { {DATA_WIDTH-SUM_WIDTH{1'b0}}, dividerTuserOutSum };
         default: ;
         endcase
     end
 
 
-    tbtValid <= 1'b0;
-    faValid <= 1'b0;
-    saValid <= 1'b0;
+    tbtValidRaw <= 1'b0;
+    faValidRaw <= 1'b0;
+    saValidRaw <= 1'b0;
     if (calibratedValid) begin
         case (calibratedChannel)
-        4'h0: tbtX <= calibrated;
-        4'h1: tbtY <= calibrated;
+        4'h0: tbtXRaw <= calibrated;
+        4'h1: tbtYRaw <= calibrated;
         4'h2: begin
-              tbtQ <= calibrated;
-              tbtToggle = !tbtToggle;
-              tbtValid <= 1'b1;
+              tbtQRaw <= calibrated;
+              tbtToggleRaw = !tbtToggleRaw;
+              tbtValidRaw <= 1'b1;
               end
-        4'h4: faX <= calibrated;
-        4'h5: faY <= calibrated;
+        4'h4: faXRaw <= calibrated;
+        4'h5: faYRaw <= calibrated;
         4'h6: begin
-              faQ <= calibrated;
-              faToggle = !faToggle;
-              faValid <= 1'b1;
+              faQRaw <= calibrated;
+              faToggleRaw = !faToggleRaw;
+              faValidRaw <= 1'b1;
               end
-        4'h8: saX <= calibrated;
-        4'h9: saY <= calibrated;
+        4'h8: saXRaw <= calibrated;
+        4'h9: saYRaw <= calibrated;
         4'hA: begin
-              saQ <= calibrated;
-              saToggle = !saToggle;
-              saValid <= 1'b1;
+              saQRaw <= calibrated;
+              saToggleRaw = !saToggleRaw;
+              saValidRaw <= 1'b1;
               end
         default: ;
         endcase
     end
 end
+
+//
+// Offset subtraction
+//
+
+localparam NUM_SIGNALS = 4;
+localparam USER_WIDTH = 1;
+localparam [DATA_WIDTH-1:0] zero = {DATA_WIDTH{1'b0}};
+
+subOffset #(
+    .NUM_SIGNALS(NUM_SIGNALS),
+    .USER_WIDTH(USER_WIDTH),
+    .SIGNAL_WIDTH(DATA_WIDTH),
+    .OFFSET_WIDTH(DATA_WIDTH)
+    )
+  subOffsetTbT (
+    .clk(clk),
+    .userIn(tbtToggleRaw),
+    .validIn(tbtValidRaw),
+    .signalIn({
+        tbtSRaw,
+        tbtQRaw,
+        tbtYRaw,
+        tbtXRaw
+    }),
+    .offsetIn({
+        zero,
+        posQOffset,
+        posYOffset,
+        posXOffset
+    }),
+    .userOut(tbtToggle),
+    .validOut(tbtValid),
+    .signalOut({
+        tbtS,
+        tbtQ,
+        tbtY,
+        tbtX
+    })
+  );
+
+subOffset #(
+    .NUM_SIGNALS(NUM_SIGNALS),
+    .USER_WIDTH(USER_WIDTH),
+    .SIGNAL_WIDTH(DATA_WIDTH),
+    .OFFSET_WIDTH(DATA_WIDTH)
+    )
+  subOffsetFA (
+    .clk(clk),
+    .userIn(faToggleRaw),
+    .validIn(faValidRaw),
+    .signalIn({
+        faSRaw,
+        faQRaw,
+        faYRaw,
+        faXRaw
+    }),
+    .offsetIn({
+        zero,
+        posQOffset,
+        posYOffset,
+        posXOffset
+    }),
+    .userOut(faToggle),
+    .validOut(faValid),
+    .signalOut({
+        faS,
+        faQ,
+        faY,
+        faX
+    })
+  );
+
+subOffset #(
+    .NUM_SIGNALS(NUM_SIGNALS),
+    .USER_WIDTH(USER_WIDTH),
+    .SIGNAL_WIDTH(DATA_WIDTH),
+    .OFFSET_WIDTH(DATA_WIDTH)
+    )
+  subOffsetSA (
+    .clk(clk),
+    .userIn(saToggleRaw),
+    .validIn(saValidRaw),
+    .signalIn({
+        saSRaw,
+        saQRaw,
+        saYRaw,
+        saXRaw
+    }),
+    .offsetIn({
+        zero,
+        posQOffset,
+        posYOffset,
+        posXOffset
+    }),
+    .userOut(saToggle),
+    .validOut(saValid),
+    .signalOut({
+        saS,
+        saQ,
+        saY,
+        saX
+    })
+  );
 
 endmodule

@@ -24,6 +24,8 @@
 #define MAX_ADC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_ADC_COUNT/CFG_DSBPM_COUNT)
 #define MAX_DAC_CHANNELS_PER_CHAIN (DSBPM_PROTOCOL_DAC_COUNT/CFG_DSBPM_COUNT)
 
+#define MAX_POS_OFFSETS_PER_CHAIN  (DSBPM_PROTOCOL_POS_OFFSET_COUNT/CFG_DSBPM_COUNT)
+
 #define REG(base,chan)  ((base) + (GPIO_IDX_PER_DSBPM * (chan)))
 
 static struct udp_pcb *pcb;
@@ -37,7 +39,7 @@ static void
 publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
 {
     int i;
-    int adcChannel, dacChannel, chainNumber;
+    int adcChannel, dacChannel, chainNumber, channelNumber;
     struct pbuf *p;
     struct dsbpmSlowAcquisition *pk;
     static epicsUInt32 packetNumber = 1;
@@ -109,6 +111,11 @@ publishSlowAcquisition(unsigned int saSeconds, unsigned int saFraction)
         pk->dacPwr[i] = rfDACGetShutdownModeBPM(chainNumber, dacChannel);
     }
 
+    for (i = 0; i < DSBPM_PROTOCOL_POS_OFFSET_COUNT ; i++ ) {
+        channelNumber = i % MAX_POS_OFFSETS_PER_CHAIN;
+        chainNumber = i / MAX_POS_OFFSETS_PER_CHAIN;
+        pk->posOffset[i] = positionCalcGetOffset(chainNumber, channelNumber);
+    }
 
     r = 0;
     pk->adcPeak[0] = r;

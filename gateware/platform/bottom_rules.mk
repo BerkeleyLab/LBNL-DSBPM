@@ -1,0 +1,3 @@
+dsbpm_TARGET_PLATFORM_DIR = $(PLATFORM_DIR)/$(FPGA_VENDOR)/$(FPGA_PLATFORM)
+
+include $(dsbpm_TARGET_PLATFORM_DIR)/bottom_rules.mk

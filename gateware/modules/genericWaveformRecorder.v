@@ -23,7 +23,12 @@ module genericWaveformRecorder #(
     input                        sysClk,
     input        [BUS_WIDTH-1:0] writeData,
     input                  [4:0] regStrobes,
-    output wire       [BUS_WIDTH-1:0] csr, pretrigCount, acqCount, acqAddressMSB, acqAddressLSB,
+    output wire       [BUS_WIDTH-1:0] csr,
+    output wire       [BUS_WIDTH-1:0] csr2,
+    output wire       [BUS_WIDTH-1:0] pretrigCount,
+    output wire       [BUS_WIDTH-1:0] acqCount,
+    output wire       [BUS_WIDTH-1:0] acqAddressMSB,
+    output wire       [BUS_WIDTH-1:0] acqAddressLSB,
     output wire  [TIMESTAMP_WIDTH-1:0] whenTriggered,
 
     // clk synchronous signals
@@ -127,6 +132,9 @@ assign csr = { sysCsrTriggerEnables,
                7'b0, sysAcqPretrigLeftDone,
                6'b0, sysCsrTestMode, sysCsrDiagMode,
               sysFull, sysCsrBRESP, sysOverrun, sysState, sysAcqArmed };
+assign csr2 = { 16'b0,
+               {16-(FIFO_ADDR_WIDTH+1){1'b0}},
+              sysFifoCount };
 reg [2*BUS_WIDTH-1:0] sysAcqBase;
 
 //
@@ -285,12 +293,14 @@ assign fifo_wr_en = (acqArmed && dataValid
 assign fifo_rd_en = (((state == S_ADDR) && axi_AWREADY)
                   || ((state == S_DATA) && (beatCount != 0) && axi_WREADY));
 wire signed [FIFO_ADDR_WIDTH:0] fifoCount;
+reg fifoRst = 0;
 genericFifo #(
     .dw(AXI_DATA_WIDTH),
     .aw(FIFO_ADDR_WIDTH),
     .fwft(0)
 ) fifo (
     .clk(clk),
+    .rst(fifoRst),
     .din(fifoIn),
     .we(fifo_wr_en),
 
@@ -310,27 +320,40 @@ assign axi_WSTRB = {(AXI_DATA_WIDTH/8){1'b1}};
 //
 reg csrStrobe = 0, csrToggle_d1 = 0;
 reg acqArmed = 0, overrun = 0, full = 0;
+reg acqPreArmed = 0, acqPreArmed_d = 0;
 reg [TIMESTAMP_WIDTH-1:0] acqWhenTriggered = 0;
 reg [1:0] csrBRESP = 0;
 always @(posedge clk) begin
     csrToggle_d1 <= csrToggle;
     csrStrobe <= csrToggle_d1 ^ csrToggle;
 
-    if (fifoOverflow) overrun <= 1;
+    if (fifoOverflow) begin
+        overrun <= 1;
+    end
+
+    acqPreArmed_d <= acqPreArmed;
+
+    fifoRst <= 0;
     if (csrStrobe) begin
         full <= 0;
         if (csrArmed) begin
-            if (!acqArmed) begin
+            if (!acqPreArmed) begin
                 overrun <= 0;
                 writeAddr <= 0;
                 acqPretrigLeft <= csrPretrigCount;
                 acqLeft <= csrAcqCount;
-                acqArmed <= 1;
+                fifoRst <= 1;
+                acqPreArmed <= 1;
             end
         end
         else begin
+            acqPreArmed <= 0;
             acqArmed <= 0;
         end
+    end
+
+    if (acqPreArmed && !acqPreArmed_d) begin
+        acqArmed <= 1;
     end
 
     //
@@ -355,6 +378,7 @@ always @(posedge clk) begin
                     // the CSR reg values forwared to the CLK
                     // domain
                     if (!csrStrobe) begin
+                        acqPreArmed <= 0;
                         acqArmed <= 0;
                         full <= 1;
                     end
@@ -434,6 +458,7 @@ always @(posedge clk) begin
         if (axi_BVALID) begin
             csrBRESP <= axi_BRESP;
             if ((axi_BRESP != 0) && !csrStrobe) begin
+                acqPreArmed <= 0;
                 acqArmed <= 0;
                 acqLeft <= 0;
             end
@@ -459,7 +484,7 @@ end
 
 generate
 if (CHIPSCOPE_DBG != "TRUE" && CHIPSCOPE_DBG != "FALSE") begin
-    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED();
+    CHIPSCOPE_DBG_only_TRUE_or_FALSE_SUPPORTED err();
 end
 endgenerate
 
@@ -519,5 +544,13 @@ forwardData #(.DATA_WIDTH(AXI_ADDR_WIDTH+TIMESTAMP_WIDTH+1+1+2+3+1+1))
     .outClk(sysClk),
     .outData({  sysAxi_AWADDR, sysWhenTriggered, sysOverrun, sysFull,
                 sysCsrBRESP, sysState, sysAcqArmed, sysAcqPretrigLeftDone}));
+
+wire signed [FIFO_ADDR_WIDTH:0] sysFifoCount;
+forwardData #(.DATA_WIDTH(FIFO_ADDR_WIDTH+1))
+  forwardAcqtoCSR2 (
+    .inClk(clk),
+    .inData(fifoCount),
+    .outClk(sysClk),
+    .outData(sysFifoCount));
 
 endmodule

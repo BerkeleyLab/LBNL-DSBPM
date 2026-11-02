@@ -1303,13 +1303,13 @@ wire ddr4_rst;
 
 wire [1:0]      ddr_aximm_dbg_ARBURST;
 wire [3:0]      ddr_aximm_dbg_ARCACHE;
+wire [31:0]     ddr_aximm_dbg_ARADDR;
 wire [7:0]      ddr_aximm_dbg_ARLEN;
 wire [0:0]      ddr_aximm_dbg_ARLOCK;
 wire [2:0]      ddr_aximm_dbg_ARPROT;
 wire [3:0]      ddr_aximm_dbg_ARQOS;
 wire            ddr_aximm_dbg_ARREADY;
 wire [2:0]      ddr_aximm_dbg_ARSIZE;
-wire [15:0]     ddr_aximm_dbg_ARUSER;
 wire            ddr_aximm_dbg_ARVALID;
 wire [31:0]     ddr_aximm_dbg_AWADDR;
 wire [1:0]      ddr_aximm_dbg_AWBURST;
@@ -1320,7 +1320,6 @@ wire [2:0]      ddr_aximm_dbg_AWPROT;
 wire [3:0]      ddr_aximm_dbg_AWQOS;
 wire            ddr_aximm_dbg_AWREADY;
 wire [2:0]      ddr_aximm_dbg_AWSIZE;
-wire [15:0]     ddr_aximm_dbg_AWUSER;
 wire            ddr_aximm_dbg_AWVALID;
 wire            ddr_aximm_dbg_BREADY;
 wire [1:0]      ddr_aximm_dbg_BRESP;
@@ -1777,7 +1776,6 @@ system
     .ddr_aximm_dbg_arqos(ddr_aximm_dbg_ARQOS),
     .ddr_aximm_dbg_arready(ddr_aximm_dbg_ARREADY),
     .ddr_aximm_dbg_arsize(ddr_aximm_dbg_ARSIZE),
-    .ddr_aximm_dbg_aruser(ddr_aximm_dbg_ARUSER),
     .ddr_aximm_dbg_arvalid(ddr_aximm_dbg_ARVALID),
     .ddr_aximm_dbg_awaddr(ddr_aximm_dbg_AWADDR),
     .ddr_aximm_dbg_awburst(ddr_aximm_dbg_AWBURST),
@@ -1788,7 +1786,6 @@ system
     .ddr_aximm_dbg_awqos(ddr_aximm_dbg_AWQOS),
     .ddr_aximm_dbg_awready(ddr_aximm_dbg_AWREADY),
     .ddr_aximm_dbg_awsize(ddr_aximm_dbg_AWSIZE),
-    .ddr_aximm_dbg_awuser(ddr_aximm_dbg_AWUSER),
     .ddr_aximm_dbg_awvalid(ddr_aximm_dbg_AWVALID),
     .ddr_aximm_dbg_bready(ddr_aximm_dbg_BREADY),
     .ddr_aximm_dbg_bresp(ddr_aximm_dbg_BRESP),
@@ -2435,6 +2432,11 @@ wire [31:0] positionCalcSaX[0:CFG_DSBPM_COUNT-1];
 wire [31:0] positionCalcSaY[0:CFG_DSBPM_COUNT-1];
 wire [31:0] positionCalcSaQ[0:CFG_DSBPM_COUNT-1];
 wire [31:0] positionCalcSaS[0:CFG_DSBPM_COUNT-1];
+
+wire [31:0] positionCalcXOffset[0:CFG_DSBPM_COUNT-1];
+wire [31:0] positionCalcYOffset[0:CFG_DSBPM_COUNT-1];
+wire [31:0] positionCalcQOffset[0:CFG_DSBPM_COUNT-1];
+
 wire positionCalcTbtToggle[0:CFG_DSBPM_COUNT-1];
 wire positionCalcFaToggle[0:CFG_DSBPM_COUNT-1];
 wire positionCalcSaToggle[0:CFG_DSBPM_COUNT-1];
@@ -2450,22 +2452,25 @@ wire [31:0] narrowYrms[0:CFG_DSBPM_COUNT-1];
 
 generate
 for (dsbpm = 0 ; dsbpm < CFG_DSBPM_COUNT ; dsbpm = dsbpm + 1) begin : pos_chain
+
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_CSR + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcCSR[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_XCAL + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcXcal[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_YCAL + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcYcal[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_QCAL + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcQcal[dsbpm];
+
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_SA_X + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcSaX[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_SA_Y + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcSaY[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_SA_Q + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcSaQ[dsbpm];
 assign GPIO_IN[GPIO_IDX_POSITION_CALC_SA_S + dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcSaS[dsbpm];
+
+assign GPIO_IN[GPIO_IDX_X_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcXOffset[dsbpm];
+assign GPIO_IN[GPIO_IDX_Y_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcYOffset[dsbpm];
+assign GPIO_IN[GPIO_IDX_Q_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM] = positionCalcQOffset[dsbpm];
+
 positionCalc #(.MAG_WIDTH(MAG_WIDTH))
   positionCalc(
     .clk(sysClk),
-    .gpioData(GPIO_OUT),
-    .csrStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_CSR + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .xCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_XCAL + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .yCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_YCAL + dsbpm*GPIO_IDX_PER_DSBPM]),
-    .qCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_QCAL + dsbpm*GPIO_IDX_PER_DSBPM]),
+
     .tbt0(prelimProcRfTbtMag0[dsbpm]),
     .tbt1(prelimProcRfTbtMag1[dsbpm]),
     .tbt2(prelimProcRfTbtMag2[dsbpm]),
@@ -2481,10 +2486,25 @@ positionCalc #(.MAG_WIDTH(MAG_WIDTH))
     .sa2(prelimProcRfSaMag2[dsbpm]),
     .sa3(prelimProcRfSaMag3[dsbpm]),
     .saInToggle(prelimProcRfSaToggle[dsbpm]),
+
+    .gpioData  (GPIO_OUT),
+    .csrStrobe (GPIO_STROBES[GPIO_IDX_POSITION_CALC_CSR+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .xCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_XCAL+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .yCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_YCAL+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .qCalStrobe(GPIO_STROBES[GPIO_IDX_POSITION_CALC_QCAL+dsbpm*GPIO_IDX_PER_DSBPM]),
+
     .csr(positionCalcCSR[dsbpm]),
     .xCalibration(positionCalcXcal[dsbpm]),
     .yCalibration(positionCalcYcal[dsbpm]),
     .qCalibration(positionCalcQcal[dsbpm]),
+
+    .posXOffsetStrobe(GPIO_STROBES[GPIO_IDX_X_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .posXOffsetRBK(positionCalcXOffset[dsbpm]),
+    .posYOffsetStrobe(GPIO_STROBES[GPIO_IDX_Y_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .posYOffsetRBK(positionCalcYOffset[dsbpm]),
+    .posQOffsetStrobe(GPIO_STROBES[GPIO_IDX_Q_OFFSET_CSR+dsbpm*GPIO_IDX_PER_DSBPM]),
+    .posQOffsetRBK(positionCalcQOffset[dsbpm]),
+
     .tbtX(positionCalcTbtX[dsbpm]),
     .tbtY(positionCalcTbtY[dsbpm]),
     .tbtQ(positionCalcTbtQ[dsbpm]),
