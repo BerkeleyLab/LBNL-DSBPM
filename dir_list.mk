@@ -2,6 +2,7 @@ TOP := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 GATEWARE_DIR       = $(TOP)gateware
 SOFTWARE_DIR       = $(TOP)software
+CFG_DIR            = $(TOP)config
 
 # Gateware
 
@@ -28,6 +29,13 @@ SW_TGT_COMMON_DIR  = $(SW_TGT_DIR)/common_dsbpm
 SW_SCRIPTS_DIR     = $(SOFTWARE_DIR)/scripts
 SW_SRC_DIR     	   = $(SOFTWARE_DIR)/src
 SW_APP_DIR         = $(SOFTWARE_DIR)/app
+
+# Config
+
+CFG_ALS_SR            = $(CFG_DIR)/als_sr
+CFG_ALS_SR_LMK_VCXO   = $(CFG_DIR)/als_sr_lmk_vcxo
+CFG_ALSU_AR           = $(CFG_DIR)/alsu_ar
+CFG_ALSU_SR           = $(CFG_DIR)/als_sr
 
 # DSBPM Sofware
 
