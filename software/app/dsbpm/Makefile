@@ -37,7 +37,7 @@ FSBL  = $(THIS_DIR)/$(TARGET_VARIANT)/platform/zynqmp_fsbl/fsbl_a53.elf
 
 TARGET_DIR = $(SW_TGT_DIR)/$(TARGET_VARIANT)
 
-all: $(TARGET_VARIANT) $(TARGET_VARIANT).elf $(TARGET_VARIANT).elf.size $(BIN)
+all: $(TARGET_VARIANT) $(TARGET_VARIANT).elf $(TARGET_VARIANT).elf.size $(BIN) $(CLK_FILES)
 
 __SRC_FILES = \
 	acqSync.c \
@@ -204,11 +204,27 @@ INCLUDE_DIRS += \
 	$(ST7789V_DIR)
 INCLUDE_FLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 
+CLK_FILES = \
+	$(CFG_ALS_SR)/lmk04828B_distribution_SR_spt_81.csv \
+	$(CFG_ALS_SR)/lmx2594ADC_distribution_SR_spt_81.csv \
+	$(CFG_ALS_SR)/lmx2594DAC_distribution_SR_spt_81.csv \
+	$(CFG_ALS_SR_LMK_VCXO)/lmk04828B_ref_124_91_vcxo_160_spt_81.csv \
+	$(CFG_ALS_SR_LMK_VCXO)/lmx2594ADC_ref_124_91_vcxo_160_spt_81.csv \
+	$(CFG_ALS_SR_LMK_VCXO)/lmx2594DAC_ref_124_91_vcxo_160_spt_81.csv \
+	$(CFG_ALSU_AR)/lmk04828B_distribution_AR_spt_73.csv \
+	$(CFG_ALSU_AR)/lmx2594ADC_distribution_AR_spt_73.csv \
+	$(CFG_ALSU_AR)/lmx2594DAC_distribution_AR_spt_73.csv \
+	$(CFG_ALSU_SR)/lmk04828B_distribution_SR_spt_81.csv \
+	$(CFG_ALSU_SR)/lmx2594ADC_distribution_SR_spt_81.csv \
+	$(CFG_ALSU_SR)/lmx2594DAC_distribution_SR_spt_81.csv
+
 .PHONY: all clean bsp
 
 vpath %.c $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR)
 vpath %.h $(SW_SRC_DIR) $(ST7789V_DIR) $(TARGET_DIR) $(SW_TGT_COMMON_DIR)
 vpath %.o $(SW_SRC_DIR) $(ST7789V_DIR)
+vpath %.sh $(SW_SCRIPTS_DIR)
+vpath %.tcs $(SW_SCRIPTS_DIR)
 
 %softwareBuildDate.h: $(SRC_FILES) $(HDR_FILES)
 	sh $(SW_SCRIPTS_DIR)/setSoftwareBuildDate.sh > $@
@@ -230,6 +246,9 @@ $(TARGET_VARIANT).elf.size: $(TARGET_VARIANT).elf
 
 %.o: %.c
 	$(CC) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" $(CFLAGS) $(USER_FLAGS) $(INCLUDE_FLAGS) -c $*.c -o $@
+
+%.csv: %.tcs
+	sh $(SW_SCRIPTS_DIR)/createRFCLKtable.sh $< > $@
 
 $(BIN): $(BIF) $(FSBL) $(PMUFW) $(BIT) $(ELF)
 	bootgen -image "$<" -w on -arch zynqmp -o "$@"
