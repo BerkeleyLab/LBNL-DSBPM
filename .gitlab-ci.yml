@@ -101,6 +101,7 @@ sw_dsbpm_zcu208:
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/export/platform/sw/platform/boot/pmufw.elf
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}.elf
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}*.bin
+      - config/*
   parallel:
     matrix:
       - SAMPLES_PER_TURN: [77, 81]
@@ -144,6 +145,7 @@ sw_dsbpm_lbl208:
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}/platform/export/platform/sw/platform/boot/pmufw.elf
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}.elf
       - software/app/dsbpm/dsbpm_${PLATFORM}_${VARIANT_MOD}vcxo_${VCXO_TYPE}_spt_${SAMPLES_PER_TURN}*.bin
+      - config/*
   parallel:
     matrix:
       - SAMPLES_PER_TURN: [77, 81]
