@@ -36,6 +36,7 @@ CFG_ALS_SR            = $(CFG_DIR)/als_sr
 CFG_ALS_SR_LMK_VCXO   = $(CFG_DIR)/als_sr_lmk_vcxo
 CFG_ALSU_AR           = $(CFG_DIR)/alsu_ar
 CFG_ALSU_SR           = $(CFG_DIR)/als_sr
+CFG_ALSU_SR_LMK_VCXO  = $(CFG_DIR)/alsu_sr_lmk_vcxo
 
 # DSBPM Sofware
 
