@@ -49,7 +49,10 @@ CLK_FILES = \
 	$(CFG_ALSU_AR)/lmx2594DAC_distribution_AR_spt_73.csv \
 	$(CFG_ALSU_SR)/lmk04828B_distribution_SR_spt_81.csv \
 	$(CFG_ALSU_SR)/lmx2594ADC_distribution_SR_spt_81.csv \
-	$(CFG_ALSU_SR)/lmx2594DAC_distribution_SR_spt_81.csv
+	$(CFG_ALSU_SR)/lmx2594DAC_distribution_SR_spt_81.csv \
+	$(CFG_ALSU_SR_LMK_VCXO)/lmk04828B_ref_125_098_vcxo_160_spt_81.csv \
+	$(CFG_ALSU_SR_LMK_VCXO)/lmx2594ADC_ref_125_098_vcxo_160_spt_81.csv \
+	$(CFG_ALSU_SR_LMK_VCXO)/lmx2594DAC_ref_125_098_vcxo_160_spt_81.csv
 
 all: $(TARGET_VARIANT) $(TARGET_VARIANT).elf $(TARGET_VARIANT).elf.size $(BIN) $(CLK_FILES)
 
