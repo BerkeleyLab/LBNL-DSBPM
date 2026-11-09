@@ -231,7 +231,7 @@ cellCommStatusSingle(struct cellCommInfo *cellp, int verbose)
             if ((status & CELLCOMM_MGT_CSR_RX_RESET_DONE) != CELLCOMM_MGT_CSR_RX_RESET_DONE) {
                 printf("  RX reset NOT done");
             }
-            if ((status & CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) != CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) {
+            if ((status & CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) == CELLCOMM_MGT_CSR_MMCM_NOT_LOCK) {
                 printf("  MMCM NOT locked");
             }
             if ((status & CELLCOMM_MGT_CSR_TX_PLL_LOCK) != CELLCOMM_MGT_CSR_TX_PLL_LOCK) {
