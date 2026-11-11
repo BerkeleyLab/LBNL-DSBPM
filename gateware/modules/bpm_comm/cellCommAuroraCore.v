@@ -85,9 +85,11 @@ module cellCommAuroraCore #(
 // CCW Aurora block
 //
 
-wire ccwAuMGTclk;
 wire ccwAuUserClk;
+wire ccwAuUserClk2x;
+wire ccwAuSyncClk;
 wire ccwAuUserReset;
+wire ccwAuUser2xReset;
 wire ccwMmcmLocked;
 
 wire ccwMgtHardErr;
@@ -127,9 +129,12 @@ auroraLink #(
     .MGT_RX_N(CCW_RX_N),
 
     // Clocks in case of USE_INTERNAL_MMCM = "true"
-    .auMGTclkOut(ccwAuMGTclk),
     .auUserClkOut(ccwAuUserClk),
+    .auUserClk2xOut(ccwAuUserClk2x),
+    .auSyncClkOut(ccwAuSyncClk),
+
     .auUserResetOut(ccwAuUserReset),
+    .auUser2xResetOut(ccwAuUser2xReset),
     .mmcmLockedOut(ccwMmcmLocked),
 
     .axiRxTdata(ccwAxisRxTdata),
@@ -156,8 +161,9 @@ auroraLink #(
     .txOutClkClr(ccwTxOutClkClr)
 );
 
-assign ccwAxisUserClk = ccwAuUserClk;
-assign ccwAxisUserReset = ccwAuUserReset;
+// The out user clocks are actually the 2x version (32-bit interface)
+assign ccwAxisUserClk = ccwAuUserClk2x;
+assign ccwAxisUserReset = ccwAuUser2xReset;
 assign ccwChannelUp = ccwMgtChannelUp;
 assign ccwAxisRxCRCpass = ccwAxisRxTuser[0];
 assign ccwAxisRxCRCvalid = ccwAxisRxTuser[1];
@@ -174,11 +180,13 @@ end
 // CW Aurora block
 //
 
-wire cwAuMGTclk = ccwAuMGTclk;
 wire cwAuUserClk = ccwAuUserClk;
+wire cwAuUserClk2x = ccwAuUserClk2x;
+wire cwAuSyncClk = ccwAuSyncClk;
 wire cwMmcmLocked = ccwMmcmLocked;
 
 wire cwAuUserReset;
+wire cwAuUser2xReset;
 
 wire cwMgtHardErr;
 wire cwMgtSoftErr;
@@ -210,11 +218,13 @@ auroraLink #(
     .MGT_RX_N(CW_RX_N),
 
     // Clocks in case of USE_INTERNAL_MMCM = "false"
-    .auMGTclkIn(cwAuMGTclk),
     .auUserClkIn(cwAuUserClk),
+    .auUserClk2xIn(cwAuUserClk2x),
+    .auSyncClkIn(cwAuSyncClk),
     .mmcmLockedIn(cwMmcmLocked),
 
     .auUserResetOut(cwAuUserReset),
+    .auUser2xResetOut(cwAuUser2xReset),
 
     .axiRxTdata(cwAxisRxTdata),
     .axiRxTkeep(),
@@ -237,8 +247,8 @@ auroraLink #(
     .mgtMmcmNotLocked(cwMgtMmcmNotLocked)
 );
 
-assign cwAxisUserClk = cwAuUserClk;
-assign cwAxisUserReset = cwAuUserReset;
+assign cwAxisUserClk = cwAuUserClk2x;
+assign cwAxisUserReset = cwAuUser2xReset;
 assign cwChannelUp = cwMgtChannelUp;
 assign cwAxisRxCRCpass = cwAxisRxTuser[0];
 assign cwAxisRxCRCvalid = cwAxisRxTuser[1];
